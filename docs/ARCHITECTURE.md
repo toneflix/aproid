@@ -37,24 +37,26 @@ A packet that carries a file adds `payloadSize` and `payloadTransferInfo: {"port
 1. Each device broadcasts a `kdeconnect.identity` packet over UDP to port 1716. It holds the device id, name, type, protocol version, capabilities and the TCP port it listens on (from 1716 to 1764).
 2. A device that hears a broadcast opens a TCP connection to that port and sends its own identity in plain text.
 
-**Encryption (next step).** Each device has a self-signed certificate whose common name is its device id. After the plain-text identity, both sides start TLS on the same socket. The device that *opened* the TCP connection acts as the TLS *server*. Once TLS is up, version 8 has both sides send their identity again over the encrypted link. A paired device's certificate is saved and must match on every later connection.
+**Encryption.** Each device has a self-signed certificate whose common name is its device id. After the plain-text identity, both sides start TLS on the same socket. The device that *opened* the TCP connection acts as the TLS *server*. Once TLS is up, version 8 has both sides send their identity again over the encrypted link. A paired device's certificate is saved and must match on every later connection.
 
 **Pairing.** A sends `kdeconnect.pair` with `pair: true` and `timestamp` (Unix seconds). B shows a prompt and a short verification code derived from both certificates and the timestamp, so the user can check the same code shows on both screens. B answers `pair: true` to accept or `pair: false` to reject. Either side sends `pair: false` later to unpair. Requests time out after 30 seconds. `PairingStateMachine` implements this on both sides.
 
 ## What is done and what is next
 
-Done in this scaffold:
+Done:
 
 - Packet format, identity, name rules and the pairing state machine, with tests, in Kotlin and Swift.
-- LAN discovery and plain-text identity exchange (`LanLink`) in both apps.
-- Android foreground service and a screen listing nearby devices; Mac menu bar app doing the same.
+- LAN discovery, plain-text identity exchange, and the TLS upgrade with v8 identity re-exchange (`LanLink`).
+- Self-signed RSA 2048 certificates per device (`DeviceCertificate`), stored on first launch.
+- Trusted devices (`TrustStore`): a paired device whose certificate changes is refused.
+- `Device`: wraps a link with pairing, and drops packets from unpaired devices.
+- Pairing UI with the verification code on both apps.
+- The Mac side runs on SwiftNIO and swift-nio-ssl, because Network.framework cannot start TLS on a connection that is already open.
 
 Next, in order:
 
-1. Certificates and TLS on both sides, and saving trusted devices.
-2. Pairing UI with the verification code. The exact code derivation must be checked against KDE Connect's source before it ships, so the codes match theirs.
-3. A `Device` object per connection that routes packets to feature plugins.
-4. First plugins: ping, battery, clipboard, share (files and links), notifications.
+1. Check against a real KDE Connect install: the verification code derivation and certificate fields.
+2. First plugins: ping, battery, clipboard, share (files and links), notifications.
 
 ## Platform limits to design around
 

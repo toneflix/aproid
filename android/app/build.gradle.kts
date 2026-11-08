@@ -34,6 +34,11 @@ android {
     buildFeatures {
         compose = true
     }
+
+    packaging {
+        // BouncyCastle jars each ship the same OSGi manifest.
+        resources.excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+    }
 }
 
 dependencies {
