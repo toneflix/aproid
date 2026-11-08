@@ -27,6 +27,7 @@ final class AppModel: ObservableObject {
     private let connected = DeviceRegistry()
     private let plugins: PluginRouter
     private let battery = BatteryPlugin()
+    private let clipboard: ClipboardPlugin
     private var link: LanLink?
     private var timer: Timer?
     private let trustStore = DefaultsTrustStore()
@@ -47,10 +48,12 @@ final class AppModel: ObservableObject {
             deviceName: DeviceIdentity.sanitizeName(Host.current().localizedName ?? "Mac"),
             deviceType: Self.isLaptop() ? .laptop : .desktop
         )
-        plugins = PluginRouter([NotificationPlugin(devices: connected), battery])
+        clipboard = ClipboardPlugin(devices: connected)
+        plugins = PluginRouter([NotificationPlugin(devices: connected), battery, clipboard])
 
         battery.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         start()
+        clipboard.startWatching()
     }
 
     func requestPair(_ id: String) { connected[id]?.requestPair() }
