@@ -1,0 +1,34 @@
+package com.toneflix.aproid.protocol
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class DeviceIdentityTest {
+    @Test fun newIdsAreValid() {
+        repeat(20) { assertTrue(DeviceIdentity.isValidDeviceId(DeviceIdentity.newDeviceId())) }
+        assertFalse(DeviceIdentity.isValidDeviceId("short"))
+        assertFalse(DeviceIdentity.isValidDeviceId("has-dashes-0000000000000000000000000"))
+    }
+
+    @Test fun sanitizesNames() {
+        assertEquals("Obis Pixel", DeviceIdentity.sanitizeName("Obi's Pixel!"))
+        assertEquals("Android", DeviceIdentity.sanitizeName("..."))
+        assertEquals(32, DeviceIdentity.sanitizeName("x".repeat(50)).length)
+    }
+
+    @Test fun roundTripsThroughPacket() {
+        val id = DeviceIdentity(DeviceIdentity.newDeviceId(), "Pixel 9", DeviceType.PHONE, tcpPort = 1716)
+        val back = DeviceIdentity.fromPacket(NetworkPacket.parse(id.toPacket().serialize()))
+        assertEquals(id, back)
+    }
+
+    @Test fun readsKdeConnectIdentity() {
+        val wire = """{"id":1700000000000,"type":"kdeconnect.identity","body":{"deviceId":"_0123456789abcdef0123456789abcdef_","deviceName":"laptop","deviceType":"laptop","protocolVersion":8,"incomingCapabilities":["kdeconnect.ping"],"outgoingCapabilities":[],"tcpPort":1716}}"""
+        val id = DeviceIdentity.fromPacket(NetworkPacket.parse(wire))
+        assertEquals(DeviceType.LAPTOP, id.deviceType)
+        assertEquals(8, id.protocolVersion)
+        assertEquals(setOf("kdeconnect.ping"), id.incomingCapabilities)
+    }
+}
