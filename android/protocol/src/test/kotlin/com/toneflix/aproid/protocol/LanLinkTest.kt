@@ -191,4 +191,41 @@ class LanLinkTest {
         assertTrue(onPhone.isOpen)
         assertTrue(onMac.isOpen)
     }
+
+    @Test fun fileTravelsOverItsOwnTlsConnection() {
+        val (onPhone, onMac) = connect()
+        phone.trust.trust(mac.identity.deviceId, onPhone.certificate.encoded)
+        mac.trust.trust(phone.identity.deviceId, onMac.certificate.encoded)
+        val shares = LinkedBlockingQueue<NetworkPacket>()
+        val phoneDevice = Device(onPhone, phone.certificate, phone.trust).apply { start() }
+        val macDevice = Device(onMac, mac.certificate, mac.trust).apply {
+            listener = object : Device.Listener {
+                override fun onPacket(device: Device, packet: NetworkPacket) = shares.put(packet)
+            }
+            start()
+        }
+        val bytes = ByteArray(300_000) { (it % 251).toByte() }
+
+        phoneDevice.sendWithPayload(Share.file("photo.jpg", bytes.size.toLong()), bytes.size.toLong(), { bytes.inputStream() })
+        val packet = shares.poll(10, TimeUnit.SECONDS) ?: error("no share")
+        val received = java.io.ByteArrayOutputStream()
+        macDevice.receivePayload(packet, received)
+
+        assertEquals(Share.File("photo.jpg", bytes.size.toLong()), Share.fromPacket(packet))
+        assertTrue(bytes.contentEquals(received.toByteArray()))
+    }
+
+    @Test fun payloadRefusesAnotherCertificate() {
+        val (onPhone, onMac) = connect()
+        val stranger = DeviceCertificate.generate(DeviceIdentity.newDeviceId()).certificate
+        val sender = PayloadTransfer(phone.certificate)
+
+        val port = sender.offer(stranger, { ByteArray(10).inputStream() })
+        val result = runCatching {
+            PayloadTransfer(mac.certificate).receive(InetAddress.getLoopbackAddress(), port, 10, onMac.certificate, java.io.ByteArrayOutputStream())
+        }
+
+        assertTrue(result.isFailure)
+        onPhone.close()
+    }
 }

@@ -12,6 +12,7 @@ class PhoneNotificationTest {
         text = "Are you coming?",
         time = 1_700_000_000_000,
         replyId = "f3b2c1",
+        iconHash = "900150983cd24fb0d6963f7d28e17f72",
     )
 
     @Test fun roundTrips() {
@@ -28,6 +29,10 @@ class PhoneNotificationTest {
         assertEquals("Signal", note?.appName)
         assertEquals(1_700_000_000_000, note?.time)
         assertNull(note?.replyId)
+    }
+
+    @Test fun iconHashIsMd5Hex() {
+        assertEquals("900150983cd24fb0d6963f7d28e17f72", PhoneNotification.iconHash("abc".toByteArray()))
     }
 
     @Test fun cancelIsNotANotification() {

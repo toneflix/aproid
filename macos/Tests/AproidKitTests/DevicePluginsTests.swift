@@ -30,4 +30,19 @@ final class DevicePluginsTests: XCTestCase {
         XCTAssertNil(Clipboard.content(Clipboard.packet("")))
         XCTAssertNil(Clipboard.content(FindMyPhone.request()))
     }
+
+    func testSharePacketsParse() {
+        var file = Share.filePacket(name: "a.txt", size: 5)
+        file.payloadSize = 5
+
+        XCTAssertEqual(Share(packet: file), .file(name: "a.txt", size: 5))
+        XCTAssertEqual(Share(packet: Share.linkPacket("https://example.com")), .link("https://example.com"))
+        XCTAssertEqual(Share(packet: Share.textPacket("hi")), .text("hi"))
+    }
+
+    func testSharedFileNameCannotLeaveTheFolder() {
+        XCTAssertEqual(Share.safeName("../../etc/passwd"), "passwd")
+        XCTAssertEqual(Share.safeName("C:\\evil.txt"), "evil.txt")
+        XCTAssertEqual(Share.safeName(".."), "file")
+    }
 }

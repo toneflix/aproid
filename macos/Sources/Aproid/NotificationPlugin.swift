@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import OSLog
 import UserNotifications
@@ -11,12 +12,15 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
     private enum Category {
         static let plain = "phone.notification"
         static let replyable = "phone.notification.reply"
+        static let missedCall = "phone.call.missed"
     }
 
     private enum Key {
         static let device = "device"
         static let id = "id"
         static let replyId = "replyId"
+        static let file = "file"
+        static let callBack = "callBack"
     }
 
     private let log = Logger(subsystem: "com.toneflix.aproid.app", category: "notifications")
@@ -26,6 +30,17 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
     /// What each shown notification said, so a resend after reconnecting or an unchanged update doesn't pop up again.
     private var shown: [String: String] = [:]
     private let lock = NSLock()
+    private let icons = NotificationIcons()
+    private var enabled = true
+
+    /// Paused from the menu: phone notifications are dropped instead of shown.
+    var isEnabled: Bool {
+        get { lock.withLock { enabled } }
+        set { lock.withLock { enabled = newValue } }
+    }
+
+    /// Called after a phone notification is shown, on any thread.
+    var onShown: (() -> Void)?
 
     /// True when running as a bundled app. `swift run` has no bundle, and
     /// Notification Center refuses to work without one.
@@ -48,6 +63,12 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         center.setNotificationCategories([
             UNNotificationCategory(identifier: Category.plain, actions: [], intentIdentifiers: [], options: [.customDismissAction]),
             UNNotificationCategory(identifier: Category.replyable, actions: [reply], intentIdentifiers: [], options: [.customDismissAction]),
+            UNNotificationCategory(
+                identifier: Category.missedCall,
+                actions: [UNNotificationAction(identifier: Key.callBack, title: "Call back")],
+                intentIdentifiers: [],
+                options: []
+            ),
         ])
         center.delegate = self
         center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
@@ -69,7 +90,7 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
             return
         }
 
-        guard let note = PhoneNotification(packet: packet) else { return }
+        guard isEnabled, let note = PhoneNotification(packet: packet) else { return }
 
         let identifier = Self.identifier(device: device.id, id: note.id)
         let summary = "\(note.title)\n\(note.text)"
@@ -90,8 +111,45 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
             content.sound = .default
         }
 
-        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
-        center.add(request)
+        // The phone sends the app icon, or the sender's photo, as the payload.
+        icons.icon(for: packet, hash: note.iconHash, from: device) { [weak self] icon in
+            if let icon, let attachment = try? UNNotificationAttachment(identifier: "icon", url: icon) {
+                content.attachments = [attachment]
+            }
+
+            center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: nil))
+            if !note.silent { self?.onShown?() }
+        }
+    }
+
+    /// Tells the user a file arrived. Clicking it shows the file in Finder.
+    func announce(file url: URL, from device: Device) {
+        guard let center else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = url.lastPathComponent
+        content.subtitle = "From \(device.name)"
+        content.body = "Saved to Downloads"
+        content.categoryIdentifier = Category.plain
+        content.userInfo = [Key.file: url.path]
+        content.sound = .default
+
+        center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
+    }
+
+    /// A missed call, with a Call back button that dials from the phone.
+    func announceMissedCall(from caller: String, number: String, device: Device) {
+        guard let center else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = "Missed call"
+        content.subtitle = device.name
+        content.body = caller
+        content.categoryIdentifier = Category.missedCall
+        content.userInfo = [Key.device: device.id, Key.callBack: number]
+        content.sound = .default
+
+        center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
     }
 
     // MARK: UNUserNotificationCenterDelegate
@@ -114,6 +172,17 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         defer { completionHandler() }
 
         let info = response.notification.request.content.userInfo
+        if let path = info[Key.file] as? String {
+            let url = URL(fileURLWithPath: path)
+            DispatchQueue.main.async { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+            return
+        }
+
+        if let number = info[Key.callBack] as? String, response.actionIdentifier != UNNotificationDismissActionIdentifier {
+            Task { @MainActor in AppModel.shared.dial(number, name: nil) }
+            return
+        }
+
         guard let deviceId = info[Key.device] as? String,
               let id = info[Key.id] as? String,
               let device = devices[deviceId]

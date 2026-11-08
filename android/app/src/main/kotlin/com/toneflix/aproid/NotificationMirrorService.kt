@@ -7,10 +7,12 @@ import android.service.notification.StatusBarNotification
 class NotificationMirrorService : NotificationListenerService() {
     override fun onListenerConnected() {
         instance = this
+        MediaPlugin.start(this)
     }
 
     override fun onListenerDisconnected() {
         instance = null
+        MediaPlugin.stop()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
