@@ -35,6 +35,9 @@ object PacketType {
     const val SMS_REQUEST_CONVERSATION = "kdeconnect.sms.request_conversation"
     const val TELEPHONY = "kdeconnect.telephony"
 
+    /** A copied picture or file, sent as the payload. Body: {"name": ..., "mimeType": ...}. */
+    const val CLIPBOARD_FILE = "aproid.clipboard.file"
+
     /** Answer, decline or hang up a call, or dial a number. Body: {"action": ..., "number"?: ...}. */
     const val CALL_REQUEST = "aproid.call.request"
 
@@ -64,6 +67,7 @@ object Capabilities {
         PacketType.SMS_REQUEST_CONVERSATION,
         PacketType.TELEPHONY,
         PacketType.CALL_REQUEST,
+        PacketType.CLIPBOARD_FILE,
         PacketType.HEARTBEAT,
     )
 }

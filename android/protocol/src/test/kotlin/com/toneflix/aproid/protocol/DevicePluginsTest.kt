@@ -25,6 +25,16 @@ class DevicePluginsTest {
         assertEquals(BatteryStatus(9, isCharging = false, isLow = true), BatteryStatus.fromPacket(NetworkPacket.parse(wire)))
     }
 
+    @Test fun clipboardFileNeedsAPayload() {
+        val announced = Clipboard.filePacket("../shot.png", "image/png")
+
+        assertNull(Clipboard.file(announced))
+
+        val withPayload = NetworkPacket.parse(announced.copy(payloadSize = 10).serialize())
+        assertEquals(ClipboardFile("../shot.png", "image/png"), Clipboard.file(withPayload))
+        assertEquals("shot.png", Clipboard.file(withPayload)?.safeName)
+    }
+
     @Test fun clipboardContentComesFromBothPacketTypes() {
         assertEquals("hello", Clipboard.content(Clipboard.packet("hello")))
         assertEquals("hello", Clipboard.content(Clipboard.connectPacket("hello", 1_700_000_000_000)))

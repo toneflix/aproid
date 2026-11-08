@@ -24,6 +24,17 @@ final class DevicePluginsTests: XCTestCase {
         XCTAssertEqual(status, BatteryStatus(charge: 9, isCharging: false, isLow: true))
     }
 
+    func testClipboardFileNeedsAPayload() throws {
+        var announced = Clipboard.filePacket(name: "../shot.png", mimeType: "image/png")
+
+        XCTAssertNil(Clipboard.file(announced))
+
+        announced.payloadSize = 10
+        let withPayload = try NetworkPacket.parse(try announced.serialize())
+        XCTAssertEqual(Clipboard.file(withPayload), ClipboardFile(name: "../shot.png", mimeType: "image/png"))
+        XCTAssertEqual(Clipboard.file(withPayload)?.safeName, "shot.png")
+    }
+
     func testClipboardContentComesFromBothPacketTypes() {
         XCTAssertEqual(Clipboard.content(Clipboard.packet("hello")), "hello")
         XCTAssertEqual(Clipboard.content(Clipboard.connectPacket("hello", timestampMillis: 1_700_000_000_000)), "hello")

@@ -36,6 +36,9 @@ public enum PacketType {
     public static let smsRequestConversation = "kdeconnect.sms.request_conversation"
     public static let telephony = "kdeconnect.telephony"
 
+    /// A copied picture or file, sent as the payload. Body: {"name": ..., "mimeType": ...}.
+    public static let clipboardFile = "aproid.clipboard.file"
+
     /// Answer, decline or hang up a call, or dial a number. Body: {"action": ..., "number"?: ...}.
     public static let callRequest = "aproid.call.request"
 
@@ -64,6 +67,7 @@ public enum Capabilities {
         PacketType.smsRequestConversation,
         PacketType.telephony,
         PacketType.callRequest,
+        PacketType.clipboardFile,
         PacketType.heartbeat,
     ]
 }
