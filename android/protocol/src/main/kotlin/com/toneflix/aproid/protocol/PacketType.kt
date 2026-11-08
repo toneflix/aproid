@@ -35,6 +35,36 @@ object PacketType {
     const val SMS_REQUEST_CONVERSATION = "kdeconnect.sms.request_conversation"
     const val TELEPHONY = "kdeconnect.telephony"
 
+    /** Asks the sender to send the rest of a file that stopped. Body: {"transferId", "offset"}. */
+    const val SHARE_RESUME = "aproid.share.resume"
+
+    /** Asks for a page of the phone's photos and videos. Body: {"before"?: ms, "count": n}. */
+    const val PHOTOS_REQUEST = "aproid.photos.request"
+
+    /** A page of photos with small thumbnails. Body: {"photos": [...], "more": bool}. */
+    const val PHOTOS = "aproid.photos"
+
+    /** Asks the phone to send one photo in full, as a normal shared file. Body: {"id"}. */
+    const val PHOTOS_DOWNLOAD = "aproid.photos.download"
+
+    /** Starts or stops mirroring the phone's screen. Body: {"action": "start"|"stop", "maxSize"?, "bitrate"?}. */
+    const val SCREEN_REQUEST = "aproid.screen.request"
+
+    /** The screen stream, as a payload of size -1. Body: {"width", "height", "codec", "running"}. */
+    const val SCREEN = "aproid.screen"
+
+    /** A tap, swipe, key or text for the mirrored screen. Body: {"action", ...}. */
+    const val SCREEN_INPUT = "aproid.screen.input"
+
+    /** Asks the phone where it is. Body: {}. */
+    const val LOCATION_REQUEST = "aproid.location.request"
+
+    /** Where the phone is. Body: {"latitude", "longitude", "accuracy" (metres), "time" (ms)}. */
+    const val LOCATION = "aproid.location"
+
+    /** A copied picture or file, sent as the payload. Body: {"name": ..., "mimeType": ...}. */
+    const val CLIPBOARD_FILE = "aproid.clipboard.file"
+
     /** Answer, decline or hang up a call, or dial a number. Body: {"action": ..., "number"?: ...}. */
     const val CALL_REQUEST = "aproid.call.request"
 
@@ -64,6 +94,16 @@ object Capabilities {
         PacketType.SMS_REQUEST_CONVERSATION,
         PacketType.TELEPHONY,
         PacketType.CALL_REQUEST,
+        PacketType.CLIPBOARD_FILE,
+        PacketType.LOCATION_REQUEST,
+        PacketType.SHARE_RESUME,
+        PacketType.PHOTOS_REQUEST,
+        PacketType.PHOTOS,
+        PacketType.PHOTOS_DOWNLOAD,
+        PacketType.SCREEN_REQUEST,
+        PacketType.SCREEN,
+        PacketType.SCREEN_INPUT,
+        PacketType.LOCATION,
         PacketType.HEARTBEAT,
     )
 }

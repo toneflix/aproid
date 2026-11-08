@@ -30,6 +30,7 @@ public struct NetworkPacket: Equatable, Sendable {
     public func string(_ key: String) -> String? { body[key]?.stringValue }
     public func int(_ key: String) -> Int64? { body[key]?.intValue }
     public func bool(_ key: String) -> Bool? { body[key]?.boolValue }
+    public func double(_ key: String) -> Double? { body[key]?.doubleValue }
 
     /// The port the sender opened for this packet's payload.
     public var payloadPort: UInt16? {

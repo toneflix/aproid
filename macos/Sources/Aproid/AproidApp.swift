@@ -16,9 +16,15 @@ struct AproidApp: App {
             MessagesWindow(store: model.messages, model: model)
         }
         .defaultSize(width: 900, height: 620)
+
+        Window("Photos", id: AproidApp.photosWindow) {
+            PhotosWindow(store: model.photos)
+        }
+        .defaultSize(width: 860, height: 640)
     }
 
     static let messagesWindow = "messages"
+    static let photosWindow = "photos"
 }
 
 /// Offers the Services menu item, and opens tel: links, such as a number clicked in Safari, by calling from the phone.

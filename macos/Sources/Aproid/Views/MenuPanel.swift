@@ -41,7 +41,7 @@ struct MenuPanel: View {
     /// The device the big cards are about: one asking to pair first, then the first paired one.
     private var focused: DeviceState? {
         model.devices.first { $0.pairState == .requestedByPeer || $0.pairState == .requested }
-            ?? model.devices.first { $0.pairState == .paired }
+            ?? model.devices.first { $0.id == model.primaryId }
     }
 
     @ViewBuilder private var main: some View {
@@ -50,6 +50,10 @@ struct MenuPanel: View {
                 .transition(.scale(scale: 0.96).combined(with: .opacity))
         } else if let device = focused {
             DeviceHero(device: device, model: model)
+            if model.finding == device.id, let location = device.location {
+                FindCard(deviceName: device.name, location: location) { model.finding = nil }
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
             if let media = device.media {
                 NowPlayingCard(deviceId: device.id, media: media, model: model)
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -59,6 +63,10 @@ struct MenuPanel: View {
         } else {
             SearchingCard(hasNearby: !model.devices.isEmpty)
                 .transition(.opacity)
+            if model.phoneNearby || model.hotspotStatus != nil {
+                HotspotCard(model: model)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
     }
 }
@@ -153,6 +161,41 @@ private struct SearchingCard: View {
         .padding(.vertical, 10)
         .card(padding: 18)
         .onAppear { pulse = true }
+    }
+}
+
+/// Shown when the phone is in Bluetooth range but not on this Mac's network.
+private struct HotspotCard: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(Theme.tint)
+                .frame(width: 34, height: 34)
+                .overlay(
+                    Image(systemName: "personalhotspot")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                )
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Your phone is nearby").font(.system(size: 13, weight: .semibold))
+                Text(model.hotspotStatus ?? "It isn't on this Wi-Fi. Join its hotspot to connect; this Mac will leave its current network.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if model.hotspotStatus == nil {
+                    Button("Join phone's hotspot") { model.joinPhoneHotspot() }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .card(padding: 12)
     }
 }
 

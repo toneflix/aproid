@@ -281,6 +281,33 @@ final class LanLinkTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: sinkURL), bytes)
     }
 
+    func testLiveStreamIsReadUntilTheSenderCloses() throws {
+        let (onPhone, onMac) = try connect()
+        phone.trust.trust(mac.identity.deviceId, certificate: onPhone.certificateDER)
+        mac.trust.trust(phone.identity.deviceId, certificate: onMac.certificateDER)
+        let phoneDevice = Device(link: onPhone, ownCertificate: phone.certificate, trustStore: phone.trust)
+        let macDevice = Device(link: onMac, ownCertificate: mac.certificate, trustStore: mac.trust)
+        macDevice.delegate = mac.recorder
+        phoneDevice.start()
+        macDevice.start()
+
+        let frames = [
+            ScreenFrame(data: Data([0, 0, 0, 1, 0x67, 0x42]), timeUs: 0, flags: ScreenFrame.config),
+            ScreenFrame(data: Data((0..<70_000).map { UInt8($0 % 256) }), timeUs: 16_666, flags: ScreenFrame.key),
+        ]
+        let streamURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try frames.reduce(Data()) { $0 + $1.header() + $1.data }.write(to: streamURL)
+
+        XCTAssertTrue(phoneDevice.sendWithPayload(Screen.started(width: 1080, height: 2400), size: Screen.stream, source: try FileHandle(forReadingFrom: streamURL)))
+        let packet = try XCTUnwrap(mac.recorder.packets.take())
+        let reader = ScreenFrameReader()
+        var received: [ScreenFrame] = []
+        try macDevice.receiveStream(packet) { received += try reader.feed($0) }.wait()
+
+        XCTAssertEqual(Screen.info(packet), Screen.Info(width: 1080, height: 2400, running: true))
+        XCTAssertEqual(received, frames)
+    }
+
     func testAnnouncementConnectsToANewPeer() throws {
         var announced = mac.identity
         announced.tcpPort = mac.lan.tcpPort

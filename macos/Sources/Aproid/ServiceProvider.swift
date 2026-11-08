@@ -9,7 +9,7 @@ final class ServiceProvider: NSObject {
 
         Task { @MainActor in
             let model = AppModel.shared
-            guard let phone = model.devices.first(where: { $0.pairState == .paired }) else {
+            guard let phone = model.devices.first(where: { $0.id == model.primaryId }) else {
                 NSSound.beep()
                 return
             }

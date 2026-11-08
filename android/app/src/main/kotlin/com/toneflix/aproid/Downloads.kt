@@ -17,8 +17,10 @@ class DownloadTarget private constructor(
     private val file: File?,
     val mimeType: String,
 ) {
-    fun open(): OutputStream =
-        uri?.let { context.contentResolver.openOutputStream(it) } ?: file!!.outputStream()
+    /** With [append], adds to what is already there, to resume a stopped file. */
+    fun open(append: Boolean = false): OutputStream =
+        uri?.let { context.contentResolver.openOutputStream(it, if (append) "wa" else "w") }
+            ?: java.io.FileOutputStream(file!!, append)
 
     fun publish() {
         val uri = uri ?: return
