@@ -38,7 +38,7 @@ object DeviceStore {
 
     private val devices = linkedMapOf<String, Device>()
 
-    private val plugins = PluginRouter(listOf(NotificationPlugin, BatteryPlugin, FindMyPhonePlugin, ClipboardPlugin))
+    private val plugins = PluginRouter(listOf(NotificationPlugin, BatteryPlugin, FindMyPhonePlugin, ClipboardPlugin, SharePlugin))
 
     /** Network writes must stay off the main thread, so all plugin sends go through here. */
     private val sender = Executors.newSingleThreadExecutor()

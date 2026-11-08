@@ -64,6 +64,7 @@ class LinkService : Service() {
         BatteryPlugin.start(this)
         FindMyPhonePlugin.start(this)
         ClipboardPlugin.start(this)
+        SharePlugin.start(this)
 
         val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         multicastLock = wifi.createMulticastLock("aproid").apply {

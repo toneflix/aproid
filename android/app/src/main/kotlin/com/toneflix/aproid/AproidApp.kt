@@ -19,6 +19,12 @@ class AproidApp : Application() {
             NotificationManager.IMPORTANCE_HIGH,
         ).apply { setSound(null, null) }
 
-        getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(channel, find))
+        val transfers = NotificationChannel(
+            SharePlugin.CHANNEL_ID,
+            getString(R.string.channel_transfers),
+            NotificationManager.IMPORTANCE_DEFAULT,
+        )
+
+        getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(channel, find, transfers))
     }
 }
