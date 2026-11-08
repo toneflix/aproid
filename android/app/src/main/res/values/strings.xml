@@ -3,4 +3,5 @@
     <string name="app_name">Aproid</string>
     <string name="channel_link">Connection</string>
     <string name="notification_running">Looking for your Mac</string>
+    <string name="notification_connected">Connected to %1$s</string>
 </resources>

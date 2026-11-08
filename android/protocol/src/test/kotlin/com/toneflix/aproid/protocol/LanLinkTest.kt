@@ -178,5 +178,17 @@ class LanLinkTest {
         device.tick()
 
         assertEquals(true, closed.poll(10, TimeUnit.SECONDS))
+        assertTrue(onPhone.closeReason.orEmpty().contains("heartbeat"))
+    }
+
+    @Test fun idleLinkStaysOpen() {
+        val (onPhone, onMac) = connect()
+        onPhone.startReading()
+        onMac.startReading()
+
+        Thread.sleep(11_000)
+
+        assertTrue(onPhone.isOpen)
+        assertTrue(onMac.isOpen)
     }
 }

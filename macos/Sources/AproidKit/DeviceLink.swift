@@ -15,6 +15,11 @@ public final class DeviceLink {
     public var onClosed: (() -> Void)?
 
     private let channel: Channel
+    private let lock = NSLock()
+    private var reason: String?
+
+    /// Why the link closed, for logs.
+    public var closeReason: String? { lock.withLock { reason } }
 
     init(identity: DeviceIdentity, certificateDER: [UInt8], publicKeyDER: [UInt8], host: String, isOutgoing: Bool, channel: Channel) {
         self.identity = identity
@@ -53,8 +58,14 @@ public final class DeviceLink {
         channel.writeAndFlush(buffer, promise: nil)
     }
 
-    public func close() {
+    public func close(reason: String = "closed locally") {
+        record(reason)
         channel.close(promise: nil)
+    }
+
+    /// Keeps the first reason: later ones are just the effects of it.
+    func record(_ reason: String) {
+        lock.withLock { if self.reason == nil { self.reason = reason } }
     }
 
     func deliver(_ packet: NetworkPacket) {
@@ -62,6 +73,7 @@ public final class DeviceLink {
     }
 
     func closed() {
+        record("peer closed the connection")
         onClosed?()
     }
 }

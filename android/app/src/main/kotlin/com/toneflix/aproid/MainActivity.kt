@@ -115,7 +115,7 @@ private fun BackgroundAccess() {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Stay connected in the background", style = MaterialTheme.typography.titleSmall)
-            Text("Android cuts Aproid's connection to save battery unless you allow it to run unrestricted.")
+            Text("Android cuts Aproid's connection to save battery unless you allow it to run unrestricted. If your phone has its own battery manager, such as Phone Master, exempt Aproid there too.")
             Button(onClick = { context.startActivity(LinkService.unrestrictIntent(context)) }) {
                 Text("Allow")
             }

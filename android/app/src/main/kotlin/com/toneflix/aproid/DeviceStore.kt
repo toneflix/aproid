@@ -2,6 +2,7 @@ package com.toneflix.aproid
 
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import android.util.Base64
 import com.toneflix.aproid.protocol.Device
 import com.toneflix.aproid.protocol.DeviceCertificate
@@ -30,6 +31,7 @@ data class DeviceState(
 
 /** This phone's identity and certificate, trusted devices, and the devices connected now. */
 object DeviceStore {
+    private const val TAG = "AproidLink"
     private const val PREFS = "aproid"
     private const val TRUST_PREFS = "aproid_trusted"
     private const val KEY_ID = "device_id"
@@ -109,12 +111,13 @@ object DeviceStore {
     @Synchronized fun add(device: Device, ownDeviceId: String) {
         val existing = devices[device.id]
         if (existing != null && DeviceLink.keepsExisting(existing.link, device.link, ownDeviceId)) {
-            device.link.close()
+            device.link.close("both sides connected at once; kept the other link")
             return
         }
 
-        existing?.link?.close()
+        existing?.link?.close("replaced by a newer link")
         devices[device.id] = device
+        Log.i(TAG, "Connected to ${device.name} (${if (device.link.isOutgoing) "we" else "they"} connected)")
         device.listener = listener
         device.start()
         if (device.isPaired) plugins.onPaired(device)
@@ -132,6 +135,7 @@ object DeviceStore {
     }
 
     @Synchronized fun remove(device: Device) {
+        Log.i(TAG, "Disconnected from ${device.name}: ${device.link.closeReason}")
         if (devices[device.id] === device) devices.remove(device.id)
         if (_pairRequest.value?.id == device.id) _pairRequest.value = null
         publish()

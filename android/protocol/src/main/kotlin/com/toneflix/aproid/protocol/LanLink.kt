@@ -129,7 +129,10 @@ class LanLink(
         } else {
             plainIdentity
         }
+        // Clear the handshake timeout on both layers, or an idle link would drop after 10 seconds.
+        socket.soTimeout = 0
         ssl.soTimeout = 0
+        socket.keepAlive = true
 
         return DeviceLink(identity, peerCertificate, socket.inetAddress, ssl, reader, isOutgoing = asServer)
     }
