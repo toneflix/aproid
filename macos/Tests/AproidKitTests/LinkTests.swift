@@ -248,6 +248,39 @@ final class LanLinkTests: XCTestCase {
         XCTAssertTrue(onMac.isOpen)
     }
 
+    func testFileTravelsOverItsOwnTlsConnection() throws {
+        let (onPhone, onMac) = try connect()
+        phone.trust.trust(mac.identity.deviceId, certificate: onPhone.certificateDER)
+        mac.trust.trust(phone.identity.deviceId, certificate: onMac.certificateDER)
+        let phoneDevice = Device(link: onPhone, ownCertificate: phone.certificate, trustStore: phone.trust)
+        let macDevice = Device(link: onMac, ownCertificate: mac.certificate, trustStore: mac.trust)
+        macDevice.delegate = mac.recorder
+        phoneDevice.start()
+        macDevice.start()
+
+        let bytes = Data((0..<300_000).map { UInt8($0 % 251) })
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let sourceURL = folder.appendingPathComponent("photo.jpg")
+        let sinkURL = folder.appendingPathComponent("received.jpg")
+        try bytes.write(to: sourceURL)
+        FileManager.default.createFile(atPath: sinkURL.path, contents: nil)
+
+        let sent = phoneDevice.sendWithPayload(
+            Share.filePacket(name: "photo.jpg", size: Int64(bytes.count)),
+            size: Int64(bytes.count),
+            source: try FileHandle(forReadingFrom: sourceURL)
+        )
+        let packet = try XCTUnwrap(mac.recorder.packets.take())
+        let sink = try FileHandle(forWritingTo: sinkURL)
+        try macDevice.receivePayload(packet, into: sink).wait()
+        try sink.close()
+
+        XCTAssertTrue(sent)
+        XCTAssertEqual(Share(packet: packet), .file(name: "photo.jpg", size: Int64(bytes.count)))
+        XCTAssertEqual(try Data(contentsOf: sinkURL), bytes)
+    }
+
     func testAnnouncementConnectsToANewPeer() throws {
         var announced = mac.identity
         announced.tcpPort = mac.lan.tcpPort

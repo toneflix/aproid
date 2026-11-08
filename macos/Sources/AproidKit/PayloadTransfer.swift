@@ -1,0 +1,268 @@
+import Foundation
+import NIOCore
+import NIOPosix
+import NIOSSL
+import NIOTLS
+
+/// Moves a packet's payload, such as a file, over its own TLS connection, as KDE Connect does.
+/// The sender opens a port and acts as the TLS server; the receiver connects as the client.
+/// Each side checks the other's certificate against the one from the device link. Mirrors PayloadTransfer.kt.
+public final class PayloadTransfer {
+    private static let group = MultiThreadedEventLoopGroup(numberOfThreads: 2)
+
+    private let serverContext: NIOSSLContext
+    private let clientContext: NIOSSLContext
+    private let ports: ClosedRange<UInt16>
+
+    public init(certificate: DeviceCertificate, ports: ClosedRange<UInt16> = AproidKit.payloadPortRange) throws {
+        self.ports = ports
+
+        var server = TLSConfiguration.makeServerConfiguration(
+            certificateChain: [.certificate(certificate.nioCertificate)],
+            privateKey: .privateKey(certificate.nioPrivateKey)
+        )
+        server.certificateVerification = .noHostnameVerification
+        serverContext = try NIOSSLContext(configuration: server)
+
+        var client = TLSConfiguration.makeClientConfiguration()
+        client.certificateChain = [.certificate(certificate.nioCertificate)]
+        client.privateKey = .privateKey(certificate.nioPrivateKey)
+        client.certificateVerification = .noHostnameVerification
+        clientContext = try NIOSSLContext(configuration: client)
+    }
+
+    /// Opens a port and streams `source` to the first peer that connects with `peerCertificateDER`.
+    /// Returns the port to put in the packet. Blocks briefly, so call it off the event loops.
+    public func offer(
+        peerCertificateDER: [UInt8],
+        source: FileHandle,
+        completion: @escaping (Error?) -> Void = { _ in }
+    ) throws -> UInt16 {
+        let done = Once(completion)
+        let serverContext = serverContext
+        var lastError: Error = ProtocolError("no free payload port in \(ports)")
+
+        for port in ports {
+            do {
+                let channel = try ServerBootstrap(group: Self.group)
+                    .serverChannelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
+                    .childChannelInitializer { child in
+                        let box = PeerCertificateBox()
+                        let tls = NIOSSLServerHandler(context: serverContext, customVerificationCallback: box.verify)
+                        let upload = UploadHandler(box: box, expected: peerCertificateDER, source: source, done: done)
+
+                        return child.pipeline.addHandlers([tls, upload])
+                    }
+                    .bind(host: "0.0.0.0", port: Int(port))
+                    .wait()
+
+                // Nobody came to download it.
+                channel.eventLoop.scheduleTask(in: .seconds(60)) {
+                    channel.close(promise: nil)
+                    done.call(ProtocolError("the peer never downloaded the payload"))
+                }
+
+                return port
+            } catch {
+                lastError = error
+            }
+        }
+
+        throw lastError
+    }
+
+    /// Downloads `size` bytes that the peer offered at `host`:`port` into `sink`.
+    public func receive(
+        host: String,
+        port: UInt16,
+        size: Int64,
+        peerCertificateDER: [UInt8],
+        into sink: FileHandle
+    ) -> EventLoopFuture<Void> {
+        let promise = Self.group.next().makePromise(of: Void.self)
+        let clientContext = clientContext
+
+        ClientBootstrap(group: Self.group)
+            .connectTimeout(.seconds(10))
+            .channelInitializer { channel in
+                do {
+                    let box = PeerCertificateBox()
+                    let tls = try NIOSSLClientHandler(context: clientContext, serverHostname: nil, customVerificationCallback: box.verify)
+                    let download = DownloadHandler(box: box, expected: peerCertificateDER, size: size, sink: sink, promise: promise)
+
+                    return channel.pipeline.addHandlers([tls, download])
+                } catch {
+                    return channel.eventLoop.makeFailedFuture(error)
+                }
+            }
+            .connect(host: host, port: Int(port))
+            .whenFailure { promise.fail($0) }
+
+        return promise.futureResult
+    }
+}
+
+/// Calls a completion at most once, from any thread.
+private final class Once: @unchecked Sendable {
+    private var completion: ((Error?) -> Void)?
+    private let lock = NSLock()
+
+    init(_ completion: @escaping (Error?) -> Void) {
+        self.completion = completion
+    }
+
+    func call(_ error: Error?) {
+        let completion = lock.withLock { () -> ((Error?) -> Void)? in
+            defer { self.completion = nil }
+            return self.completion
+        }
+        completion?(error)
+    }
+}
+
+/// Sends a file to the peer once TLS is up and its certificate checks out.
+private final class UploadHandler: ChannelInboundHandler {
+    typealias InboundIn = ByteBuffer
+    typealias OutboundOut = ByteBuffer
+
+    private static let chunkSize = 64 * 1024
+
+    private let box: PeerCertificateBox
+    private let expected: [UInt8]
+    private let source: FileHandle
+    private let done: Once
+
+    init(box: PeerCertificateBox, expected: [UInt8], source: FileHandle, done: Once) {
+        self.box = box
+        self.expected = expected
+        self.source = source
+        self.done = done
+    }
+
+    func channelActive(context: ChannelHandlerContext) {
+        // One download per offer: stop listening once the peer is here.
+        context.channel.parent?.close(promise: nil)
+        context.fireChannelActive()
+    }
+
+    func userInboundEventTriggered(context: ChannelHandlerContext, event: Any) {
+        guard let tlsEvent = event as? TLSUserEvent, case .handshakeCompleted = tlsEvent else {
+            context.fireUserInboundEventTriggered(event)
+            return
+        }
+
+        guard let der = try? box.certificate?.toDERBytes(), der == expected else {
+            fail(context, ProtocolError("payload peer is not the paired device"))
+            return
+        }
+
+        sendNext(context)
+    }
+
+    func errorCaught(context: ChannelHandlerContext, error: Error) {
+        fail(context, error)
+    }
+
+    private func sendNext(_ context: ChannelHandlerContext) {
+        let data: Data
+        do {
+            data = try source.read(upToCount: Self.chunkSize) ?? Data()
+        } catch {
+            fail(context, error)
+            return
+        }
+
+        if data.isEmpty {
+            try? source.close()
+            context.close(promise: nil)
+            done.call(nil)
+            return
+        }
+
+        let buffer = context.channel.allocator.buffer(bytes: data)
+        context.writeAndFlush(wrapOutboundOut(buffer)).whenComplete { result in
+            switch result {
+            case .success:
+                // Hop through the event loop so a large file doesn't grow the stack.
+                context.eventLoop.execute { self.sendNext(context) }
+            case .failure(let error):
+                self.fail(context, error)
+            }
+        }
+    }
+
+    private func fail(_ context: ChannelHandlerContext, _ error: Error) {
+        try? source.close()
+        context.close(promise: nil)
+        done.call(error)
+    }
+}
+
+/// Writes the incoming bytes to a file until the announced size has arrived.
+private final class DownloadHandler: ChannelInboundHandler {
+    typealias InboundIn = ByteBuffer
+
+    private let box: PeerCertificateBox
+    private let expected: [UInt8]
+    private let size: Int64
+    private let sink: FileHandle
+    private let promise: EventLoopPromise<Void>
+    private var received: Int64 = 0
+    private var finished = false
+
+    init(box: PeerCertificateBox, expected: [UInt8], size: Int64, sink: FileHandle, promise: EventLoopPromise<Void>) {
+        self.box = box
+        self.expected = expected
+        self.size = size
+        self.sink = sink
+        self.promise = promise
+    }
+
+    func userInboundEventTriggered(context: ChannelHandlerContext, event: Any) {
+        guard let tlsEvent = event as? TLSUserEvent, case .handshakeCompleted = tlsEvent else {
+            context.fireUserInboundEventTriggered(event)
+            return
+        }
+
+        guard let der = try? box.certificate?.toDERBytes(), der == expected else {
+            finish(context, ProtocolError("payload peer is not the paired device"))
+            return
+        }
+    }
+
+    func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+        guard !finished else { return }
+
+        let buffer = unwrapInboundIn(data)
+        let wanted = Int(min(Int64(buffer.readableBytes), size - received))
+
+        do {
+            try sink.write(contentsOf: Data(buffer.readableBytesView.prefix(wanted)))
+        } catch {
+            finish(context, error)
+            return
+        }
+
+        received += Int64(wanted)
+        if received >= size { finish(context, nil) }
+    }
+
+    func channelInactive(context: ChannelHandlerContext) {
+        finish(context, ProtocolError("payload ended after \(received) of \(size) bytes"))
+        context.fireChannelInactive()
+    }
+
+    func errorCaught(context: ChannelHandlerContext, error: Error) {
+        finish(context, error)
+    }
+
+    private func finish(_ context: ChannelHandlerContext, _ error: Error?) {
+        guard !finished else { return }
+
+        finished = true
+        try? sink.synchronize()
+        context.close(promise: nil)
+
+        if let error { promise.fail(error) } else { promise.succeed(()) }
+    }
+}

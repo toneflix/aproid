@@ -9,6 +9,9 @@ const val UDP_PORT = 1716
 /** TCP ports KDE Connect clients try, in order. */
 val TCP_PORT_RANGE = 1716..1764
 
+/** TCP ports a sender opens for payloads such as files. */
+val PAYLOAD_PORT_RANGE = 1739..1764
+
 /** Packet types. Standard KDE Connect ones use "kdeconnect.", our extensions use "aproid.". */
 object PacketType {
     const val IDENTITY = "kdeconnect.identity"
@@ -26,6 +29,14 @@ object PacketType {
     const val FIND_MY_PHONE = "kdeconnect.findmyphone.request"
     const val MPRIS = "kdeconnect.mpris"
     const val MPRIS_REQUEST = "kdeconnect.mpris.request"
+    const val SMS_MESSAGES = "kdeconnect.sms.messages"
+    const val SMS_REQUEST = "kdeconnect.sms.request"
+    const val SMS_REQUEST_CONVERSATIONS = "kdeconnect.sms.request_conversations"
+    const val SMS_REQUEST_CONVERSATION = "kdeconnect.sms.request_conversation"
+    const val TELEPHONY = "kdeconnect.telephony"
+
+    /** Answer, decline or hang up a call, or dial a number. Body: {"action": ..., "number"?: ...}. */
+    const val CALL_REQUEST = "aproid.call.request"
 
     /** Keeps the link alive and detects a dead one. Body: {"pong": bool}. */
     const val HEARTBEAT = "aproid.heartbeat"
@@ -47,6 +58,12 @@ object Capabilities {
         PacketType.FIND_MY_PHONE,
         PacketType.MPRIS,
         PacketType.MPRIS_REQUEST,
+        PacketType.SMS_MESSAGES,
+        PacketType.SMS_REQUEST,
+        PacketType.SMS_REQUEST_CONVERSATIONS,
+        PacketType.SMS_REQUEST_CONVERSATION,
+        PacketType.TELEPHONY,
+        PacketType.CALL_REQUEST,
         PacketType.HEARTBEAT,
     )
 }

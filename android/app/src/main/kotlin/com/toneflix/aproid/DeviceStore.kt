@@ -38,7 +38,7 @@ object DeviceStore {
 
     private val devices = linkedMapOf<String, Device>()
 
-    private val plugins = PluginRouter(listOf(NotificationPlugin, BatteryPlugin, FindMyPhonePlugin, ClipboardPlugin))
+    private val plugins = PluginRouter(listOf(NotificationPlugin, BatteryPlugin, FindMyPhonePlugin, ClipboardPlugin, SharePlugin, MediaPlugin, SmsPlugin, CallPlugin))
 
     /** Network writes must stay off the main thread, so all plugin sends go through here. */
     private val sender = Executors.newSingleThreadExecutor()
@@ -127,6 +127,22 @@ object DeviceStore {
     fun send(device: Device, packet: NetworkPacket) {
         sender.execute { runCatching { device.send(packet) } }
     }
+
+    /** Sends [packet] with [payload] attached. Falls back to the bare packet if no payload port is free. */
+    fun sendWithPayload(device: Device, packet: NetworkPacket, payload: ByteArray, onDone: (Throwable?) -> Unit = {}) {
+        sender.execute {
+            val offered = runCatching {
+                device.sendWithPayload(packet, payload.size.toLong(), open = { payload.inputStream() }, onDone = onDone)
+            }.getOrDefault(false)
+
+            if (!offered) {
+                runCatching { device.send(packet) }
+                onDone(java.io.IOException("payload not offered"))
+            }
+        }
+    }
+
+    fun pairedDevices(): List<Device> = synchronized(this) { devices.values.filter { it.isPaired } }
 
     fun sendToPaired(packet: NetworkPacket) {
         val targets = synchronized(this) { devices.values.filter { it.isPaired } }

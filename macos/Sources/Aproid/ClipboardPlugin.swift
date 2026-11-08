@@ -10,6 +10,9 @@ final class ClipboardPlugin: Plugin {
     private var lastChangeCount: Int
     private var timer: Timer?
 
+    /// Called on the main thread whenever text goes either way.
+    var onSync: (() -> Void)?
+
     init(devices: DeviceRegistry) {
         self.devices = devices
         lastChangeCount = NSPasteboard.general.changeCount
@@ -41,7 +44,18 @@ final class ClipboardPlugin: Plugin {
             pasteboard.setString(text, forType: .string)
             // Our own write must not be sent back to the phone.
             lastChangeCount = pasteboard.changeCount
+            onSync?()
         }
+    }
+
+    /// Sends what is on the clipboard now, even if it was sent before. Call on the main thread.
+    @discardableResult
+    func send(to device: Device) -> Bool {
+        guard let text = pasteboard.string(forType: .string), !text.isEmpty else { return false }
+        guard device.send(Clipboard.packet(text)) else { return false }
+
+        onSync?()
+        return true
     }
 
     private func check() {
@@ -50,6 +64,8 @@ final class ClipboardPlugin: Plugin {
         lastChangeCount = pasteboard.changeCount
         guard let text = pasteboard.string(forType: .string), !text.isEmpty else { return }
 
-        devices.all.filter(\.isPaired).forEach { $0.send(Clipboard.packet(text)) }
+        let paired = devices.all.filter(\.isPaired)
+        paired.forEach { $0.send(Clipboard.packet(text)) }
+        if !paired.isEmpty { onSync?() }
     }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import NIOCore
 
 public protocol DeviceDelegate: AnyObject {
     /// The peer asked to pair. Show `code` and call `accept()` or `reject()`.
@@ -27,6 +28,7 @@ public final class Device {
     private let pairing: PairingStateMachine
     private let lock = NSLock()
     private var lastReceived: Int64
+    private lazy var payloads = try? PayloadTransfer(certificate: ownCertificate)
 
     /// A link with no packets for this long is treated as dead.
     public static let heartbeatTimeoutSeconds: Int64 = 30
@@ -75,6 +77,39 @@ public final class Device {
         link.send(packet)
 
         return true
+    }
+
+    /// Sends `packet` with a payload that the peer downloads from us, such as a file.
+    /// Returns false when not paired or the payload could not be offered. Call off the event loops.
+    @discardableResult
+    public func sendWithPayload(
+        _ packet: NetworkPacket,
+        size: Int64,
+        source: FileHandle,
+        completion: @escaping (Error?) -> Void = { _ in }
+    ) -> Bool {
+        guard isPaired, let payloads = lock.withLock({ payloads }) else { return false }
+
+        do {
+            let port = try payloads.offer(peerCertificateDER: link.certificateDER, source: source, completion: completion)
+            var announced = packet
+            announced.payloadSize = size
+            announced.payloadTransferInfo = ["port": .int(Int64(port))]
+            link.send(announced)
+
+            return true
+        } catch {
+            completion(error)
+            return false
+        }
+    }
+
+    /// Downloads the payload of a packet from this device into `sink`.
+    public func receivePayload(_ packet: NetworkPacket, into sink: FileHandle) throws -> EventLoopFuture<Void> {
+        guard let size = packet.payloadSize, let port = packet.payloadPort else { throw ProtocolError("packet has no payload") }
+        guard let payloads = lock.withLock({ payloads }) else { throw ProtocolError("payloads unavailable") }
+
+        return payloads.receive(host: link.host, port: port, size: size, peerCertificateDER: link.certificateDER, into: sink)
     }
 
     public func requestPair() { run { $0.requestPair(now: clock()) } }

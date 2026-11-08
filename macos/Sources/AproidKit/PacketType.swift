@@ -9,6 +9,9 @@ public let udpPort: UInt16 = 1716
 /// TCP ports KDE Connect clients try, in order.
 public let tcpPortRange: ClosedRange<UInt16> = 1716...1764
 
+/// TCP ports a sender opens for payloads such as files.
+public let payloadPortRange: ClosedRange<UInt16> = 1739...1764
+
 /// Packet types. Standard KDE Connect ones use "kdeconnect.", our extensions use "aproid.".
 /// Keep in sync with android/protocol/.../PacketType.kt.
 public enum PacketType {
@@ -27,6 +30,14 @@ public enum PacketType {
     public static let findMyPhone = "kdeconnect.findmyphone.request"
     public static let mpris = "kdeconnect.mpris"
     public static let mprisRequest = "kdeconnect.mpris.request"
+    public static let smsMessages = "kdeconnect.sms.messages"
+    public static let smsRequest = "kdeconnect.sms.request"
+    public static let smsRequestConversations = "kdeconnect.sms.request_conversations"
+    public static let smsRequestConversation = "kdeconnect.sms.request_conversation"
+    public static let telephony = "kdeconnect.telephony"
+
+    /// Answer, decline or hang up a call, or dial a number. Body: {"action": ..., "number"?: ...}.
+    public static let callRequest = "aproid.call.request"
 
     /// Keeps the link alive and detects a dead one. Body: {"pong": bool}.
     public static let heartbeat = "aproid.heartbeat"
@@ -47,6 +58,12 @@ public enum Capabilities {
         PacketType.findMyPhone,
         PacketType.mpris,
         PacketType.mprisRequest,
+        PacketType.smsMessages,
+        PacketType.smsRequest,
+        PacketType.smsRequestConversations,
+        PacketType.smsRequestConversation,
+        PacketType.telephony,
+        PacketType.callRequest,
         PacketType.heartbeat,
     ]
 }

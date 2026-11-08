@@ -52,6 +52,7 @@ public enum JSONValue: Codable, Equatable, Sendable {
         }
     }
     public var arrayValue: [JSONValue]? { if case .array(let v) = self { return v }; return nil }
+    public var objectValue: [String: JSONValue]? { if case .object(let v) = self { return v }; return nil }
 }
 
 extension JSONValue: ExpressibleByStringLiteral, ExpressibleByIntegerLiteral, ExpressibleByBooleanLiteral {
