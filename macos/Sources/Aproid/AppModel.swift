@@ -94,6 +94,12 @@ final class AppModel: ObservableObject {
     }
 
     private func add(_ device: Device) {
+        if let existing = connected[device.id], existing !== device,
+           DeviceLink.keepsExisting(existing.link, over: device.link, ownDeviceId: identity.deviceId) {
+            device.link.close()
+            return
+        }
+
         if let old = connected.insert(device), old !== device { old.link.close() }
         if device.isPaired { plugins.onPaired(device) }
 

@@ -35,9 +35,12 @@ A packet that carries a file adds `payloadSize` and `payloadTransferInfo: {"port
 **Discovery.**
 
 1. Each device broadcasts a `kdeconnect.identity` packet over UDP to port 1716. It holds the device id, name, type, protocol version, capabilities and the TCP port it listens on (from 1716 to 1764).
-2. A device that hears a broadcast opens a TCP connection to that port and sends its own identity in plain text.
+2. A device that hears a broadcast opens a TCP connection to that port and sends its own identity in plain text. It skips devices it already has an open link to.
+3. If both devices connect at the same moment, both keep the link opened by the device with the larger id and close the other. Any later link replaces the old one, because a peer only reconnects when its old link died.
 
 **Encryption.** Each device has a self-signed certificate whose common name is its device id. After the plain-text identity, both sides start TLS on the same socket. The device that *opened* the TCP connection acts as the TLS *server*. Once TLS is up, version 8 has both sides send their identity again over the encrypted link. A paired device's certificate is saved and must match on every later connection.
+
+**Heartbeat (`aproid.heartbeat`).** Every 5 seconds each side sends `{"pong": false}` and the other answers at once with `{"pong": true}`. A link that receives nothing for 30 seconds is closed, so discovery can reconnect. A sleeping phone wakes to answer even when its own timer is paused. Only peers that list the packet in their capabilities take part.
 
 **Pairing.** A sends `kdeconnect.pair` with `pair: true` and `timestamp` (Unix seconds). B shows a prompt and a short verification code derived from both certificates and the timestamp, so the user can check the same code shows on both screens. B answers `pair: true` to accept or `pair: false` to reject. Either side sends `pair: false` later to unpair. Requests time out after 30 seconds. `PairingStateMachine` implements this on both sides.
 

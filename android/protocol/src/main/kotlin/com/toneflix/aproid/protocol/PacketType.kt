@@ -26,6 +26,9 @@ object PacketType {
     const val FIND_MY_PHONE = "kdeconnect.findmyphone.request"
     const val MPRIS = "kdeconnect.mpris"
     const val MPRIS_REQUEST = "kdeconnect.mpris.request"
+
+    /** Keeps the link alive and detects a dead one. Body: {"pong": bool}. */
+    const val HEARTBEAT = "aproid.heartbeat"
 }
 
 /** What this MVP sends and accepts. Kept in one place so both apps advertise the same set. */
@@ -44,5 +47,6 @@ object Capabilities {
         PacketType.FIND_MY_PHONE,
         PacketType.MPRIS,
         PacketType.MPRIS_REQUEST,
+        PacketType.HEARTBEAT,
     )
 }

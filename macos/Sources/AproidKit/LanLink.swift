@@ -181,7 +181,7 @@ public final class LanLink {
 
         let box = PeerCertificateBox()
         let tls = NIOSSLServerHandler(context: serverContext, customVerificationCallback: box.verify)
-        try addSecureHandlers(channel, tls: tls, box: box, plainIdentity: peer, host: host)
+        try addSecureHandlers(channel, tls: tls, box: box, plainIdentity: peer, host: host, isOutgoing: true)
     }
 
     /// The peer opened the connection and sent its identity: act as TLS client.
@@ -189,7 +189,7 @@ public final class LanLink {
         let box = PeerCertificateBox()
         let tls = try NIOSSLClientHandler(context: clientContext, serverHostname: nil, customVerificationCallback: box.verify)
         let host = channel.remoteAddress?.ipAddress ?? ""
-        try addSecureHandlers(channel, tls: tls, box: box, plainIdentity: plainIdentity, host: host)
+        try addSecureHandlers(channel, tls: tls, box: box, plainIdentity: plainIdentity, host: host, isOutgoing: false)
     }
 
     private func addSecureHandlers(
@@ -197,9 +197,10 @@ public final class LanLink {
         tls: ChannelHandler,
         box: PeerCertificateBox,
         plainIdentity: DeviceIdentity,
-        host: String
+        host: String,
+        isOutgoing: Bool
     ) throws {
-        let handler = LinkHandler(link: self, box: box, plainIdentity: plainIdentity, host: host)
+        let handler = LinkHandler(link: self, box: box, plainIdentity: plainIdentity, host: host, isOutgoing: isOutgoing)
         let pipeline = channel.pipeline.syncOperations
 
         try pipeline.addHandler(tls, position: .first)
@@ -309,15 +310,17 @@ final class LinkHandler: ChannelInboundHandler {
     private let box: PeerCertificateBox
     private let plainIdentity: DeviceIdentity
     private let host: String
+    private let isOutgoing: Bool
     private var state = State.handshaking
     private var certificateDER: [UInt8] = []
     private var publicKeyDER: [UInt8] = []
 
-    init(link: LanLink, box: PeerCertificateBox, plainIdentity: DeviceIdentity, host: String) {
+    init(link: LanLink, box: PeerCertificateBox, plainIdentity: DeviceIdentity, host: String, isOutgoing: Bool) {
         self.link = link
         self.box = box
         self.plainIdentity = plainIdentity
         self.host = host
+        self.isOutgoing = isOutgoing
     }
 
     func userInboundEventTriggered(context: ChannelHandlerContext, event: Any) {
@@ -379,6 +382,7 @@ final class LinkHandler: ChannelInboundHandler {
             certificateDER: certificateDER,
             publicKeyDER: publicKeyDER,
             host: host,
+            isOutgoing: isOutgoing,
             channel: context.channel
         )
         state = .open(deviceLink)
