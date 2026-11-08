@@ -49,6 +49,11 @@ public final class DefaultsTrustStore: TrustStore {
         defaults.set(all, forKey: key)
     }
 
+    /// Every device we have paired with.
+    public var trustedIds: [String] {
+        Array((defaults.dictionary(forKey: key) ?? [:]).keys)
+    }
+
     public func forget(_ deviceId: String) {
         var all = defaults.dictionary(forKey: key) ?? [:]
         all.removeValue(forKey: deviceId)

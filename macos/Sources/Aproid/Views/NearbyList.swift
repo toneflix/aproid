@@ -44,7 +44,7 @@ struct NearbyList: View {
         case .requestedByPeer:
             SmallButton(title: "Not now") { model.reject(device.id) }
         case .paired:
-            SmallButton(title: "Ring") { model.ring(device.id) }
+            SmallButton(title: "Show") { model.selectedPhone = device.id }
         case .requested:
             ProgressView().controlSize(.small)
         }

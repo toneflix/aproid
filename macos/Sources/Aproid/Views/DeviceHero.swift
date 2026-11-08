@@ -11,9 +11,7 @@ struct DeviceHero: View {
             PhoneArt(width: 40)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(device.name)
-                    .font(.system(size: 16, weight: .bold))
-                    .lineLimit(1)
+                name
 
                 HStack(spacing: 6) {
                     Circle().fill(Theme.ok).frame(width: 7, height: 7)
@@ -36,6 +34,31 @@ struct DeviceHero: View {
             BatteryRing(charge: device.battery?.charge, isCharging: device.battery?.isCharging ?? false)
         }
         .card(padding: 16)
+    }
+
+    /// With several phones paired, the name is a menu to switch between them.
+    @ViewBuilder private var name: some View {
+        let others = model.devices.filter { $0.pairState == .paired && $0.id != device.id }
+        let title = Text(device.name).font(.system(size: 16, weight: .bold)).lineLimit(1)
+
+        if others.isEmpty {
+            title
+        } else {
+            Menu {
+                ForEach(others) { other in
+                    Button(other.name) { model.selectedPhone = other.id }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    title
+                    Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold)).foregroundStyle(.secondary)
+                }
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("Switch to another phone")
+        }
     }
 
     private var summary: String {

@@ -31,7 +31,7 @@ class PayloadTransfer(certificate: DeviceCertificate, private val ports: IntRang
             val error = runCatching {
                 server.use { it.accept() }.use { socket ->
                     secure(socket, asServer = true, peerCertificate).use { ssl ->
-                        open().use { it.copyTo(ssl.outputStream) }
+                        open().use { it.copyTo(ssl.outputStream, BUFFER_SIZE) }
                         ssl.outputStream.flush()
                     }
                 }
@@ -43,20 +43,25 @@ class PayloadTransfer(certificate: DeviceCertificate, private val ports: IntRang
         return server.localPort
     }
 
-    /** Downloads [size] bytes that the peer offered at [address]:[port] into [sink]. Blocks until done. */
+    /**
+     * Downloads [size] bytes that the peer offered at [address]:[port] into [sink]. Blocks until done.
+     * A size of [Screen.STREAM] reads a live stream until the peer closes it.
+     */
     fun receive(address: InetAddress, port: Int, size: Long, peerCertificate: X509Certificate, sink: OutputStream) {
         Socket().use { socket ->
             socket.connect(InetSocketAddress(address, port), CONNECT_TIMEOUT_MS)
             socket.soTimeout = READ_TIMEOUT_MS
 
             secure(socket, asServer = false, peerCertificate).use { ssl ->
-                val copied = copy(ssl.inputStream, sink, size)
-                if (copied < size) throw ProtocolException("payload ended after $copied of $size bytes")
+                val copied = copy(ssl.inputStream, sink, if (size == Screen.STREAM) Long.MAX_VALUE else size)
+                if (size != Screen.STREAM && copied < size) throw ProtocolException("payload ended after $copied of $size bytes")
             }
         }
     }
 
     private fun secure(socket: Socket, asServer: Boolean, peerCertificate: X509Certificate): SSLSocket {
+        socket.sendBufferSize = SOCKET_BUFFER
+        socket.receiveBufferSize = SOCKET_BUFFER
         val ssl = tls.upgrade(socket, asServer)
         val presented = ssl.session.peerCertificates.firstOrNull() as? X509Certificate
 
@@ -103,6 +108,8 @@ class PayloadTransfer(certificate: DeviceCertificate, private val ports: IntRang
         const val ACCEPT_TIMEOUT_MS = 60_000
         const val CONNECT_TIMEOUT_MS = 10_000
         const val READ_TIMEOUT_MS = 30_000
-        const val BUFFER_SIZE = 64 * 1024
+        // Large reads and socket buffers keep a fast Wi-Fi link full instead of waiting on small writes.
+        const val BUFFER_SIZE = 256 * 1024
+        const val SOCKET_BUFFER = 1024 * 1024
     }
 }

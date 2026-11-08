@@ -25,6 +25,32 @@ class DevicePluginsTest {
         assertEquals(BatteryStatus(9, isCharging = false, isLow = true), BatteryStatus.fromPacket(NetworkPacket.parse(wire)))
     }
 
+    @Test fun resumedFileCarriesItsTransferAndOffset() {
+        val resumed = NetworkPacket.parse(Share.file("film.mp4", 1000, transferId = "t1", offset = 400).copy(payloadSize = 600).serialize())
+
+        assertEquals(Share.File("film.mp4", 600, "t1", 400), Share.fromPacket(resumed))
+        assertEquals("t1" to 400L, Share.resumeRequest(NetworkPacket.parse(Share.resume("t1", 400).serialize())))
+        assertNull(Share.resumeRequest(Share.link("https://example.com")))
+    }
+
+    @Test fun locationRoundTripsAndRejectsNonsense() {
+        val here = PhoneLocation(6.5244, 3.3792, 12.5, 1_700_000_000_000)
+
+        assertEquals(here, PhoneLocation.fromPacket(NetworkPacket.parse(here.toPacket().serialize())))
+        assertNull(PhoneLocation.fromPacket(PhoneLocation(95.0, 3.0, 1.0, 0).toPacket()))
+        assertEquals(PacketType.LOCATION_REQUEST, PhoneLocation.request().type)
+    }
+
+    @Test fun clipboardFileNeedsAPayload() {
+        val announced = Clipboard.filePacket("../shot.png", "image/png")
+
+        assertNull(Clipboard.file(announced))
+
+        val withPayload = NetworkPacket.parse(announced.copy(payloadSize = 10).serialize())
+        assertEquals(ClipboardFile("../shot.png", "image/png"), Clipboard.file(withPayload))
+        assertEquals("shot.png", Clipboard.file(withPayload)?.safeName)
+    }
+
     @Test fun clipboardContentComesFromBothPacketTypes() {
         assertEquals("hello", Clipboard.content(Clipboard.packet("hello")))
         assertEquals("hello", Clipboard.content(Clipboard.connectPacket("hello", 1_700_000_000_000)))

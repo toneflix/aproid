@@ -38,6 +38,7 @@ data class NetworkPacket(
     fun int(key: String): Int? = (body[key] as? JsonPrimitive)?.intOrNull
     fun long(key: String): Long? = (body[key] as? JsonPrimitive)?.longOrNull
     fun bool(key: String): Boolean? = (body[key] as? JsonPrimitive)?.booleanOrNull
+    fun double(key: String): Double? = (body[key] as? JsonPrimitive)?.takeIf { !it.isString }?.content?.toDoubleOrNull()
 
     /** The port the sender opened for this packet's payload. */
     val payloadPort: Int? get() = (payloadTransferInfo?.get("port") as? JsonPrimitive)?.intOrNull

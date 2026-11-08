@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import Foundation
 import OSLog
 import AproidKit
@@ -13,6 +14,7 @@ struct DeviceState: Identifiable, Equatable {
     let code: String?
     let battery: BatteryStatus?
     let media: NowPlaying?
+    let location: PhoneLocation?
 }
 
 @MainActor
@@ -26,6 +28,26 @@ final class AppModel: ObservableObject {
     @Published private(set) var clipboardSyncedAt: Date?
     @Published private(set) var notificationsToday = 0
     @Published private(set) var call: ActiveCall?
+
+    /// The paired phone the panel, Messages, calls and the Services menu use.
+    @Published private(set) var primaryId: String?
+
+    /// The phone the user picked when several are paired. Kept across launches.
+    var selectedPhone: String? {
+        get { UserDefaults.standard.string(forKey: "selectedPhone") }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "selectedPhone")
+            publish()
+        }
+    }
+
+    /// A paired phone is in Bluetooth range but not reachable over the network.
+    @Published private(set) var phoneNearby = false
+    /// What joining the phone's hotspot is doing, or why it failed.
+    @Published private(set) var hotspotStatus: String?
+
+    /// The phone being looked for: its map shows in the panel until closed.
+    @Published var finding: String?
     @Published var mirrorsNotifications: Bool {
         didSet {
             notifications.isEnabled = mirrorsNotifications
@@ -49,11 +71,21 @@ final class AppModel: ObservableObject {
     private let share = SharePlugin(folder: AppModel.downloads)
     private let mediaPlugin = MediaPlugin()
     private let sms = SmsPlugin()
+    private let locations = LocationPlugin()
+    private let photosPlugin = PhotosPlugin()
     private let calls = CallPlugin()
     private let callPanel = CallPanel()
     private var messagesDevice: String?
+    private var photosDevice: String?
 
     let messages = MessagesStore()
+    let photos = PhotosStore()
+    let screen: ScreenMirror
+    private let screenPlugin: ScreenPlugin
+    private let screenWindow: ScreenWindowController
+    private var screenSize: AnyCancellable?
+    private let nearby: NearbyFinder
+    private var lastNearbySearch = Date.distantPast
     private var notificationsDay = Calendar.current.startOfDay(for: Date())
     private var link: LanLink?
     private var timer: Timer?
@@ -76,18 +108,42 @@ final class AppModel: ObservableObject {
             deviceType: Self.isLaptop() ? .laptop : .desktop
         )
         clipboard = ClipboardPlugin(devices: connected)
+        nearby = NearbyFinder(ownId: identity.deviceId)
+        let screen = ScreenMirror()
+        self.screen = screen
+        screenPlugin = ScreenPlugin(decoder: screen.decoder)
+        screenWindow = ScreenWindowController(mirror: screen)
         notifications = NotificationPlugin(devices: connected)
-        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls])
+        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, locations, photosPlugin, screenPlugin])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
         notifications.isEnabled = mirrorsNotifications
 
         battery.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         mediaPlugin.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
+        locations.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         sms.onMessages = { [weak self] messages, deviceId in Task { @MainActor in self?.messages.ingest(messages, from: deviceId) } }
         calls.onState = { [weak self] state, device in
             let deviceId = device.id
             let deviceName = device.name
             Task { @MainActor in self?.handleCall(state, deviceId: deviceId, deviceName: deviceName) }
+        }
+        nearby.onNearby = { [weak self] found in Task { @MainActor in self?.nearbyChanged(found) } }
+        nearby.onAnswer = { [weak self] answer in Task { @MainActor in self?.reach(answer) } }
+        screen.send = { [weak self] id, packet in self?.connected[id]?.send(packet) ?? false }
+        screenPlugin.onStarted = { [weak self] device in
+            let deviceId = device.id
+            let deviceName = device.name
+            Task { @MainActor in
+                self?.screen.started(deviceId: deviceId, name: deviceName)
+                self?.screenWindow.show()
+            }
+        }
+        screenPlugin.onEnded = { [weak self] deviceId in Task { @MainActor in self?.screen.ended(deviceId: deviceId) } }
+        screenSize = screen.$videoSize.sink { [weak self] size in Task { @MainActor in self?.screenWindow.fit(size) } }
+        photosPlugin.onPage = { [weak self] page, deviceId in Task { @MainActor in self?.photos.ingest(page, from: deviceId) } }
+        photos.send = { [weak self] packet in
+            guard let id = self?.primaryId, let device = self?.connected[id] else { return false }
+            return device.send(packet)
         }
         messages.send = { [weak self] packet in
             guard let id = self?.messagesDevice, let device = self?.connected[id] else { return false }
@@ -109,7 +165,22 @@ final class AppModel: ObservableObject {
 
     func unpair(_ id: String) { connected[id]?.unpair() }
 
-    func ring(_ id: String) { connected[id]?.send(FindMyPhone.request()) }
+    /// Rings the phone and asks where it is, so it can be found by sound or on the map.
+    func ring(_ id: String) {
+        guard let device = connected[id] else { return }
+
+        device.send(FindMyPhone.request())
+        locations.request(from: device)
+        finding = id
+    }
+
+    /// Asks the phone to share its screen and opens the window that shows it.
+    func mirror(_ id: String) {
+        guard let device = connected[id], device.isPaired else { return }
+
+        screen.begin(deviceId: id, name: device.name)
+        screenWindow.show()
+    }
 
     func media(_ id: String, _ player: String, _ action: MediaAction) {
         connected[id]?.send(MediaRequest.action(player, action).toPacket())
@@ -141,7 +212,7 @@ final class AppModel: ObservableObject {
     /// Places a call on the paired phone.
     func dial(_ number: String, name: String?) {
         let number = number.trimmingCharacters(in: .whitespaces)
-        guard !number.isEmpty, let phone = connected.all.first(where: \.isPaired), phone.send(Call.dial(number)) else { return }
+        guard !number.isEmpty, let phone = primaryPhone, phone.send(Call.dial(number)) else { return }
 
         call = ActiveCall(deviceId: phone.id, deviceName: phone.name, number: number, name: name, phase: .dialing)
         callPanel.show(self)
@@ -204,20 +275,9 @@ final class AppModel: ObservableObject {
     func sendFiles(_ urls: [URL], to id: String) {
         guard let device = connected[id] else { return }
 
-        for url in urls {
-            let started = Activity(.sending, title: url.lastPathComponent, detail: "Sending to \(device.name)")
-            record(started)
-
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                Self.send(url, to: device) { error in
-                    var done = started
-                    done.date = Date()
-                    done.kind = error == nil ? .sent : .failed
-                    done.detail = error == nil ? "Sent to \(device.name)" : "Could not send to \(device.name)"
-
-                    Task { @MainActor in self?.record(done) }
-                }
-            }
+        let share = share
+        DispatchQueue.global(qos: .userInitiated).async {
+            urls.forEach { share.send($0, to: device) }
         }
     }
 
@@ -261,32 +321,6 @@ final class AppModel: ObservableObject {
         notificationsToday += 1
     }
 
-    /// Offers one file to the phone. `completion` is called once, when it is done or failed.
-    private nonisolated static func send(_ url: URL, to device: Device, completion: @escaping (Error?) -> Void) {
-        let attributes: [FileAttributeKey: Any]
-        let source: FileHandle
-        do {
-            attributes = try FileManager.default.attributesOfItem(atPath: url.path)
-            source = try FileHandle(forReadingFrom: url)
-        } catch {
-            completion(error)
-            return
-        }
-
-        guard device.isPaired else {
-            try? source.close()
-            completion(ProtocolError("not paired"))
-            return
-        }
-
-        let size = (attributes[.size] as? NSNumber)?.int64Value ?? 0
-        let modified = (attributes[.modificationDate] as? Date).map { Int64($0.timeIntervalSince1970 * 1000) }
-        let packet = Share.filePacket(name: url.lastPathComponent, size: size, lastModifiedMillis: modified)
-
-        // On failure it calls completion itself.
-        device.sendWithPayload(packet, size: size, source: source, completion: completion)
-    }
-
     private func start() {
         let me = identity
         let trustStore = trustStore
@@ -310,23 +344,76 @@ final class AppModel: ObservableObject {
                 }
                 try link.start()
 
-                await self?.started(link)
+                await self?.started(link, certificate: certificate)
             } catch {
                 await self?.failed("Could not start: \(error)")
             }
         }
     }
 
-    private func started(_ link: LanLink) {
+    private func started(_ link: LanLink, certificate: DeviceCertificate) {
         self.link = link
+        nearby.use(privateKeyPEM: certificate.privateKeyPEM)
         let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
             link.broadcastIdentity()
-            self?.connected.all.forEach { $0.tick() }
+            Task { @MainActor in
+                self?.connected.all.forEach { $0.tick() }
+                self?.searchNearbyIfLost()
+            }
         }
         // Common modes keep it running while the menu is open.
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
         link.broadcastIdentity()
+    }
+
+    // MARK: Bluetooth fallback
+
+    /// When no paired phone has answered on the network, look for one over Bluetooth now and then.
+    private func searchNearbyIfLost() {
+        let hasPhone = connected.all.contains { $0.isPaired }
+        guard !hasPhone, !trustStore.trustedIds.isEmpty, Date().timeIntervalSince(lastNearbySearch) > 45 else { return }
+
+        lastNearbySearch = Date()
+        nearby.search(.connect)
+    }
+
+    private func nearbyChanged(_ found: Bool) {
+        let hasPhone = connected.all.contains { $0.isPaired }
+        phoneNearby = found && !hasPhone
+    }
+
+    /// Asks the phone for a hotspot and joins it. This Mac leaves its current Wi-Fi.
+    func joinPhoneHotspot() {
+        hotspotStatus = "Asking your phone to start a hotspot…"
+        lastNearbySearch = Date()
+        nearby.askForLocation()
+        nearby.search(.hotspot)
+    }
+
+    /// Connects to the addresses the phone gave over Bluetooth, joining its hotspot first if it started one.
+    private func reach(_ answer: Nearby.Answer) {
+        let peer = DeviceIdentity(deviceId: answer.deviceId, deviceName: "Phone", deviceType: .phone, tcpPort: answer.port)
+        guard let link else { return }
+
+        guard let ssid = answer.ssid else {
+            if hotspotStatus != nil { hotspotStatus = "Your phone couldn't start a hotspot. Turn on its hotspot in Settings and join it." }
+            answer.addresses.forEach { _ = link.connect(to: peer, host: $0) }
+            return
+        }
+
+        hotspotStatus = "Joining \(ssid)…"
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            do {
+                try NearbyFinder.join(ssid: ssid, password: answer.password)
+                // Give the Mac a moment to get an address on the new network.
+                Thread.sleep(forTimeInterval: 2)
+                answer.addresses.forEach { _ = link.connect(to: peer, host: $0) }
+                Task { @MainActor in self?.hotspotStatus = nil }
+            } catch {
+                Task { @MainActor in self?.hotspotStatus = "Couldn't join \(ssid): \(error)" }
+            }
+        }
     }
 
     private func failed(_ message: String) {
@@ -342,7 +429,11 @@ final class AppModel: ObservableObject {
 
         if let old = connected.insert(device), old !== device { old.link.close(reason: "replaced by a newer link") }
         log.info("Connected to \(device.name, privacy: .public) (\(device.link.isOutgoing ? "we" : "they", privacy: .public) connected)")
-        if device.isPaired { plugins.onPaired(device) }
+        if device.isPaired {
+            plugins.onPaired(device)
+            phoneNearby = false
+            hotspotStatus = nil
+        }
 
         publish()
     }
@@ -351,6 +442,7 @@ final class AppModel: ObservableObject {
         guard connected.remove(device) else { return }
 
         mediaPlugin.forget(device.id)
+        screen.ended(deviceId: device.id)
 
         log.info("Disconnected from \(device.name, privacy: .public): \(device.link.closeReason ?? "unknown", privacy: .public)")
 
@@ -358,6 +450,7 @@ final class AppModel: ObservableObject {
     }
 
     fileprivate func publish() {
+        primaryId = primaryPhone?.id
         syncMessages()
 
         devices = connected.all
@@ -373,15 +466,29 @@ final class AppModel: ObservableObject {
                     pairState: state,
                     code: showsCode ? device.verificationCode : nil,
                     battery: battery.status(for: device.id),
-                    media: mediaPlugin.nowPlaying(for: device.id)
+                    media: mediaPlugin.nowPlaying(for: device.id),
+                    location: locations.location(for: device.id)
                 )
             }
             .sorted { $0.name < $1.name }
     }
 
-    /// Texts come from the first paired phone.
+    private var primaryPhone: Device? {
+        if let id = selectedPhone, let device = connected[id], device.isPaired { return device }
+
+        return connected.all.filter(\.isPaired).min { $0.name < $1.name }
+    }
+
+    /// Texts and photos come from the primary phone.
     private func syncMessages() {
-        let phone = connected.all.first { $0.isPaired }
+        let phone = primaryPhone
+
+        if let phone {
+            photos.attach(phone.id)
+            photosDevice = phone.id
+        } else if let id = photosDevice {
+            photos.detach(id)
+        }
 
         if let phone, messagesDevice != phone.id || !messages.hasPhone {
             messagesDevice = phone.id

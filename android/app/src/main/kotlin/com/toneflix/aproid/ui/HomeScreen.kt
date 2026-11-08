@@ -38,7 +38,11 @@ import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Bluetooth
+import androidx.compose.material.icons.outlined.Cast
 import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.TouchApp
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Sms
@@ -82,6 +86,11 @@ import com.toneflix.aproid.CallPlugin
 import com.toneflix.aproid.ClipboardPlugin
 import com.toneflix.aproid.SmsPlugin
 import com.toneflix.aproid.LinkService
+import com.toneflix.aproid.LocationPlugin
+import com.toneflix.aproid.NearbyBeacon
+import com.toneflix.aproid.PhotosPlugin
+import com.toneflix.aproid.ScreenControlService
+import com.toneflix.aproid.ScreenPlugin
 import com.toneflix.aproid.NotificationPlugin
 import com.toneflix.aproid.R
 import com.toneflix.aproid.Recent
@@ -280,6 +289,7 @@ private fun QuickTiles(mac: DeviceState) {
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
         Tile(Icons.Outlined.Link, stringResource(R.string.home_open_link), Modifier.weight(1f)) { linkDialog = true }
+        Tile(Icons.Outlined.Cast, stringResource(R.string.home_mirror), Modifier.weight(1f)) { ScreenPlugin.mirror(context, mac.id) }
     }
 
     if (linkDialog) {
@@ -320,7 +330,34 @@ private fun SetupCards() {
         CallPlugin.start(context)
     }
 
+    var location by remember { mutableStateOf(LocationPlugin.hasPermission(context) && LocationPlugin.hasBackgroundPermission(context)) }
+    // Android asks for "all the time" location separately, after the normal location permission.
+    val askBackgroundLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        location = LocationPlugin.hasPermission(context) && LocationPlugin.hasBackgroundPermission(context)
+    }
+    val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        if (LocationPlugin.hasPermission(context) && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            askBackgroundLocation.launch(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
+    }
+
+    var photos by remember { mutableStateOf(PhotosPlugin.hasPermission(context)) }
+    val askPhotos = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        photos = PhotosPlugin.hasPermission(context)
+    }
+
+    var control by remember { mutableStateOf(ScreenControlService.isEnabled(context)) }
+    var nearby by remember { mutableStateOf(NearbyBeacon.hasPermission(context)) }
+    val askNearby = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        nearby = NearbyBeacon.hasPermission(context)
+        if (nearby) LinkService.start(context)
+    }
+
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        control = ScreenControlService.isEnabled(context)
+        nearby = NearbyBeacon.hasPermission(context)
+        photos = PhotosPlugin.hasPermission(context)
+        location = LocationPlugin.hasPermission(context) && LocationPlugin.hasBackgroundPermission(context)
         notifications = NotificationPlugin.hasAccess(context)
         background = LinkService.isUnrestricted(context)
         phone = CallPlugin.hasPermissions(context)
@@ -346,6 +383,40 @@ private fun SetupCards() {
             stringResource(R.string.setup_phone),
             stringResource(R.string.setup_phone_hint),
         ) { askPhone.launch(CallPlugin.permissions) }
+    }
+    AnimatedVisibility(!location) {
+        SetupCard(
+            Icons.Outlined.LocationOn,
+            stringResource(R.string.setup_location),
+            stringResource(R.string.setup_location_hint),
+        ) {
+            if (LocationPlugin.hasPermission(context) && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                askBackgroundLocation.launch(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            } else {
+                askLocation.launch(LocationPlugin.permissions)
+            }
+        }
+    }
+    AnimatedVisibility(!photos) {
+        SetupCard(
+            Icons.Outlined.Image,
+            stringResource(R.string.setup_photos),
+            stringResource(R.string.setup_photos_hint),
+        ) { askPhotos.launch(PhotosPlugin.permissions) }
+    }
+    AnimatedVisibility(!nearby) {
+        SetupCard(
+            Icons.Outlined.Bluetooth,
+            stringResource(R.string.setup_nearby),
+            stringResource(R.string.setup_nearby_hint),
+        ) { askNearby.launch(NearbyBeacon.permissions) }
+    }
+    AnimatedVisibility(!control) {
+        SetupCard(
+            Icons.Outlined.TouchApp,
+            stringResource(R.string.setup_control),
+            stringResource(R.string.setup_control_hint),
+        ) { context.startActivity(ScreenControlService.settingsIntent()) }
     }
 }
 

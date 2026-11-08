@@ -56,6 +56,12 @@
             </array>
         </dict>
     </array>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Aproid finds your phone over Bluetooth when it isn't on the same Wi-Fi.</string>
+    <key>NSLocationUsageDescription</key>
+    <string>macOS needs location access for Aproid to see your phone's hotspot name.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>macOS needs location access for Aproid to see your phone's hotspot name.</string>
     <key>NSLocalNetworkUsageDescription</key>
     <string>Aproid finds and connects to your phone on the local network.</string>
 </dict>

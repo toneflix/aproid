@@ -3,23 +3,32 @@ package com.toneflix.aproid
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.provider.OpenableColumns
+import androidx.core.content.FileProvider
 import com.toneflix.aproid.protocol.Clipboard
+import com.toneflix.aproid.protocol.ClipboardFile
 import com.toneflix.aproid.protocol.Device
 import com.toneflix.aproid.protocol.NetworkPacket
 import com.toneflix.aproid.protocol.PacketType
 import com.toneflix.aproid.protocol.Plugin
+import java.io.File
+import java.io.FileNotFoundException
+import java.util.UUID
+import java.util.concurrent.Executors
 
 /**
- * Puts text copied on the Mac on the phone's clipboard. Android only lets an app read the
- * clipboard while it is in front, so sending the other way goes through [ClipboardActivity].
+ * Puts what was copied on the Mac, text, pictures or files, on the phone's clipboard. Android only
+ * lets an app read the clipboard while it is in front, so sending the other way goes through [ClipboardActivity].
  */
 object ClipboardPlugin : Plugin {
-    override val incoming = setOf(PacketType.CLIPBOARD, PacketType.CLIPBOARD_CONNECT)
+    override val incoming = setOf(PacketType.CLIPBOARD, PacketType.CLIPBOARD_CONNECT, PacketType.CLIPBOARD_FILE)
 
     private var context: Context? = null
     private val main = Handler(Looper.getMainLooper())
+    private val transfers = Executors.newCachedThreadPool()
 
     fun start(context: Context) {
         this.context = context.applicationContext
@@ -27,22 +36,67 @@ object ClipboardPlugin : Plugin {
 
     override fun onPacket(device: Device, packet: NetworkPacket) {
         val context = context ?: return
-        val content = Clipboard.content(packet) ?: return
 
-        main.post {
-            val clipboard = context.getSystemService(ClipboardManager::class.java)
-            clipboard.setPrimaryClip(ClipData.newPlainText(device.name, content))
+        Clipboard.file(packet)?.let { file ->
+            transfers.execute { receive(context, device, packet, file) }
+            return
         }
+
+        val content = Clipboard.content(packet) ?: return
+        main.post { clipboard(context).setPrimaryClip(ClipData.newPlainText(device.name, content)) }
     }
 
-    /** Sends the phone's clipboard text to every paired Mac. Call while an activity has focus. */
+    /** Sends the phone's clipboard to every paired Mac. Call while an activity has focus. */
     fun send(context: Context): Boolean {
-        val clip = context.getSystemService(ClipboardManager::class.java).primaryClip ?: return false
-        val text = clip.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString()
+        val clip = clipboard(context).primaryClip?.takeIf { it.itemCount > 0 } ?: return false
+        val item = clip.getItemAt(0)
+
+        item.uri?.let { uri -> return sendFile(context, uri) }
+
+        val text = item.coerceToText(context)?.toString()
         if (text.isNullOrEmpty()) return false
 
         DeviceStore.sendToPaired(Clipboard.packet(text))
-
         return true
     }
+
+    private fun sendFile(context: Context, uri: Uri): Boolean {
+        val resolver = context.contentResolver
+        val (name, size) = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)
+            ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) to cursor.getLong(1) else null }
+            ?: return false
+        if (size <= 0 || size > Clipboard.FILE_LIMIT) return false
+
+        val packet = Clipboard.filePacket(name ?: "Copied file", resolver.getType(uri) ?: "application/octet-stream")
+        val targets = DeviceStore.pairedDevices()
+        transfers.execute {
+            targets.forEach { device ->
+                runCatching {
+                    device.sendWithPayload(packet, size, open = { resolver.openInputStream(uri) ?: throw FileNotFoundException(uri.toString()) })
+                }
+            }
+        }
+
+        return targets.isNotEmpty()
+    }
+
+    /** Saves the file in our cache and puts a link to it on the clipboard, which apps can paste. */
+    private fun receive(context: Context, device: Device, packet: NetworkPacket, file: ClipboardFile) {
+        val folder = File(context.cacheDir, "clipboard").apply { deleteRecursively() }
+        val target = File(File(folder, UUID.randomUUID().toString()).apply { mkdirs() }, file.safeName)
+
+        val received = runCatching { target.outputStream().use { device.receivePayload(packet, it) } }.isSuccess
+        if (!received) {
+            target.delete()
+            return
+        }
+
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", target)
+        main.post {
+            val clip = ClipData(device.name, arrayOf(file.mimeType), ClipData.Item(uri))
+            clipboard(context).setPrimaryClip(clip)
+        }
+    }
+
+    private fun clipboard(context: Context) = context.getSystemService(ClipboardManager::class.java)
 }

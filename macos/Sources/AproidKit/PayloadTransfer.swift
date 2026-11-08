@@ -79,6 +79,32 @@ public final class PayloadTransfer {
         peerCertificateDER: [UInt8],
         into sink: FileHandle
     ) -> EventLoopFuture<Void> {
+        download(host: host, port: port, size: size, peerCertificateDER: peerCertificateDER) { data in
+            try sink.write(contentsOf: data)
+        } finish: {
+            try? sink.synchronize()
+        }
+    }
+
+    /// Reads a live stream (payload size `Screen.stream`) and hands each piece to `onData` on a network thread,
+    /// until the peer closes it.
+    public func stream(
+        host: String,
+        port: UInt16,
+        peerCertificateDER: [UInt8],
+        onData: @escaping (Data) throws -> Void
+    ) -> EventLoopFuture<Void> {
+        download(host: host, port: port, size: Screen.stream, peerCertificateDER: peerCertificateDER, write: onData) {}
+    }
+
+    private func download(
+        host: String,
+        port: UInt16,
+        size: Int64,
+        peerCertificateDER: [UInt8],
+        write: @escaping (Data) throws -> Void,
+        finish: @escaping () -> Void
+    ) -> EventLoopFuture<Void> {
         let promise = Self.group.next().makePromise(of: Void.self)
         let clientContext = clientContext
 
@@ -88,7 +114,14 @@ public final class PayloadTransfer {
                 do {
                     let box = PeerCertificateBox()
                     let tls = try NIOSSLClientHandler(context: clientContext, serverHostname: nil, customVerificationCallback: box.verify)
-                    let download = DownloadHandler(box: box, expected: peerCertificateDER, size: size, sink: sink, promise: promise)
+                    let download = DownloadHandler(
+                        box: box,
+                        expected: peerCertificateDER,
+                        size: size,
+                        write: write,
+                        onFinish: finish,
+                        promise: promise
+                    )
 
                     return channel.pipeline.addHandlers([tls, download])
                 } catch {
@@ -125,7 +158,8 @@ private final class UploadHandler: ChannelInboundHandler {
     typealias InboundIn = ByteBuffer
     typealias OutboundOut = ByteBuffer
 
-    private static let chunkSize = 64 * 1024
+    // Large reads keep a fast Wi-Fi link full instead of waiting on small writes.
+    private static let chunkSize = 256 * 1024
 
     private let box: PeerCertificateBox
     private let expected: [UInt8]
@@ -198,23 +232,34 @@ private final class UploadHandler: ChannelInboundHandler {
     }
 }
 
-/// Writes the incoming bytes to a file until the announced size has arrived.
+/// Hands the incoming bytes on until the announced size has arrived, or, for a live stream, until the peer closes it.
 private final class DownloadHandler: ChannelInboundHandler {
     typealias InboundIn = ByteBuffer
 
     private let box: PeerCertificateBox
     private let expected: [UInt8]
     private let size: Int64
-    private let sink: FileHandle
+    private let write: (Data) throws -> Void
+    private let onFinish: () -> Void
     private let promise: EventLoopPromise<Void>
     private var received: Int64 = 0
     private var finished = false
 
-    init(box: PeerCertificateBox, expected: [UInt8], size: Int64, sink: FileHandle, promise: EventLoopPromise<Void>) {
+    private var isStream: Bool { size == Screen.stream }
+
+    init(
+        box: PeerCertificateBox,
+        expected: [UInt8],
+        size: Int64,
+        write: @escaping (Data) throws -> Void,
+        onFinish: @escaping () -> Void,
+        promise: EventLoopPromise<Void>
+    ) {
         self.box = box
         self.expected = expected
         self.size = size
-        self.sink = sink
+        self.write = write
+        self.onFinish = onFinish
         self.promise = promise
     }
 
@@ -234,21 +279,21 @@ private final class DownloadHandler: ChannelInboundHandler {
         guard !finished else { return }
 
         let buffer = unwrapInboundIn(data)
-        let wanted = Int(min(Int64(buffer.readableBytes), size - received))
+        let wanted = isStream ? buffer.readableBytes : Int(min(Int64(buffer.readableBytes), size - received))
 
         do {
-            try sink.write(contentsOf: Data(buffer.readableBytesView.prefix(wanted)))
+            try write(Data(buffer.readableBytesView.prefix(wanted)))
         } catch {
             finish(context, error)
             return
         }
 
         received += Int64(wanted)
-        if received >= size { finish(context, nil) }
+        if !isStream, received >= size { finish(context, nil) }
     }
 
     func channelInactive(context: ChannelHandlerContext) {
-        finish(context, ProtocolError("payload ended after \(received) of \(size) bytes"))
+        finish(context, isStream ? nil : ProtocolError("payload ended after \(received) of \(size) bytes"))
         context.fireChannelInactive()
     }
 
@@ -260,7 +305,7 @@ private final class DownloadHandler: ChannelInboundHandler {
         guard !finished else { return }
 
         finished = true
-        try? sink.synchronize()
+        onFinish()
         context.close(promise: nil)
 
         if let error { promise.fail(error) } else { promise.succeed(()) }

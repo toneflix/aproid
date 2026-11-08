@@ -26,7 +26,12 @@ import java.util.concurrent.atomic.AtomicInteger
 object SharePlugin : Plugin {
     const val CHANNEL_ID = "transfers"
 
-    override val incoming = setOf(PacketType.SHARE_REQUEST)
+    override val incoming = setOf(PacketType.SHARE_REQUEST, PacketType.SHARE_RESUME)
+
+    /** A file that stopped arriving, waiting for the Mac to come back. */
+    private class Paused(val target: DownloadTarget, val deviceId: String, val item: RecentItem, val total: Long, val received: Long)
+
+    private val paused = java.util.concurrent.ConcurrentHashMap<String, Paused>()
 
     private var context: Context? = null
     private val main = Handler(Looper.getMainLooper())
@@ -39,8 +44,19 @@ object SharePlugin : Plugin {
         this.context = context.applicationContext
     }
 
+    override fun onPaired(device: Device) {
+        paused.filterValues { it.deviceId == device.id }.forEach { (id, file) ->
+            DeviceStore.send(device, Share.resume(id, file.received))
+        }
+    }
+
     override fun onPacket(device: Device, packet: NetworkPacket) {
         val context = context ?: return
+
+        Share.resumeRequest(packet)?.let { (id, offset) ->
+            ShareSender.resume(context, device, id, offset)
+            return
+        }
 
         when (val share = Share.fromPacket(packet)) {
             is Share.File -> downloads.execute { receive(context, device, packet, share) }
@@ -51,23 +67,37 @@ object SharePlugin : Plugin {
     }
 
     private fun receive(context: Context, device: Device, packet: NetworkPacket, file: Share.File) {
-        val size = Formatter.formatShortFileSize(context, file.size)
-        val started = Recent.add(RecentItem.Kind.RECEIVING, file.safeName, context.getString(R.string.share_receiving, size, device.name))
+        val resumed = file.transferId?.let { paused.remove(it) }?.takeIf { it.received == file.offset }
+        val total = resumed?.total ?: (file.offset + file.size)
+        val size = Formatter.formatShortFileSize(context, total)
+        val detail = context.getString(R.string.share_receiving, size, device.name)
+        val started = resumed?.item?.copy(kind = RecentItem.Kind.RECEIVING, detail = detail)?.also(Recent::put)
+            ?: Recent.add(RecentItem.Kind.RECEIVING, file.safeName, detail)
 
-        val target = DownloadTarget.create(context, file.safeName)
+        val target = resumed?.target ?: if (file.offset == 0L) DownloadTarget.create(context, file.safeName) else null
         if (target == null) {
             Recent.put(started.copy(kind = RecentItem.Kind.FAILED, detail = context.getString(R.string.share_save_failed)))
             return
         }
 
+        var received = file.offset
         val result = runCatching {
-            target.open().use { device.receivePayload(packet, it) }
+            target.open(append = resumed != null).use { sink ->
+                device.receivePayload(packet, CountingSink(sink) { received += it })
+            }
             target.publish()
         }
 
         if (result.isFailure) {
-            target.discard()
-            Recent.put(started.copy(kind = RecentItem.Kind.FAILED, detail = context.getString(R.string.share_stopped, device.name)))
+            val id = file.transferId
+            if (id != null && received > 0) {
+                // Keep what arrived; the rest comes when the Mac reconnects.
+                paused[id] = Paused(target, device.id, started, total, received)
+                Recent.put(started.copy(kind = RecentItem.Kind.FAILED, detail = context.getString(R.string.share_paused, device.name)))
+            } else {
+                target.discard()
+                Recent.put(started.copy(kind = RecentItem.Kind.FAILED, detail = context.getString(R.string.share_stopped, device.name)))
+            }
             return
         }
 
@@ -80,6 +110,19 @@ object SharePlugin : Plugin {
         )
         Recent.put(done)
         notify(context, file.safeName, context.getString(R.string.share_received_note, device.name), done.openIntent())
+    }
+
+    /** Counts the bytes written, so a stopped file knows where to resume. */
+    private class CountingSink(sink: java.io.OutputStream, private val onWrite: (Long) -> Unit) : java.io.FilterOutputStream(sink) {
+        override fun write(b: Int) {
+            out.write(b)
+            onWrite(1)
+        }
+
+        override fun write(b: ByteArray, off: Int, len: Int) {
+            out.write(b, off, len)
+            onWrite(len.toLong())
+        }
     }
 
     private fun link(context: Context, device: Device, url: String) {

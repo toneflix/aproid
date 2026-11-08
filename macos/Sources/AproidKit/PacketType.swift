@@ -36,6 +36,36 @@ public enum PacketType {
     public static let smsRequestConversation = "kdeconnect.sms.request_conversation"
     public static let telephony = "kdeconnect.telephony"
 
+    /// Asks the sender to send the rest of a file that stopped. Body: {"transferId", "offset"}.
+    public static let shareResume = "aproid.share.resume"
+
+    /// Asks for a page of the phone's photos and videos. Body: {"before"?: ms, "count": n}.
+    public static let photosRequest = "aproid.photos.request"
+
+    /// A page of photos with small thumbnails. Body: {"photos": [...], "more": bool}.
+    public static let photos = "aproid.photos"
+
+    /// Asks the phone to send one photo in full, as a normal shared file. Body: {"id"}.
+    public static let photosDownload = "aproid.photos.download"
+
+    /// Starts or stops mirroring the phone's screen. Body: {"action": "start"|"stop", "maxSize"?, "bitrate"?}.
+    public static let screenRequest = "aproid.screen.request"
+
+    /// The screen stream, as a payload of size -1. Body: {"width", "height", "codec", "running"}.
+    public static let screen = "aproid.screen"
+
+    /// A tap, swipe, key or text for the mirrored screen. Body: {"action", ...}.
+    public static let screenInput = "aproid.screen.input"
+
+    /// Asks the phone where it is. Body: {}.
+    public static let locationRequest = "aproid.location.request"
+
+    /// Where the phone is. Body: {"latitude", "longitude", "accuracy" (metres), "time" (ms)}.
+    public static let location = "aproid.location"
+
+    /// A copied picture or file, sent as the payload. Body: {"name": ..., "mimeType": ...}.
+    public static let clipboardFile = "aproid.clipboard.file"
+
     /// Answer, decline or hang up a call, or dial a number. Body: {"action": ..., "number"?: ...}.
     public static let callRequest = "aproid.call.request"
 
@@ -64,6 +94,16 @@ public enum Capabilities {
         PacketType.smsRequestConversation,
         PacketType.telephony,
         PacketType.callRequest,
+        PacketType.clipboardFile,
+        PacketType.locationRequest,
+        PacketType.shareResume,
+        PacketType.photosRequest,
+        PacketType.photos,
+        PacketType.photosDownload,
+        PacketType.screenRequest,
+        PacketType.screen,
+        PacketType.screenInput,
+        PacketType.location,
         PacketType.heartbeat,
     ]
 }

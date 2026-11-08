@@ -112,6 +112,15 @@ public final class Device {
         return payloads.receive(host: link.host, port: port, size: size, peerCertificateDER: link.certificateDER, into: sink)
     }
 
+    /// Reads the live stream a packet announces, such as the mirrored screen, until the device closes it.
+    /// `onData` runs on a network thread. To end it early, send `Screen.stop()`.
+    public func receiveStream(_ packet: NetworkPacket, onData: @escaping (Data) throws -> Void) throws -> EventLoopFuture<Void> {
+        guard packet.payloadSize == Screen.stream, let port = packet.payloadPort else { throw ProtocolError("packet has no stream") }
+        guard let payloads = lock.withLock({ payloads }) else { throw ProtocolError("payloads unavailable") }
+
+        return payloads.stream(host: link.host, port: port, peerCertificateDER: link.certificateDER, onData: onData)
+    }
+
     public func requestPair() { run { $0.requestPair(now: clock()) } }
 
     public func accept() { run { $0.accept() } }
