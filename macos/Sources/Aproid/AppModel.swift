@@ -11,6 +11,7 @@ struct DeviceState: Identifiable, Equatable {
     let host: String
     let pairState: PairState
     let code: String?
+    let battery: BatteryStatus?
 }
 
 @MainActor
@@ -25,6 +26,8 @@ final class AppModel: ObservableObject {
 
     private let connected = DeviceRegistry()
     private let plugins: PluginRouter
+    private let battery = BatteryPlugin()
+    private let clipboard: ClipboardPlugin
     private var link: LanLink?
     private var timer: Timer?
     private let trustStore = DefaultsTrustStore()
@@ -45,9 +48,12 @@ final class AppModel: ObservableObject {
             deviceName: DeviceIdentity.sanitizeName(Host.current().localizedName ?? "Mac"),
             deviceType: Self.isLaptop() ? .laptop : .desktop
         )
-        plugins = PluginRouter([NotificationPlugin(devices: connected)])
+        clipboard = ClipboardPlugin(devices: connected)
+        plugins = PluginRouter([NotificationPlugin(devices: connected), battery, clipboard])
 
+        battery.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         start()
+        clipboard.startWatching()
     }
 
     func requestPair(_ id: String) { connected[id]?.requestPair() }
@@ -57,6 +63,8 @@ final class AppModel: ObservableObject {
     func reject(_ id: String) { connected[id]?.reject() }
 
     func unpair(_ id: String) { connected[id]?.unpair() }
+
+    func ring(_ id: String) { connected[id]?.send(FindMyPhone.request()) }
 
     private func start() {
         let me = identity
@@ -138,7 +146,8 @@ final class AppModel: ObservableObject {
                     type: device.link.identity.deviceType,
                     host: device.link.host,
                     pairState: state,
-                    code: showsCode ? device.verificationCode : nil
+                    code: showsCode ? device.verificationCode : nil,
+                    battery: battery.status(for: device.id)
                 )
             }
             .sorted { $0.name < $1.name }
