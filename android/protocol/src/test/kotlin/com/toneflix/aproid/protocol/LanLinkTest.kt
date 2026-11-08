@@ -123,4 +123,60 @@ class LanLinkTest {
         assertFalse(phone.lan.handleAnnouncement(announced, InetAddress.getLoopbackAddress()))
         assertEquals(null, mac.links.poll(2, TimeUnit.SECONDS))
     }
+
+    @Test fun bothSidesKeepTheSameLinkWhenTheyConnectAtOnce() {
+        phone.lan.start()
+        try {
+            phone.lan.connect(mac.identity.copy(tcpPort = mac.lan.tcpPort), InetAddress.getLoopbackAddress())
+            val phoneOpened = phone.nextLink() to mac.nextLink()
+            mac.lan.connect(phone.identity.copy(tcpPort = phone.lan.tcpPort), InetAddress.getLoopbackAddress())
+            val macOpened = mac.nextLink() to phone.nextLink()
+
+            // The phone sees its own link first, the Mac sees its own first.
+            val phoneKeepsItsOwn = DeviceLink.keepsExisting(phoneOpened.first, macOpened.second, phone.identity.deviceId)
+            val macKeepsItsOwn = DeviceLink.keepsExisting(macOpened.first, phoneOpened.second, mac.identity.deviceId)
+
+            assertTrue(phoneKeepsItsOwn != macKeepsItsOwn)
+        } finally {
+            phone.lan.stop()
+        }
+    }
+
+    @Test fun aReconnectReplacesTheOldLink() {
+        val (first, _) = connect()
+        val (second, _) = connect()
+
+        assertFalse(DeviceLink.keepsExisting(first, second, phone.identity.deviceId))
+    }
+
+    @Test fun heartbeatIsAnswered() {
+        val (onPhone, onMac) = connect()
+        val received = LinkedBlockingQueue<NetworkPacket>()
+        Device(onMac, mac.certificate, mac.trust).start()
+        onPhone.onPacket = { received.put(it) }
+        onPhone.startReading()
+
+        onPhone.send(NetworkPacket(PacketType.HEARTBEAT, NetworkPacket.body("pong" to false)))
+
+        val answer = received.poll(10, TimeUnit.SECONDS)
+        assertEquals(PacketType.HEARTBEAT, answer?.type)
+        assertEquals(true, answer?.bool("pong"))
+    }
+
+    @Test fun silentLinkIsClosed() {
+        val (onPhone, _) = connect()
+        var now = 1_000L
+        val closed = LinkedBlockingQueue<Boolean>()
+        val device = Device(onPhone, phone.certificate, phone.trust, clock = { now }).apply {
+            listener = object : Device.Listener {
+                override fun onDisconnected(device: Device) = closed.put(true)
+            }
+            start()
+        }
+
+        now += Device.HEARTBEAT_TIMEOUT_SECONDS + 1
+        device.tick()
+
+        assertEquals(true, closed.poll(10, TimeUnit.SECONDS))
+    }
 }

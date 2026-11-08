@@ -131,7 +131,7 @@ class LanLink(
         }
         ssl.soTimeout = 0
 
-        return DeviceLink(identity, peerCertificate, socket.inetAddress, ssl, reader)
+        return DeviceLink(identity, peerCertificate, socket.inetAddress, ssl, reader, isOutgoing = asServer)
     }
 
     private fun checkCertificate(deviceId: String, certificate: X509Certificate) {
