@@ -36,6 +36,10 @@
             </intent-filter>
         </activity>
 
+        <receiver
+            android:name=".FindMyPhonePlugin$StopRingingReceiver"
+            android:exported="false" />
+
         <service
             android:name=".LinkService"
             android:exported="false"

@@ -61,6 +61,8 @@ final class AppModel: ObservableObject {
 
     func unpair(_ id: String) { connected[id]?.unpair() }
 
+    func ring(_ id: String) { connected[id]?.send(FindMyPhone.request()) }
+
     private func start() {
         let me = identity
         let trustStore = trustStore

@@ -61,6 +61,7 @@ class LinkService : Service() {
 
     private fun startLink() {
         BatteryPlugin.start(this)
+        FindMyPhonePlugin.start(this)
 
         val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         multicastLock = wifi.createMulticastLock("aproid").apply {

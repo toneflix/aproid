@@ -100,7 +100,11 @@ struct DeviceRow: View {
                 Button("Pair") { model.accept(device.id) }.keyboardShortcut(.defaultAction)
             }
         case .paired:
-            Button("Unpair") { model.unpair(device.id) }
+            HStack {
+                Button("Ring") { model.ring(device.id) }
+                    .help("Ring the phone at full volume until you find it")
+                Button("Unpair") { model.unpair(device.id) }
+            }
         case .requested:
             EmptyView()
         }
