@@ -12,6 +12,7 @@ struct DeviceState: Identifiable, Equatable {
     let pairState: PairState
     let code: String?
     let battery: BatteryStatus?
+    let media: NowPlaying?
 }
 
 @MainActor
@@ -42,6 +43,7 @@ final class AppModel: ObservableObject {
     private let clipboard: ClipboardPlugin
     private let notifications: NotificationPlugin
     private let share = SharePlugin(folder: AppModel.downloads)
+    private let mediaPlugin = MediaPlugin()
     private var notificationsDay = Calendar.current.startOfDay(for: Date())
     private var link: LanLink?
     private var timer: Timer?
@@ -65,11 +67,12 @@ final class AppModel: ObservableObject {
         )
         clipboard = ClipboardPlugin(devices: connected)
         notifications = NotificationPlugin(devices: connected)
-        plugins = PluginRouter([notifications, battery, clipboard, share])
+        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
         notifications.isEnabled = mirrorsNotifications
 
         battery.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
+        mediaPlugin.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         clipboard.onSync = { [weak self] in Task { @MainActor in self?.clipboardSyncedAt = Date() } }
         notifications.onShown = { [weak self] in Task { @MainActor in self?.countNotification() } }
         share.onActivity = { [weak self] activity in Task { @MainActor in self?.record(activity) } }
@@ -87,6 +90,14 @@ final class AppModel: ObservableObject {
     func unpair(_ id: String) { connected[id]?.unpair() }
 
     func ring(_ id: String) { connected[id]?.send(FindMyPhone.request()) }
+
+    func media(_ id: String, _ player: String, _ action: MediaAction) {
+        connected[id]?.send(MediaRequest.action(player, action).toPacket())
+    }
+
+    func seek(_ id: String, _ player: String, to position: Int64) {
+        connected[id]?.send(MediaRequest.seek(player, to: position).toPacket())
+    }
 
     func sendClipboard(to id: String) {
         guard let device = connected[id] else { return }
@@ -246,6 +257,8 @@ final class AppModel: ObservableObject {
     fileprivate func remove(_ device: Device) {
         guard connected.remove(device) else { return }
 
+        mediaPlugin.forget(device.id)
+
         log.info("Disconnected from \(device.name, privacy: .public): \(device.link.closeReason ?? "unknown", privacy: .public)")
 
         publish()
@@ -264,7 +277,8 @@ final class AppModel: ObservableObject {
                     host: device.link.host,
                     pairState: state,
                     code: showsCode ? device.verificationCode : nil,
-                    battery: battery.status(for: device.id)
+                    battery: battery.status(for: device.id),
+                    media: mediaPlugin.nowPlaying(for: device.id)
                 )
             }
             .sorted { $0.name < $1.name }

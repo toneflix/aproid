@@ -50,6 +50,10 @@ struct MenuPanel: View {
                 .transition(.scale(scale: 0.96).combined(with: .opacity))
         } else if let device = focused {
             DeviceHero(device: device, model: model)
+            if let media = device.media {
+                NowPlayingCard(deviceId: device.id, media: media, model: model)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
             QuickActions(device: device, model: model)
             DropZone(deviceId: device.id, model: model)
         } else {
