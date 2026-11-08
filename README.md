@@ -4,7 +4,7 @@ Aproid connects an Android phone to a Mac the way an iPhone connects to one: sha
 
 It speaks the [KDE Connect](https://kdeconnect.kde.org/) protocol, so it also works with existing KDE Connect clients. The apps themselves are our own, written from scratch, with the goal of being better than both KDE Connect and Microsoft Phone Link.
 
-> Status: early scaffold. The phone and the Mac can find each other on Wi-Fi and swap identities. Encryption, pairing in the UI and features come next. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> Status: early. The phone and the Mac find each other on Wi-Fi, connect over TLS and pair with a matching code on both screens. Features come next. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Repository layout
 
@@ -42,6 +42,7 @@ Or open `macos/Package.swift` in Xcode. The first time it runs, macOS asks for p
 2. Start the Mac app. An icon appears in the menu bar.
 3. Open Aproid on the phone and tap **Start**.
 4. Each device should show the other in its list within a few seconds.
+5. Tap **Pair** on one side, check the code matches on both, and accept on the other.
 
 If KDE Connect is running on either device it may hold port 1716. Aproid falls back to the next free port, but discovery is most reliable with KDE Connect closed.
 
