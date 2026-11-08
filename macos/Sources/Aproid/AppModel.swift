@@ -18,6 +18,18 @@ struct DeviceState: Identifiable, Equatable {
 final class AppModel: ObservableObject {
     @Published private(set) var devices: [DeviceState] = []
     @Published private(set) var error: String?
+    @Published private(set) var recent: [Activity] = []
+    @Published private(set) var clipboardSyncedAt: Date?
+    @Published private(set) var notificationsToday = 0
+    @Published var mirrorsNotifications: Bool {
+        didSet {
+            notifications.isEnabled = mirrorsNotifications
+            UserDefaults.standard.set(mirrorsNotifications, forKey: "mirrorsNotifications")
+        }
+    }
+
+    static let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+        ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads")
 
     /// Notification Center only works when Aproid runs as a bundled app.
     let notificationsAvailable = NotificationPlugin.isAvailable
@@ -28,6 +40,9 @@ final class AppModel: ObservableObject {
     private let plugins: PluginRouter
     private let battery = BatteryPlugin()
     private let clipboard: ClipboardPlugin
+    private let notifications: NotificationPlugin
+    private let share = SharePlugin(folder: AppModel.downloads)
+    private var notificationsDay = Calendar.current.startOfDay(for: Date())
     private var link: LanLink?
     private var timer: Timer?
     private let trustStore = DefaultsTrustStore()
@@ -49,9 +64,16 @@ final class AppModel: ObservableObject {
             deviceType: Self.isLaptop() ? .laptop : .desktop
         )
         clipboard = ClipboardPlugin(devices: connected)
-        plugins = PluginRouter([NotificationPlugin(devices: connected), battery, clipboard])
+        notifications = NotificationPlugin(devices: connected)
+        plugins = PluginRouter([notifications, battery, clipboard, share])
+        mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
+        notifications.isEnabled = mirrorsNotifications
 
         battery.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
+        clipboard.onSync = { [weak self] in Task { @MainActor in self?.clipboardSyncedAt = Date() } }
+        notifications.onShown = { [weak self] in Task { @MainActor in self?.countNotification() } }
+        share.onActivity = { [weak self] activity in Task { @MainActor in self?.record(activity) } }
+        share.onFileReceived = { [weak notifications] url, device in notifications?.announce(file: url, from: device) }
         start()
         clipboard.startWatching()
     }
@@ -65,6 +87,101 @@ final class AppModel: ObservableObject {
     func unpair(_ id: String) { connected[id]?.unpair() }
 
     func ring(_ id: String) { connected[id]?.send(FindMyPhone.request()) }
+
+    func sendClipboard(to id: String) {
+        guard let device = connected[id] else { return }
+
+        if !clipboard.send(to: device) {
+            record(Activity(.failed, title: "Clipboard is empty", detail: "Copy some text first"))
+        }
+    }
+
+    /// Opens a file picker and sends what the user picks.
+    func chooseFiles(for id: String) {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.prompt = "Send"
+        panel.message = "Choose files to send to your phone"
+        panel.begin { [weak self] response in
+            guard response == .OK else { return }
+
+            let urls = panel.urls
+            Task { @MainActor in self?.sendFiles(urls, to: id) }
+        }
+    }
+
+    func sendFiles(_ urls: [URL], to id: String) {
+        guard let device = connected[id] else { return }
+
+        for url in urls {
+            let started = Activity(.sending, title: url.lastPathComponent, detail: "Sending to \(device.name)")
+            record(started)
+
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                Self.send(url, to: device) { error in
+                    var done = started
+                    done.date = Date()
+                    done.kind = error == nil ? .sent : .failed
+                    done.detail = error == nil ? "Sent to \(device.name)" : "Could not send to \(device.name)"
+
+                    Task { @MainActor in self?.record(done) }
+                }
+            }
+        }
+    }
+
+    func clearRecent() {
+        recent.removeAll { !$0.isInProgress }
+    }
+
+    private func record(_ activity: Activity) {
+        if let index = recent.firstIndex(where: { $0.id == activity.id }) {
+            recent[index] = activity
+            return
+        }
+
+        recent.insert(activity, at: 0)
+        if recent.count > 20 { recent.removeLast(recent.count - 20) }
+    }
+
+    private func countNotification() {
+        let today = Calendar.current.startOfDay(for: Date())
+        if today != notificationsDay {
+            notificationsDay = today
+            notificationsToday = 0
+        }
+
+        notificationsToday += 1
+    }
+
+    /// Offers one file to the phone. `completion` is called once, when it is done or failed.
+    private nonisolated static func send(_ url: URL, to device: Device, completion: @escaping (Error?) -> Void) {
+        let attributes: [FileAttributeKey: Any]
+        let source: FileHandle
+        do {
+            attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+            source = try FileHandle(forReadingFrom: url)
+        } catch {
+            completion(error)
+            return
+        }
+
+        guard device.isPaired else {
+            try? source.close()
+            completion(ProtocolError("not paired"))
+            return
+        }
+
+        let size = (attributes[.size] as? NSNumber)?.int64Value ?? 0
+        let modified = (attributes[.modificationDate] as? Date).map { Int64($0.timeIntervalSince1970 * 1000) }
+        let packet = Share.filePacket(name: url.lastPathComponent, size: size, lastModifiedMillis: modified)
+
+        // On failure it calls completion itself.
+        device.sendWithPayload(packet, size: size, source: source, completion: completion)
+    }
 
     private func start() {
         let me = identity

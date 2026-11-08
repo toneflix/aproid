@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import OSLog
 import UserNotifications
@@ -17,6 +18,7 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         static let device = "device"
         static let id = "id"
         static let replyId = "replyId"
+        static let file = "file"
     }
 
     private let log = Logger(subsystem: "com.toneflix.aproid.app", category: "notifications")
@@ -26,6 +28,16 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
     /// What each shown notification said, so a resend after reconnecting or an unchanged update doesn't pop up again.
     private var shown: [String: String] = [:]
     private let lock = NSLock()
+    private var enabled = true
+
+    /// Paused from the menu: phone notifications are dropped instead of shown.
+    var isEnabled: Bool {
+        get { lock.withLock { enabled } }
+        set { lock.withLock { enabled = newValue } }
+    }
+
+    /// Called after a phone notification is shown, on any thread.
+    var onShown: (() -> Void)?
 
     /// True when running as a bundled app. `swift run` has no bundle, and
     /// Notification Center refuses to work without one.
@@ -69,7 +81,7 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
             return
         }
 
-        guard let note = PhoneNotification(packet: packet) else { return }
+        guard isEnabled, let note = PhoneNotification(packet: packet) else { return }
 
         let identifier = Self.identifier(device: device.id, id: note.id)
         let summary = "\(note.title)\n\(note.text)"
@@ -92,6 +104,22 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
 
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
         center.add(request)
+        if !note.silent { onShown?() }
+    }
+
+    /// Tells the user a file arrived. Clicking it shows the file in Finder.
+    func announce(file url: URL, from device: Device) {
+        guard let center else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = url.lastPathComponent
+        content.subtitle = "From \(device.name)"
+        content.body = "Saved to Downloads"
+        content.categoryIdentifier = Category.plain
+        content.userInfo = [Key.file: url.path]
+        content.sound = .default
+
+        center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
     }
 
     // MARK: UNUserNotificationCenterDelegate
@@ -114,6 +142,12 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         defer { completionHandler() }
 
         let info = response.notification.request.content.userInfo
+        if let path = info[Key.file] as? String {
+            let url = URL(fileURLWithPath: path)
+            DispatchQueue.main.async { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+            return
+        }
+
         guard let deviceId = info[Key.device] as? String,
               let id = info[Key.id] as? String,
               let device = devices[deviceId]
