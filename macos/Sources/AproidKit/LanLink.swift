@@ -2,6 +2,7 @@ import Foundation
 import NIOCore
 import NIOPosix
 import NIOSSL
+import NIOTLS
 
 /// LAN discovery and connection setup from the KDE Connect protocol.
 ///
@@ -12,12 +13,12 @@ import NIOSSL
 ///
 /// Mirrors android/protocol/.../LanLink.kt.
 public final class LanLink {
-    public typealias LinkHandler = (DeviceLink) -> Void
+    public typealias LinkCallback = (DeviceLink) -> Void
 
     private let group = MultiThreadedEventLoopGroup(numberOfThreads: 2)
     private let identityProvider: () -> DeviceIdentity
     private let trustStore: TrustStore
-    private let onLink: LinkHandler
+    private let onLink: LinkCallback
     private let udpPortNumber: UInt16
     private let tcpPorts: ClosedRange<UInt16>
     private let serverContext: NIOSSLContext
@@ -34,7 +35,7 @@ public final class LanLink {
         trustStore: TrustStore,
         udpPort: UInt16 = AproidKit.udpPort,
         tcpPorts: ClosedRange<UInt16> = AproidKit.tcpPortRange,
-        onLink: @escaping LinkHandler
+        onLink: @escaping LinkCallback
     ) throws {
         self.identityProvider = identityProvider
         self.trustStore = trustStore
