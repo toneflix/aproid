@@ -61,6 +61,7 @@ class MainActivity : ComponentActivity() {
                             OutlinedButton(onClick = { LinkService.stop(this@MainActivity) }) { Text("Stop") }
                         }
                         NotificationAccess()
+                        BackgroundAccess()
                         Text("Nearby devices", style = MaterialTheme.typography.titleMedium)
                         DeviceList()
                     }
@@ -94,6 +95,29 @@ private fun NotificationAccess() {
             Text("Aproid needs notification access to send them.")
             Button(onClick = { context.startActivity(NotificationPlugin.accessSettingsIntent()) }) {
                 Text("Allow access")
+            }
+        }
+    }
+}
+
+/** Asks to be left out of battery optimization, so the connection survives in the background. */
+@Composable
+private fun BackgroundAccess() {
+    val context = LocalContext.current
+    val granted = remember { mutableStateOf(LinkService.isUnrestricted(context)) }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        granted.value = LinkService.isUnrestricted(context)
+    }
+
+    if (granted.value) return
+
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Stay connected in the background", style = MaterialTheme.typography.titleSmall)
+            Text("Android cuts Aproid's connection to save battery unless you allow it to run unrestricted.")
+            Button(onClick = { context.startActivity(LinkService.unrestrictIntent(context)) }) {
+                Text("Allow")
             }
         }
     }
