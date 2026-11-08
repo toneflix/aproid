@@ -35,6 +35,7 @@ class LinkService : Service() {
     private var scheduler: ScheduledExecutorService? = null
     private val scope = MainScope()
     private var statusText: String? = null
+    private var beacon: NearbyBeacon? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -43,6 +44,9 @@ class LinkService : Service() {
         if (scheduler == null) {
             startLink()
             showConnectionState()
+        } else {
+            // Started again, for example after a permission was granted.
+            startBeacon()
         }
         return START_STICKY
     }
@@ -51,6 +55,8 @@ class LinkService : Service() {
         scope.cancel()
         BatteryPlugin.stop(this)
         SmsPlugin.stop(this)
+        beacon?.stop()
+        beacon = null
         scheduler?.shutdownNow()
         link?.stop()
         DeviceStore.clear()
@@ -105,10 +111,18 @@ class LinkService : Service() {
             link = newLink
         }
 
+        startBeacon()
+
         exec.scheduleWithFixedDelay({
             runCatching { link?.broadcastIdentity() }
             DeviceStore.tickAll()
         }, 1, 5, TimeUnit.SECONDS)
+    }
+
+    /** Lets a paired Mac find the phone over Bluetooth. Safe to call again once the permission is granted. */
+    private fun startBeacon() {
+        val nearby = beacon ?: NearbyBeacon(this) { link?.tcpPort }.also { beacon = it }
+        nearby.start()
     }
 
     /** Keeps the service notification saying which paired devices are connected. */

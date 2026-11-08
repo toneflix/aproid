@@ -41,6 +41,11 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// A paired phone is in Bluetooth range but not reachable over the network.
+    @Published private(set) var phoneNearby = false
+    /// What joining the phone's hotspot is doing, or why it failed.
+    @Published private(set) var hotspotStatus: String?
+
     /// The phone being looked for: its map shows in the panel until closed.
     @Published var finding: String?
     @Published var mirrorsNotifications: Bool {
@@ -79,6 +84,8 @@ final class AppModel: ObservableObject {
     private let screenPlugin: ScreenPlugin
     private let screenWindow: ScreenWindowController
     private var screenSize: AnyCancellable?
+    private let nearby: NearbyFinder
+    private var lastNearbySearch = Date.distantPast
     private var notificationsDay = Calendar.current.startOfDay(for: Date())
     private var link: LanLink?
     private var timer: Timer?
@@ -101,6 +108,7 @@ final class AppModel: ObservableObject {
             deviceType: Self.isLaptop() ? .laptop : .desktop
         )
         clipboard = ClipboardPlugin(devices: connected)
+        nearby = NearbyFinder(ownId: identity.deviceId)
         let screen = ScreenMirror()
         self.screen = screen
         screenPlugin = ScreenPlugin(decoder: screen.decoder)
@@ -119,6 +127,8 @@ final class AppModel: ObservableObject {
             let deviceName = device.name
             Task { @MainActor in self?.handleCall(state, deviceId: deviceId, deviceName: deviceName) }
         }
+        nearby.onNearby = { [weak self] found in Task { @MainActor in self?.nearbyChanged(found) } }
+        nearby.onAnswer = { [weak self] answer in Task { @MainActor in self?.reach(answer) } }
         screen.send = { [weak self] id, packet in self?.connected[id]?.send(packet) ?? false }
         screenPlugin.onStarted = { [weak self] device in
             let deviceId = device.id
@@ -334,23 +344,76 @@ final class AppModel: ObservableObject {
                 }
                 try link.start()
 
-                await self?.started(link)
+                await self?.started(link, certificate: certificate)
             } catch {
                 await self?.failed("Could not start: \(error)")
             }
         }
     }
 
-    private func started(_ link: LanLink) {
+    private func started(_ link: LanLink, certificate: DeviceCertificate) {
         self.link = link
+        nearby.use(privateKeyPEM: certificate.privateKeyPEM)
         let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
             link.broadcastIdentity()
-            self?.connected.all.forEach { $0.tick() }
+            Task { @MainActor in
+                self?.connected.all.forEach { $0.tick() }
+                self?.searchNearbyIfLost()
+            }
         }
         // Common modes keep it running while the menu is open.
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
         link.broadcastIdentity()
+    }
+
+    // MARK: Bluetooth fallback
+
+    /// When no paired phone has answered on the network, look for one over Bluetooth now and then.
+    private func searchNearbyIfLost() {
+        let hasPhone = connected.all.contains { $0.isPaired }
+        guard !hasPhone, !trustStore.trustedIds.isEmpty, Date().timeIntervalSince(lastNearbySearch) > 45 else { return }
+
+        lastNearbySearch = Date()
+        nearby.search(.connect)
+    }
+
+    private func nearbyChanged(_ found: Bool) {
+        let hasPhone = connected.all.contains { $0.isPaired }
+        phoneNearby = found && !hasPhone
+    }
+
+    /// Asks the phone for a hotspot and joins it. This Mac leaves its current Wi-Fi.
+    func joinPhoneHotspot() {
+        hotspotStatus = "Asking your phone to start a hotspot…"
+        lastNearbySearch = Date()
+        nearby.askForLocation()
+        nearby.search(.hotspot)
+    }
+
+    /// Connects to the addresses the phone gave over Bluetooth, joining its hotspot first if it started one.
+    private func reach(_ answer: Nearby.Answer) {
+        let peer = DeviceIdentity(deviceId: answer.deviceId, deviceName: "Phone", deviceType: .phone, tcpPort: answer.port)
+        guard let link else { return }
+
+        guard let ssid = answer.ssid else {
+            if hotspotStatus != nil { hotspotStatus = "Your phone couldn't start a hotspot. Turn on its hotspot in Settings and join it." }
+            answer.addresses.forEach { _ = link.connect(to: peer, host: $0) }
+            return
+        }
+
+        hotspotStatus = "Joining \(ssid)…"
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            do {
+                try NearbyFinder.join(ssid: ssid, password: answer.password)
+                // Give the Mac a moment to get an address on the new network.
+                Thread.sleep(forTimeInterval: 2)
+                answer.addresses.forEach { _ = link.connect(to: peer, host: $0) }
+                Task { @MainActor in self?.hotspotStatus = nil }
+            } catch {
+                Task { @MainActor in self?.hotspotStatus = "Couldn't join \(ssid): \(error)" }
+            }
+        }
     }
 
     private func failed(_ message: String) {
@@ -366,7 +429,11 @@ final class AppModel: ObservableObject {
 
         if let old = connected.insert(device), old !== device { old.link.close(reason: "replaced by a newer link") }
         log.info("Connected to \(device.name, privacy: .public) (\(device.link.isOutgoing ? "we" : "they", privacy: .public) connected)")
-        if device.isPaired { plugins.onPaired(device) }
+        if device.isPaired {
+            plugins.onPaired(device)
+            phoneNearby = false
+            hotspotStatus = nil
+        }
 
         publish()
     }

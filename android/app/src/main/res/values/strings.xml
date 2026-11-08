@@ -56,6 +56,8 @@
     <string name="setup_control">Control your phone from the Mac</string>
     <string name="setup_control_hint">Turn on "Aproid Mac control" so clicks in the mirror window reach your phone</string>
     <string name="home_mirror">Mirror</string>
+    <string name="setup_nearby">Connect without shared Wi-Fi</string>
+    <string name="setup_nearby_hint">Lets your Mac find your phone over Bluetooth and join its hotspot</string>
     <string name="setup_photos">Browse photos from your Mac</string>
     <string name="setup_photos_hint">Lets your Mac see and download your photos and videos</string>
     <string name="setup_location_hint">Choose \"Allow all the time\" so your Mac can see where it is</string>

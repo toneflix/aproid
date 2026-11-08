@@ -38,6 +38,7 @@ import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.outlined.Cast
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.TouchApp
@@ -86,6 +87,7 @@ import com.toneflix.aproid.ClipboardPlugin
 import com.toneflix.aproid.SmsPlugin
 import com.toneflix.aproid.LinkService
 import com.toneflix.aproid.LocationPlugin
+import com.toneflix.aproid.NearbyBeacon
 import com.toneflix.aproid.PhotosPlugin
 import com.toneflix.aproid.ScreenControlService
 import com.toneflix.aproid.ScreenPlugin
@@ -345,9 +347,15 @@ private fun SetupCards() {
     }
 
     var control by remember { mutableStateOf(ScreenControlService.isEnabled(context)) }
+    var nearby by remember { mutableStateOf(NearbyBeacon.hasPermission(context)) }
+    val askNearby = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        nearby = NearbyBeacon.hasPermission(context)
+        if (nearby) LinkService.start(context)
+    }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         control = ScreenControlService.isEnabled(context)
+        nearby = NearbyBeacon.hasPermission(context)
         photos = PhotosPlugin.hasPermission(context)
         location = LocationPlugin.hasPermission(context) && LocationPlugin.hasBackgroundPermission(context)
         notifications = NotificationPlugin.hasAccess(context)
@@ -395,6 +403,13 @@ private fun SetupCards() {
             stringResource(R.string.setup_photos),
             stringResource(R.string.setup_photos_hint),
         ) { askPhotos.launch(PhotosPlugin.permissions) }
+    }
+    AnimatedVisibility(!nearby) {
+        SetupCard(
+            Icons.Outlined.Bluetooth,
+            stringResource(R.string.setup_nearby),
+            stringResource(R.string.setup_nearby_hint),
+        ) { askNearby.launch(NearbyBeacon.permissions) }
     }
     AnimatedVisibility(!control) {
         SetupCard(
