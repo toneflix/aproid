@@ -163,7 +163,7 @@ final class SharePlugin: Plugin {
                 onFileReceived?(url, device)
             } else if let transferId {
                 // Keep what arrived; the rest comes when the phone reconnects.
-                lock.withLock { paused[transferId] = Incoming(url: url, deviceId: device.id, activity: done, total: total) }
+                lock.withLock { self.paused[transferId] = Incoming(url: url, deviceId: device.id, activity: done, total: total) }
                 done.kind = .failed
                 done.detail = "Paused · resumes when \(device.name) reconnects"
             } else {
