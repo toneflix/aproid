@@ -28,6 +28,7 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
     /// What each shown notification said, so a resend after reconnecting or an unchanged update doesn't pop up again.
     private var shown: [String: String] = [:]
     private let lock = NSLock()
+    private let icons = NotificationIcons()
     private var enabled = true
 
     /// Paused from the menu: phone notifications are dropped instead of shown.
@@ -102,9 +103,15 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
             content.sound = .default
         }
 
-        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
-        center.add(request)
-        if !note.silent { onShown?() }
+        // The phone sends the app icon, or the sender's photo, as the payload.
+        icons.icon(for: packet, hash: note.iconHash, from: device) { [weak self] icon in
+            if let icon, let attachment = try? UNNotificationAttachment(identifier: "icon", url: icon) {
+                content.attachments = [attachment]
+            }
+
+            center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: nil))
+            if !note.silent { self?.onShown?() }
+        }
     }
 
     /// Tells the user a file arrived. Clicking it shows the file in Finder.

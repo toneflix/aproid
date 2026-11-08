@@ -8,6 +8,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -19,6 +21,7 @@ import com.toneflix.aproid.protocol.NetworkPacket
 import com.toneflix.aproid.protocol.PacketType
 import com.toneflix.aproid.protocol.PhoneNotification
 import com.toneflix.aproid.protocol.Plugin
+import java.io.ByteArrayOutputStream
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -39,6 +42,11 @@ object NotificationPlugin : Plugin {
 
     private const val ECHO_WINDOW_MS = 30_000L
 
+    private const val ICON_SIZE = 96
+
+    /** "deviceId/hash" for each icon a device already has, so it is sent only once per connection. */
+    private val sentIcons = ConcurrentHashMap.newKeySet<String>()
+
     fun hasAccess(context: Context): Boolean {
         val enabled = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners") ?: ""
         val me = ComponentName(context, NotificationMirrorService::class.java).flattenToString()
@@ -54,8 +62,14 @@ object NotificationPlugin : Plugin {
         if (isOwnMessage(sbn)) return
 
         val note = describe(context, sbn, silent = false) ?: return
+        val icon = icon(context, sbn)
 
-        DeviceStore.sendToPaired(note.toPacket())
+        DeviceStore.pairedDevices().forEach { send(it, note, icon) }
+    }
+
+    override fun onPaired(device: Device) {
+        // A new connection may be to a Mac that lost its cache, so start over.
+        sentIcons.removeAll { it.startsWith("${device.id}/") }
     }
 
     fun removed(sbn: StatusBarNotification) {
@@ -77,9 +91,10 @@ object NotificationPlugin : Plugin {
         packet.string("cancel")?.let { service.cancelNotification(it) }
 
         if (packet.bool("request") == true) {
-            service.activeNotifications.orEmpty()
-                .mapNotNull { describe(service, it, silent = true) }
-                .forEach { DeviceStore.send(device, it.toPacket()) }
+            service.activeNotifications.orEmpty().forEach { sbn ->
+                val note = describe(service, sbn, silent = true) ?: return@forEach
+                send(device, note, icon(service, sbn))
+            }
         }
     }
 
@@ -120,6 +135,36 @@ object NotificationPlugin : Plugin {
             pendingIntent.send(context, 0, fillIn)
         }
     }
+
+    /** Sends the notification with its icon, unless the device already has that icon. */
+    private fun send(device: Device, note: PhoneNotification, icon: ByteArray?) {
+        if (icon == null) {
+            DeviceStore.send(device, note.toPacket())
+            return
+        }
+
+        val hash = PhoneNotification.iconHash(icon)
+        val packet = note.copy(iconHash = hash).toPacket()
+        val key = "${device.id}/$hash"
+
+        if (!sentIcons.add(key)) {
+            DeviceStore.send(device, packet)
+            return
+        }
+
+        DeviceStore.sendWithPayload(device, packet, icon) { error -> if (error != null) sentIcons.remove(key) }
+    }
+
+    /** The sender's photo when the notification has one, otherwise the app icon, as a small PNG. */
+    private fun icon(context: Context, sbn: StatusBarNotification): ByteArray? = runCatching {
+        val drawable = sbn.notification.getLargeIcon()?.loadDrawable(context)
+            ?: context.packageManager.getApplicationIcon(sbn.packageName)
+        val bitmap = Bitmap.createBitmap(ICON_SIZE, ICON_SIZE, Bitmap.Config.ARGB_8888)
+        drawable.setBounds(0, 0, ICON_SIZE, ICON_SIZE)
+        drawable.draw(Canvas(bitmap))
+
+        ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
+    }.getOrNull()
 
     /** True when the newest message in the notification was written by the phone's owner. */
     private fun isOwnMessage(sbn: StatusBarNotification): Boolean {

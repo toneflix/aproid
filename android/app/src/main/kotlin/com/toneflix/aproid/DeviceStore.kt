@@ -128,6 +128,22 @@ object DeviceStore {
         sender.execute { runCatching { device.send(packet) } }
     }
 
+    /** Sends [packet] with [payload] attached. Falls back to the bare packet if no payload port is free. */
+    fun sendWithPayload(device: Device, packet: NetworkPacket, payload: ByteArray, onDone: (Throwable?) -> Unit = {}) {
+        sender.execute {
+            val offered = runCatching {
+                device.sendWithPayload(packet, payload.size.toLong(), open = { payload.inputStream() }, onDone = onDone)
+            }.getOrDefault(false)
+
+            if (!offered) {
+                runCatching { device.send(packet) }
+                onDone(java.io.IOException("payload not offered"))
+            }
+        }
+    }
+
+    fun pairedDevices(): List<Device> = synchronized(this) { devices.values.filter { it.isPaired } }
+
     fun sendToPaired(packet: NetworkPacket) {
         val targets = synchronized(this) { devices.values.filter { it.isPaired } }
 

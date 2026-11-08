@@ -8,7 +8,8 @@ final class PhoneNotificationTests: XCTestCase {
         title: "Ada",
         text: "Are you coming?",
         time: 1_700_000_000_000,
-        replyId: "f3b2c1"
+        replyId: "f3b2c1",
+        iconHash: "900150983cd24fb0d6963f7d28e17f72"
     )
 
     func testRoundTrips() throws {
@@ -26,6 +27,10 @@ final class PhoneNotificationTests: XCTestCase {
         XCTAssertEqual(note?.appName, "Signal")
         XCTAssertEqual(note?.time, 1_700_000_000_000)
         XCTAssertNil(note?.replyId)
+    }
+
+    func testIconHashIsMd5Hex() {
+        XCTAssertEqual(PhoneNotification.iconHash(Array("abc".utf8)), "900150983cd24fb0d6963f7d28e17f72")
     }
 
     func testCancelIsNotANotification() {

@@ -1,7 +1,9 @@
+import Crypto
 import Foundation
 
 /// A notification mirrored from the phone ("kdeconnect.notification").
-/// `replyId` is set when the notification can be answered with text. Mirrors PhoneNotification.kt.
+/// `replyId` is set when the notification can be answered with text. `iconHash` names the icon sent as
+/// the packet's payload, so the receiver can reuse one it already has. Mirrors PhoneNotification.kt.
 public struct PhoneNotification: Equatable, Sendable {
     public var id: String
     public var appName: String
@@ -11,6 +13,7 @@ public struct PhoneNotification: Equatable, Sendable {
     public var isClearable: Bool
     public var replyId: String?
     public var silent: Bool
+    public var iconHash: String?
 
     public init(
         id: String,
@@ -20,7 +23,8 @@ public struct PhoneNotification: Equatable, Sendable {
         time: Int64,
         isClearable: Bool = true,
         replyId: String? = nil,
-        silent: Bool = false
+        silent: Bool = false,
+        iconHash: String? = nil
     ) {
         self.id = id
         self.appName = appName
@@ -30,6 +34,7 @@ public struct PhoneNotification: Equatable, Sendable {
         self.isClearable = isClearable
         self.replyId = replyId
         self.silent = silent
+        self.iconHash = iconHash
     }
 
     /// Nil for removals and malformed packets.
@@ -41,6 +46,7 @@ public struct PhoneNotification: Equatable, Sendable {
         // KDE Connect sends the time as a string.
         let time = packet.string("time").flatMap { Int64($0) } ?? packet.int("time") ?? 0
         let replyId = packet.string("requestReplyId")
+        let iconHash = packet.string("payloadHash")
 
         self.init(
             id: id,
@@ -50,7 +56,8 @@ public struct PhoneNotification: Equatable, Sendable {
             time: time,
             isClearable: packet.bool("isClearable") ?? true,
             replyId: replyId?.isEmpty == false ? replyId : nil,
-            silent: packet.bool("silent") ?? false
+            silent: packet.bool("silent") ?? false,
+            iconHash: iconHash?.isEmpty == false ? iconHash : nil
         )
     }
 
@@ -66,8 +73,14 @@ public struct PhoneNotification: Equatable, Sendable {
             "silent": .bool(silent),
         ]
         if let replyId { body["requestReplyId"] = .string(replyId) }
+        if let iconHash { body["payloadHash"] = .string(iconHash) }
 
         return NetworkPacket(type: PacketType.notification, body: body)
+    }
+
+    /// The hash KDE Connect uses to name notification icons: MD5, as lowercase hex.
+    public static func iconHash(_ icon: [UInt8]) -> String {
+        Insecure.MD5.hash(data: icon).map { String(format: "%02x", $0) }.joined()
     }
 
     public static func cancelPacket(id: String) -> NetworkPacket {

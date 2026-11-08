@@ -2,7 +2,8 @@ package com.toneflix.aproid.protocol
 
 /**
  * A notification mirrored from the phone ("kdeconnect.notification").
- * [replyId] is set when the notification can be answered with text.
+ * [replyId] is set when the notification can be answered with text. [iconHash] names the icon
+ * sent as the packet's payload, so the receiver can reuse one it already has.
  */
 data class PhoneNotification(
     val id: String,
@@ -13,6 +14,7 @@ data class PhoneNotification(
     val isClearable: Boolean = true,
     val replyId: String? = null,
     val silent: Boolean = false,
+    val iconHash: String? = null,
 ) {
     fun toPacket(): NetworkPacket = NetworkPacket(
         type = PacketType.NOTIFICATION,
@@ -26,10 +28,15 @@ data class PhoneNotification(
             "isClearable" to isClearable,
             "requestReplyId" to replyId,
             "silent" to silent,
+            "payloadHash" to iconHash,
         ),
     )
 
     companion object {
+        /** The hash KDE Connect uses to name notification icons: MD5, as lowercase hex. */
+        fun iconHash(icon: ByteArray): String =
+            java.security.MessageDigest.getInstance("MD5").digest(icon).joinToString("") { "%02x".format(it) }
+
         fun cancelPacket(id: String): NetworkPacket = NetworkPacket(
             type = PacketType.NOTIFICATION,
             body = NetworkPacket.body("id" to id, "isCancel" to true),
@@ -59,6 +66,7 @@ data class PhoneNotification(
                 isClearable = packet.bool("isClearable") ?: true,
                 replyId = packet.string("requestReplyId")?.takeIf { it.isNotEmpty() },
                 silent = packet.bool("silent") ?: false,
+                iconHash = packet.string("payloadHash")?.takeIf { it.isNotEmpty() },
             )
         }
     }
