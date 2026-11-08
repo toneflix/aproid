@@ -70,6 +70,7 @@ class LinkService : Service() {
         CallPlugin.start(this)
         LocationPlugin.start(this)
         PhotosPlugin.start(this)
+        ScreenPlugin.start(this)
 
         val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         multicastLock = wifi.createMulticastLock("aproid").apply {

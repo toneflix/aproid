@@ -228,4 +228,20 @@ class LanLinkTest {
         assertTrue(result.isFailure)
         onPhone.close()
     }
+
+    @Test fun liveStreamIsReadUntilTheSenderCloses() {
+        val (onPhone, onMac) = connect()
+        val frames = listOf(
+            ScreenFrame(byteArrayOf(0, 0, 0, 1, 0x67, 0x42), 0, ScreenFrame.CONFIG),
+            ScreenFrame(ByteArray(70_000) { it.toByte() }, 16_666, ScreenFrame.KEY),
+        )
+        val stream = frames.fold(ByteArray(0)) { all, frame -> all + frame.header() + frame.data }
+
+        val port = PayloadTransfer(phone.certificate).offer(onPhone.certificate, { stream.inputStream() })
+        val received = java.io.ByteArrayOutputStream()
+        PayloadTransfer(mac.certificate).receive(InetAddress.getLoopbackAddress(), port, Screen.STREAM, onMac.certificate, received)
+
+        assertEquals(frames, ScreenFrame.Reader().feed(received.toByteArray()))
+        onPhone.close()
+    }
 }

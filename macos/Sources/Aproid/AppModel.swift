@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import Foundation
 import OSLog
 import AproidKit
@@ -74,6 +75,10 @@ final class AppModel: ObservableObject {
 
     let messages = MessagesStore()
     let photos = PhotosStore()
+    let screen: ScreenMirror
+    private let screenPlugin: ScreenPlugin
+    private let screenWindow: ScreenWindowController
+    private var screenSize: AnyCancellable?
     private var notificationsDay = Calendar.current.startOfDay(for: Date())
     private var link: LanLink?
     private var timer: Timer?
@@ -96,8 +101,12 @@ final class AppModel: ObservableObject {
             deviceType: Self.isLaptop() ? .laptop : .desktop
         )
         clipboard = ClipboardPlugin(devices: connected)
+        let screen = ScreenMirror()
+        self.screen = screen
+        screenPlugin = ScreenPlugin(decoder: screen.decoder)
+        screenWindow = ScreenWindowController(mirror: screen)
         notifications = NotificationPlugin(devices: connected)
-        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, locations, photosPlugin])
+        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, locations, photosPlugin, screenPlugin])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
         notifications.isEnabled = mirrorsNotifications
 
@@ -110,6 +119,17 @@ final class AppModel: ObservableObject {
             let deviceName = device.name
             Task { @MainActor in self?.handleCall(state, deviceId: deviceId, deviceName: deviceName) }
         }
+        screen.send = { [weak self] id, packet in self?.connected[id]?.send(packet) ?? false }
+        screenPlugin.onStarted = { [weak self] device in
+            let deviceId = device.id
+            let deviceName = device.name
+            Task { @MainActor in
+                self?.screen.started(deviceId: deviceId, name: deviceName)
+                self?.screenWindow.show()
+            }
+        }
+        screenPlugin.onEnded = { [weak self] deviceId in Task { @MainActor in self?.screen.ended(deviceId: deviceId) } }
+        screenSize = screen.$videoSize.sink { [weak self] size in Task { @MainActor in self?.screenWindow.fit(size) } }
         photosPlugin.onPage = { [weak self] page, deviceId in Task { @MainActor in self?.photos.ingest(page, from: deviceId) } }
         photos.send = { [weak self] packet in
             guard let id = self?.primaryId, let device = self?.connected[id] else { return false }
@@ -142,6 +162,14 @@ final class AppModel: ObservableObject {
         device.send(FindMyPhone.request())
         locations.request(from: device)
         finding = id
+    }
+
+    /// Asks the phone to share its screen and opens the window that shows it.
+    func mirror(_ id: String) {
+        guard let device = connected[id], device.isPaired else { return }
+
+        screen.begin(deviceId: id, name: device.name)
+        screenWindow.show()
     }
 
     func media(_ id: String, _ player: String, _ action: MediaAction) {
@@ -347,6 +375,7 @@ final class AppModel: ObservableObject {
         guard connected.remove(device) else { return }
 
         mediaPlugin.forget(device.id)
+        screen.ended(deviceId: device.id)
 
         log.info("Disconnected from \(device.name, privacy: .public): \(device.link.closeReason ?? "unknown", privacy: .public)")
 

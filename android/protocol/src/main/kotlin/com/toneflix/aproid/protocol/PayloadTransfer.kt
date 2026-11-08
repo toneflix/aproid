@@ -43,15 +43,18 @@ class PayloadTransfer(certificate: DeviceCertificate, private val ports: IntRang
         return server.localPort
     }
 
-    /** Downloads [size] bytes that the peer offered at [address]:[port] into [sink]. Blocks until done. */
+    /**
+     * Downloads [size] bytes that the peer offered at [address]:[port] into [sink]. Blocks until done.
+     * A size of [Screen.STREAM] reads a live stream until the peer closes it.
+     */
     fun receive(address: InetAddress, port: Int, size: Long, peerCertificate: X509Certificate, sink: OutputStream) {
         Socket().use { socket ->
             socket.connect(InetSocketAddress(address, port), CONNECT_TIMEOUT_MS)
             socket.soTimeout = READ_TIMEOUT_MS
 
             secure(socket, asServer = false, peerCertificate).use { ssl ->
-                val copied = copy(ssl.inputStream, sink, size)
-                if (copied < size) throw ProtocolException("payload ended after $copied of $size bytes")
+                val copied = copy(ssl.inputStream, sink, if (size == Screen.STREAM) Long.MAX_VALUE else size)
+                if (size != Screen.STREAM && copied < size) throw ProtocolException("payload ended after $copied of $size bytes")
             }
         }
     }

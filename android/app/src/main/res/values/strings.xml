@@ -45,6 +45,17 @@
     <string name="setup_allow">Allow</string>
     <string name="setup_phone">Texts and calls on your Mac</string>
     <string name="setup_location">Find your phone on a map</string>
+    <string name="channel_screen">Screen mirroring</string>
+    <string name="screen_ask_title">Mirror your screen to %1$s?</string>
+    <string name="screen_ask_text">Tap to allow, then choose "Start now"</string>
+    <string name="screen_mirroring">Mirroring to %1$s</string>
+    <string name="screen_mirroring_hint">Your Mac can see your screen</string>
+    <string name="screen_stop">Stop</string>
+    <string name="screen_control_label">Aproid Mac control</string>
+    <string name="screen_control_description">Lets your Mac tap, swipe and type on this phone while you mirror its screen. Aproid only acts on what you do in the mirror window.</string>
+    <string name="setup_control">Control your phone from the Mac</string>
+    <string name="setup_control_hint">Turn on "Aproid Mac control" so clicks in the mirror window reach your phone</string>
+    <string name="home_mirror">Mirror</string>
     <string name="setup_photos">Browse photos from your Mac</string>
     <string name="setup_photos_hint">Lets your Mac see and download your photos and videos</string>
     <string name="setup_location_hint">Choose \"Allow all the time\" so your Mac can see where it is</string>

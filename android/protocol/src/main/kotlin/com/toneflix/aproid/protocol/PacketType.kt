@@ -47,6 +47,15 @@ object PacketType {
     /** Asks the phone to send one photo in full, as a normal shared file. Body: {"id"}. */
     const val PHOTOS_DOWNLOAD = "aproid.photos.download"
 
+    /** Starts or stops mirroring the phone's screen. Body: {"action": "start"|"stop", "maxSize"?, "bitrate"?}. */
+    const val SCREEN_REQUEST = "aproid.screen.request"
+
+    /** The screen stream, as a payload of size -1. Body: {"width", "height", "codec", "running"}. */
+    const val SCREEN = "aproid.screen"
+
+    /** A tap, swipe, key or text for the mirrored screen. Body: {"action", ...}. */
+    const val SCREEN_INPUT = "aproid.screen.input"
+
     /** Asks the phone where it is. Body: {}. */
     const val LOCATION_REQUEST = "aproid.location.request"
 
@@ -91,6 +100,9 @@ object Capabilities {
         PacketType.PHOTOS_REQUEST,
         PacketType.PHOTOS,
         PacketType.PHOTOS_DOWNLOAD,
+        PacketType.SCREEN_REQUEST,
+        PacketType.SCREEN,
+        PacketType.SCREEN_INPUT,
         PacketType.LOCATION,
         PacketType.HEARTBEAT,
     )

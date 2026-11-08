@@ -38,7 +38,9 @@ import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Cast
 import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Settings
@@ -85,6 +87,8 @@ import com.toneflix.aproid.SmsPlugin
 import com.toneflix.aproid.LinkService
 import com.toneflix.aproid.LocationPlugin
 import com.toneflix.aproid.PhotosPlugin
+import com.toneflix.aproid.ScreenControlService
+import com.toneflix.aproid.ScreenPlugin
 import com.toneflix.aproid.NotificationPlugin
 import com.toneflix.aproid.R
 import com.toneflix.aproid.Recent
@@ -283,6 +287,7 @@ private fun QuickTiles(mac: DeviceState) {
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
         Tile(Icons.Outlined.Link, stringResource(R.string.home_open_link), Modifier.weight(1f)) { linkDialog = true }
+        Tile(Icons.Outlined.Cast, stringResource(R.string.home_mirror), Modifier.weight(1f)) { ScreenPlugin.mirror(context, mac.id) }
     }
 
     if (linkDialog) {
@@ -339,7 +344,10 @@ private fun SetupCards() {
         photos = PhotosPlugin.hasPermission(context)
     }
 
+    var control by remember { mutableStateOf(ScreenControlService.isEnabled(context)) }
+
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        control = ScreenControlService.isEnabled(context)
         photos = PhotosPlugin.hasPermission(context)
         location = LocationPlugin.hasPermission(context) && LocationPlugin.hasBackgroundPermission(context)
         notifications = NotificationPlugin.hasAccess(context)
@@ -387,6 +395,13 @@ private fun SetupCards() {
             stringResource(R.string.setup_photos),
             stringResource(R.string.setup_photos_hint),
         ) { askPhotos.launch(PhotosPlugin.permissions) }
+    }
+    AnimatedVisibility(!control) {
+        SetupCard(
+            Icons.Outlined.TouchApp,
+            stringResource(R.string.setup_control),
+            stringResource(R.string.setup_control_hint),
+        ) { context.startActivity(ScreenControlService.settingsIntent()) }
     }
 }
 

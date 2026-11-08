@@ -25,6 +25,13 @@ class AproidApp : Application() {
             NotificationManager.IMPORTANCE_DEFAULT,
         )
 
-        getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(channel, find, transfers))
+        // Loud enough to pop up, since the Mac is waiting for the user to allow mirroring.
+        val screen = NotificationChannel(
+            ScreenPlugin.CHANNEL_ID,
+            getString(R.string.channel_screen),
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply { setSound(null, null) }
+
+        getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(channel, find, transfers, screen))
     }
 }
