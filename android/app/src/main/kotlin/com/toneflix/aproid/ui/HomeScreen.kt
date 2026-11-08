@@ -39,6 +39,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Sms
@@ -82,6 +83,7 @@ import com.toneflix.aproid.CallPlugin
 import com.toneflix.aproid.ClipboardPlugin
 import com.toneflix.aproid.SmsPlugin
 import com.toneflix.aproid.LinkService
+import com.toneflix.aproid.LocationPlugin
 import com.toneflix.aproid.NotificationPlugin
 import com.toneflix.aproid.R
 import com.toneflix.aproid.Recent
@@ -320,7 +322,19 @@ private fun SetupCards() {
         CallPlugin.start(context)
     }
 
+    var location by remember { mutableStateOf(LocationPlugin.hasPermission(context) && LocationPlugin.hasBackgroundPermission(context)) }
+    // Android asks for "all the time" location separately, after the normal location permission.
+    val askBackgroundLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        location = LocationPlugin.hasPermission(context) && LocationPlugin.hasBackgroundPermission(context)
+    }
+    val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        if (LocationPlugin.hasPermission(context) && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            askBackgroundLocation.launch(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
+    }
+
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        location = LocationPlugin.hasPermission(context) && LocationPlugin.hasBackgroundPermission(context)
         notifications = NotificationPlugin.hasAccess(context)
         background = LinkService.isUnrestricted(context)
         phone = CallPlugin.hasPermissions(context)
@@ -346,6 +360,19 @@ private fun SetupCards() {
             stringResource(R.string.setup_phone),
             stringResource(R.string.setup_phone_hint),
         ) { askPhone.launch(CallPlugin.permissions) }
+    }
+    AnimatedVisibility(!location) {
+        SetupCard(
+            Icons.Outlined.LocationOn,
+            stringResource(R.string.setup_location),
+            stringResource(R.string.setup_location_hint),
+        ) {
+            if (LocationPlugin.hasPermission(context) && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                askBackgroundLocation.launch(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            } else {
+                askLocation.launch(LocationPlugin.permissions)
+            }
+        }
     }
 }
 

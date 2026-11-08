@@ -35,6 +35,12 @@ object PacketType {
     const val SMS_REQUEST_CONVERSATION = "kdeconnect.sms.request_conversation"
     const val TELEPHONY = "kdeconnect.telephony"
 
+    /** Asks the phone where it is. Body: {}. */
+    const val LOCATION_REQUEST = "aproid.location.request"
+
+    /** Where the phone is. Body: {"latitude", "longitude", "accuracy" (metres), "time" (ms)}. */
+    const val LOCATION = "aproid.location"
+
     /** A copied picture or file, sent as the payload. Body: {"name": ..., "mimeType": ...}. */
     const val CLIPBOARD_FILE = "aproid.clipboard.file"
 
@@ -68,6 +74,8 @@ object Capabilities {
         PacketType.TELEPHONY,
         PacketType.CALL_REQUEST,
         PacketType.CLIPBOARD_FILE,
+        PacketType.LOCATION_REQUEST,
+        PacketType.LOCATION,
         PacketType.HEARTBEAT,
     )
 }

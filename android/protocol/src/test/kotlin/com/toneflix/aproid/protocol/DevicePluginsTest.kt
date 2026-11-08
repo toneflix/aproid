@@ -25,6 +25,14 @@ class DevicePluginsTest {
         assertEquals(BatteryStatus(9, isCharging = false, isLow = true), BatteryStatus.fromPacket(NetworkPacket.parse(wire)))
     }
 
+    @Test fun locationRoundTripsAndRejectsNonsense() {
+        val here = PhoneLocation(6.5244, 3.3792, 12.5, 1_700_000_000_000)
+
+        assertEquals(here, PhoneLocation.fromPacket(NetworkPacket.parse(here.toPacket().serialize())))
+        assertNull(PhoneLocation.fromPacket(PhoneLocation(95.0, 3.0, 1.0, 0).toPacket()))
+        assertEquals(PacketType.LOCATION_REQUEST, PhoneLocation.request().type)
+    }
+
     @Test fun clipboardFileNeedsAPayload() {
         val announced = Clipboard.filePacket("../shot.png", "image/png")
 

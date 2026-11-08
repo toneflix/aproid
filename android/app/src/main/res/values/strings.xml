@@ -44,6 +44,8 @@
     <string name="setup_background_hint">One tap, so your phone never drops the Mac</string>
     <string name="setup_allow">Allow</string>
     <string name="setup_phone">Texts and calls on your Mac</string>
+    <string name="setup_location">Find your phone on a map</string>
+    <string name="setup_location_hint">Choose \"Allow all the time\" so your Mac can see where it is</string>
     <string name="setup_phone_hint">Read and send texts, and answer calls, from the Mac</string>
 
     <string name="status_not_paired">Not paired</string>

@@ -36,6 +36,12 @@ public enum PacketType {
     public static let smsRequestConversation = "kdeconnect.sms.request_conversation"
     public static let telephony = "kdeconnect.telephony"
 
+    /// Asks the phone where it is. Body: {}.
+    public static let locationRequest = "aproid.location.request"
+
+    /// Where the phone is. Body: {"latitude", "longitude", "accuracy" (metres), "time" (ms)}.
+    public static let location = "aproid.location"
+
     /// A copied picture or file, sent as the payload. Body: {"name": ..., "mimeType": ...}.
     public static let clipboardFile = "aproid.clipboard.file"
 
@@ -68,6 +74,8 @@ public enum Capabilities {
         PacketType.telephony,
         PacketType.callRequest,
         PacketType.clipboardFile,
+        PacketType.locationRequest,
+        PacketType.location,
         PacketType.heartbeat,
     ]
 }

@@ -24,6 +24,14 @@ final class DevicePluginsTests: XCTestCase {
         XCTAssertEqual(status, BatteryStatus(charge: 9, isCharging: false, isLow: true))
     }
 
+    func testLocationRoundTripsAndRejectsNonsense() throws {
+        let here = PhoneLocation(latitude: 6.5244, longitude: 3.3792, accuracy: 12.5, time: 1_700_000_000_000)
+
+        XCTAssertEqual(PhoneLocation(packet: try NetworkPacket.parse(try here.toPacket().serialize())), here)
+        XCTAssertNil(PhoneLocation(packet: PhoneLocation(latitude: 95, longitude: 3, accuracy: 1, time: 0).toPacket()))
+        XCTAssertEqual(PhoneLocation.request().type, PacketType.locationRequest)
+    }
+
     func testClipboardFileNeedsAPayload() throws {
         var announced = Clipboard.filePacket(name: "../shot.png", mimeType: "image/png")
 

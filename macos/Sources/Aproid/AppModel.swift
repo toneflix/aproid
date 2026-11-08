@@ -13,6 +13,7 @@ struct DeviceState: Identifiable, Equatable {
     let code: String?
     let battery: BatteryStatus?
     let media: NowPlaying?
+    let location: PhoneLocation?
 }
 
 @MainActor
@@ -26,6 +27,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var clipboardSyncedAt: Date?
     @Published private(set) var notificationsToday = 0
     @Published private(set) var call: ActiveCall?
+
+    /// The phone being looked for: its map shows in the panel until closed.
+    @Published var finding: String?
     @Published var mirrorsNotifications: Bool {
         didSet {
             notifications.isEnabled = mirrorsNotifications
@@ -49,6 +53,7 @@ final class AppModel: ObservableObject {
     private let share = SharePlugin(folder: AppModel.downloads)
     private let mediaPlugin = MediaPlugin()
     private let sms = SmsPlugin()
+    private let locations = LocationPlugin()
     private let calls = CallPlugin()
     private let callPanel = CallPanel()
     private var messagesDevice: String?
@@ -77,12 +82,13 @@ final class AppModel: ObservableObject {
         )
         clipboard = ClipboardPlugin(devices: connected)
         notifications = NotificationPlugin(devices: connected)
-        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls])
+        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, locations])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
         notifications.isEnabled = mirrorsNotifications
 
         battery.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         mediaPlugin.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
+        locations.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         sms.onMessages = { [weak self] messages, deviceId in Task { @MainActor in self?.messages.ingest(messages, from: deviceId) } }
         calls.onState = { [weak self] state, device in
             let deviceId = device.id
@@ -109,7 +115,14 @@ final class AppModel: ObservableObject {
 
     func unpair(_ id: String) { connected[id]?.unpair() }
 
-    func ring(_ id: String) { connected[id]?.send(FindMyPhone.request()) }
+    /// Rings the phone and asks where it is, so it can be found by sound or on the map.
+    func ring(_ id: String) {
+        guard let device = connected[id] else { return }
+
+        device.send(FindMyPhone.request())
+        locations.request(from: device)
+        finding = id
+    }
 
     func media(_ id: String, _ player: String, _ action: MediaAction) {
         connected[id]?.send(MediaRequest.action(player, action).toPacket())
@@ -373,7 +386,8 @@ final class AppModel: ObservableObject {
                     pairState: state,
                     code: showsCode ? device.verificationCode : nil,
                     battery: battery.status(for: device.id),
-                    media: mediaPlugin.nowPlaying(for: device.id)
+                    media: mediaPlugin.nowPlaying(for: device.id),
+                    location: locations.location(for: device.id)
                 )
             }
             .sorted { $0.name < $1.name }
