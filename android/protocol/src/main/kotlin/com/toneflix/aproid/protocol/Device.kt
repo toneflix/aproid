@@ -27,6 +27,12 @@ class Device(
 
     var listener: Listener? = null
 
+    @Volatile private var lastReceived = clock()
+
+    /** Older peers and KDE Connect itself don't send heartbeats, so only expect them from ours. */
+    private val sendsHeartbeats: Boolean
+        get() = PacketType.HEARTBEAT in link.identity.outgoingCapabilities
+
     private val pairing = PairingStateMachine(
         if (trustStore.isTrusted(id)) PairState.PAIRED else PairState.NOT_PAIRED,
     )
@@ -65,10 +71,33 @@ class Device(
 
     fun unpair() = apply(pairing.unpair())
 
-    /** Call every few seconds so unanswered requests expire. */
-    fun tick() = apply(pairing.tick(clock()))
+    /** Call every few seconds: expires unanswered pair requests and checks the link is alive. */
+    fun tick() {
+        apply(pairing.tick(clock()))
+        heartbeat()
+    }
+
+    /** Pings the peer, and closes the link if nothing has arrived for a while. */
+    private fun heartbeat() {
+        if (!sendsHeartbeats) return
+
+        if (clock() - lastReceived > HEARTBEAT_TIMEOUT_SECONDS) {
+            link.close()
+            return
+        }
+
+        runCatching { link.send(heartbeatPacket(pong = false)) }.onFailure { link.close() }
+    }
 
     private fun handle(packet: NetworkPacket) {
+        lastReceived = clock()
+
+        if (packet.type == PacketType.HEARTBEAT) {
+            // Answer right away: a sleeping phone may not run its own timer, but it wakes for this.
+            if (packet.bool("pong") != true) runCatching { link.send(heartbeatPacket(pong = true)) }
+            return
+        }
+
         if (packet.type == PacketType.PAIR) {
             apply(pairing.onPacket(packet, clock()))
             return
@@ -95,5 +124,12 @@ class Device(
             PairState.NOT_PAIRED -> trustStore.forget(id)
             else -> Unit
         }
+    }
+
+    companion object {
+        /** A link with no packets for this long is treated as dead. */
+        const val HEARTBEAT_TIMEOUT_SECONDS = 30L
+
+        private fun heartbeatPacket(pong: Boolean) = NetworkPacket(PacketType.HEARTBEAT, NetworkPacket.body("pong" to pong))
     }
 }

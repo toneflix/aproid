@@ -6,6 +6,7 @@ import android.util.Base64
 import com.toneflix.aproid.protocol.Device
 import com.toneflix.aproid.protocol.DeviceCertificate
 import com.toneflix.aproid.protocol.DeviceIdentity
+import com.toneflix.aproid.protocol.DeviceLink
 import com.toneflix.aproid.protocol.DeviceType
 import com.toneflix.aproid.protocol.NetworkPacket
 import com.toneflix.aproid.protocol.PairState
@@ -105,8 +106,14 @@ object DeviceStore {
 
     fun trustStore(context: Context): TrustStore = PreferencesTrustStore(context.applicationContext)
 
-    @Synchronized fun add(device: Device) {
-        devices.remove(device.id)?.link?.close()
+    @Synchronized fun add(device: Device, ownDeviceId: String) {
+        val existing = devices[device.id]
+        if (existing != null && DeviceLink.keepsExisting(existing.link, device.link, ownDeviceId)) {
+            device.link.close()
+            return
+        }
+
+        existing?.link?.close()
         devices[device.id] = device
         device.listener = listener
         device.start()

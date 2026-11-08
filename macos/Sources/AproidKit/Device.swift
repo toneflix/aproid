@@ -26,6 +26,10 @@ public final class Device {
     private let clock: () -> Int64
     private let pairing: PairingStateMachine
     private let lock = NSLock()
+    private var lastReceived: Int64
+
+    /// A link with no packets for this long is treated as dead.
+    public static let heartbeatTimeoutSeconds: Int64 = 30
 
     public init(
         link: DeviceLink,
@@ -38,6 +42,7 @@ public final class Device {
         self.trustStore = trustStore
         self.clock = clock
         self.pairing = PairingStateMachine(state: trustStore.isTrusted(link.identity.deviceId) ? .paired : .notPaired)
+        self.lastReceived = clock()
     }
 
     public var id: String { link.identity.deviceId }
@@ -80,10 +85,40 @@ public final class Device {
 
     public func unpair() { run { $0.unpair() } }
 
-    /// Call every few seconds so unanswered requests expire.
-    public func tick() { run { $0.tick(now: clock()) } }
+    /// Call every few seconds: expires unanswered pair requests and checks the link is alive.
+    public func tick() {
+        run { $0.tick(now: clock()) }
+        heartbeat()
+    }
+
+    /// Older peers and KDE Connect itself don't send heartbeats, so only expect them from ours.
+    private var sendsHeartbeats: Bool {
+        link.identity.outgoingCapabilities.contains(PacketType.heartbeat)
+    }
+
+    /// Pings the peer, and closes the link if nothing has arrived for a while.
+    private func heartbeat() {
+        guard sendsHeartbeats else { return }
+
+        let silent = clock() - lock.withLock { lastReceived }
+        if silent > Self.heartbeatTimeoutSeconds {
+            link.close()
+            return
+        }
+
+        link.send(Self.heartbeatPacket(pong: false))
+    }
 
     private func handle(_ packet: NetworkPacket) {
+        let now = clock()
+        lock.withLock { lastReceived = now }
+
+        if packet.type == PacketType.heartbeat {
+            // Answer right away: a sleeping phone may not run its own timer, but it wakes for this.
+            if packet.bool("pong") != true { link.send(Self.heartbeatPacket(pong: true)) }
+            return
+        }
+
         if packet.type == PacketType.pair {
             run { $0.handle(packet, now: clock()) }
             return
@@ -113,5 +148,9 @@ public final class Device {
         }
 
         delegate?.device(self, pairStateChanged: state)
+    }
+
+    private static func heartbeatPacket(pong: Bool) -> NetworkPacket {
+        NetworkPacket(type: PacketType.heartbeat, body: ["pong": .bool(pong)])
     }
 }

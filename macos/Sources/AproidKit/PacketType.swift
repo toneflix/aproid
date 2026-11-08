@@ -27,6 +27,9 @@ public enum PacketType {
     public static let findMyPhone = "kdeconnect.findmyphone.request"
     public static let mpris = "kdeconnect.mpris"
     public static let mprisRequest = "kdeconnect.mpris.request"
+
+    /// Keeps the link alive and detects a dead one. Body: {"pong": bool}.
+    public static let heartbeat = "aproid.heartbeat"
 }
 
 public enum Capabilities {
@@ -44,5 +47,6 @@ public enum Capabilities {
         PacketType.findMyPhone,
         PacketType.mpris,
         PacketType.mprisRequest,
+        PacketType.heartbeat,
     ]
 }

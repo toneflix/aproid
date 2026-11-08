@@ -42,6 +42,7 @@ final class Recorder: DeviceDelegate {
     let requests = Queue<String>()
     let packets = Queue<NetworkPacket>()
     let paired = Queue<PairState>()
+    let disconnected = Queue<Bool>()
 
     func devicePairRequested(_ device: Device, code: String) { requests.put(code) }
 
@@ -50,6 +51,8 @@ final class Recorder: DeviceDelegate {
     }
 
     func device(_ device: Device, received packet: NetworkPacket) { packets.put(packet) }
+
+    func deviceDisconnected(_ device: Device) { disconnected.put(true) }
 }
 
 final class Queue<T> {
@@ -177,6 +180,64 @@ final class LanLinkTests: XCTestCase {
         XCTAssertNil(mac.recorder.links.take(timeout: 3))
     }
 
+    func testBothSidesKeepTheSameLinkWhenTheyConnectAtOnce() throws {
+        try phone.lan.start()
+        defer { phone.lan.stop() }
+
+        var macAnnounced = mac.identity
+        macAnnounced.tcpPort = mac.lan.tcpPort
+        phone.lan.connect(to: macAnnounced, host: "127.0.0.1")
+        let phoneOwn = try XCTUnwrap(phone.recorder.links.take())
+        let macFromPhone = try XCTUnwrap(mac.recorder.links.take())
+
+        var phoneAnnounced = phone.identity
+        phoneAnnounced.tcpPort = phone.lan.tcpPort
+        mac.lan.connect(to: phoneAnnounced, host: "127.0.0.1")
+        let macOwn = try XCTUnwrap(mac.recorder.links.take())
+        let phoneFromMac = try XCTUnwrap(phone.recorder.links.take())
+
+        // The phone sees its own link first, the Mac sees its own first.
+        let phoneKeepsItsOwn = DeviceLink.keepsExisting(phoneOwn, over: phoneFromMac, ownDeviceId: phone.identity.deviceId)
+        let macKeepsItsOwn = DeviceLink.keepsExisting(macOwn, over: macFromPhone, ownDeviceId: mac.identity.deviceId)
+
+        XCTAssertNotEqual(phoneKeepsItsOwn, macKeepsItsOwn)
+    }
+
+    func testReconnectReplacesTheOldLink() throws {
+        let (first, _) = try connect()
+        let (second, _) = try connect()
+
+        XCTAssertFalse(DeviceLink.keepsExisting(first, over: second, ownDeviceId: phone.identity.deviceId))
+    }
+
+    func testHeartbeatIsAnswered() throws {
+        let (onPhone, onMac) = try connect()
+        let macDevice = Device(link: onMac, ownCertificate: mac.certificate, trustStore: mac.trust)
+        macDevice.start()
+        let received = Queue<NetworkPacket>()
+        onPhone.onPacket = { received.put($0) }
+
+        onPhone.send(NetworkPacket(type: PacketType.heartbeat, body: ["pong": .bool(false)]))
+
+        let answer = received.take()
+        XCTAssertEqual(answer?.type, PacketType.heartbeat)
+        XCTAssertEqual(answer?.bool("pong"), true)
+        withExtendedLifetime(macDevice) {}
+    }
+
+    func testSilentLinkIsClosed() throws {
+        let (onPhone, _) = try connect()
+        let clock = Clock()
+        let device = Device(link: onPhone, ownCertificate: phone.certificate, trustStore: phone.trust, clock: { clock.now })
+        device.delegate = phone.recorder
+        device.start()
+
+        clock.now += Device.heartbeatTimeoutSeconds + 1
+        device.tick()
+
+        XCTAssertEqual(phone.recorder.disconnected.take(), true)
+    }
+
     func testAnnouncementConnectsToANewPeer() throws {
         var announced = mac.identity
         announced.tcpPort = mac.lan.tcpPort
@@ -207,4 +268,9 @@ private final class ConnectedSet: @unchecked Sendable {
     func contains(_ id: String) -> Bool {
         lock.withLock { ids.contains(id) }
     }
+}
+
+/// A clock tests can move forward.
+private final class Clock: @unchecked Sendable {
+    var now: Int64 = 1_000
 }
