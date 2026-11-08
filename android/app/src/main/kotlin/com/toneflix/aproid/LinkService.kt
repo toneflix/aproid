@@ -3,6 +3,7 @@ package com.toneflix.aproid
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -48,6 +49,7 @@ class LinkService : Service() {
 
     override fun onDestroy() {
         scope.cancel()
+        BatteryPlugin.stop(this)
         scheduler?.shutdownNow()
         link?.stop()
         DeviceStore.clear()
@@ -59,6 +61,10 @@ class LinkService : Service() {
     }
 
     private fun startLink() {
+        BatteryPlugin.start(this)
+        FindMyPhonePlugin.start(this)
+        ClipboardPlugin.start(this)
+
         val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         multicastLock = wifi.createMulticastLock("aproid").apply {
             setReferenceCounted(false)
@@ -116,14 +122,21 @@ class LinkService : Service() {
         }
     }
 
-    private fun buildNotification(text: String): Notification =
-        Notification.Builder(this, CHANNEL_ID)
+    private fun buildNotification(text: String): Notification {
+        val sendClipboard = PendingIntent.getActivity(
+            this, 0, Intent(this, ClipboardActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        return Notification.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
             .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .addAction(Notification.Action.Builder(null, getString(R.string.clipboard_send), sendClipboard).build())
             .build()
+    }
 
     private fun startForegroundCompat() {
         val notification = buildNotification(statusText ?: getString(R.string.notification_running))

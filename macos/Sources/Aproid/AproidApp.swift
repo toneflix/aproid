@@ -84,7 +84,9 @@ struct DeviceRow: View {
         case .notPaired: return "Not paired"
         case .requested: return "Waiting for the phone to accept"
         case .requestedByPeer: return "Wants to pair. Check the code matches."
-        case .paired: return "Paired"
+        case .paired:
+            guard let battery = device.battery else { return "Paired" }
+            return "Paired · \(battery.charge)%\(battery.isCharging ? " charging" : "")"
         }
     }
 
@@ -98,7 +100,11 @@ struct DeviceRow: View {
                 Button("Pair") { model.accept(device.id) }.keyboardShortcut(.defaultAction)
             }
         case .paired:
-            Button("Unpair") { model.unpair(device.id) }
+            HStack {
+                Button("Ring") { model.ring(device.id) }
+                    .help("Ring the phone at full volume until you find it")
+                Button("Unpair") { model.unpair(device.id) }
+            }
         case .requested:
             EmptyView()
         }

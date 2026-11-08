@@ -12,6 +12,13 @@ class AproidApp : Application() {
             getString(R.string.channel_link),
             NotificationManager.IMPORTANCE_MIN,
         )
-        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        // We play the ringtone ourselves, at full volume, so the channel stays silent.
+        val find = NotificationChannel(
+            FindMyPhonePlugin.CHANNEL_ID,
+            getString(R.string.channel_find),
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply { setSound(null, null) }
+
+        getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(channel, find))
     }
 }
