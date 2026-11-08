@@ -28,6 +28,18 @@ final class AppModel: ObservableObject {
     @Published private(set) var notificationsToday = 0
     @Published private(set) var call: ActiveCall?
 
+    /// The paired phone the panel, Messages, calls and the Services menu use.
+    @Published private(set) var primaryId: String?
+
+    /// The phone the user picked when several are paired. Kept across launches.
+    var selectedPhone: String? {
+        get { UserDefaults.standard.string(forKey: "selectedPhone") }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "selectedPhone")
+            publish()
+        }
+    }
+
     /// The phone being looked for: its map shows in the panel until closed.
     @Published var finding: String?
     @Published var mirrorsNotifications: Bool {
@@ -154,7 +166,7 @@ final class AppModel: ObservableObject {
     /// Places a call on the paired phone.
     func dial(_ number: String, name: String?) {
         let number = number.trimmingCharacters(in: .whitespaces)
-        guard !number.isEmpty, let phone = connected.all.first(where: \.isPaired), phone.send(Call.dial(number)) else { return }
+        guard !number.isEmpty, let phone = primaryPhone, phone.send(Call.dial(number)) else { return }
 
         call = ActiveCall(deviceId: phone.id, deviceName: phone.name, number: number, name: name, phase: .dialing)
         callPanel.show(self)
@@ -371,6 +383,7 @@ final class AppModel: ObservableObject {
     }
 
     fileprivate func publish() {
+        primaryId = primaryPhone?.id
         syncMessages()
 
         devices = connected.all
@@ -393,9 +406,15 @@ final class AppModel: ObservableObject {
             .sorted { $0.name < $1.name }
     }
 
-    /// Texts come from the first paired phone.
+    private var primaryPhone: Device? {
+        if let id = selectedPhone, let device = connected[id], device.isPaired { return device }
+
+        return connected.all.filter(\.isPaired).min { $0.name < $1.name }
+    }
+
+    /// Texts come from the primary phone.
     private func syncMessages() {
-        let phone = connected.all.first { $0.isPaired }
+        let phone = primaryPhone
 
         if let phone, messagesDevice != phone.id || !messages.hasPhone {
             messagesDevice = phone.id

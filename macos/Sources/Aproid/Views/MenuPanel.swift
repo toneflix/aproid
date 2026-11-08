@@ -41,7 +41,7 @@ struct MenuPanel: View {
     /// The device the big cards are about: one asking to pair first, then the first paired one.
     private var focused: DeviceState? {
         model.devices.first { $0.pairState == .requestedByPeer || $0.pairState == .requested }
-            ?? model.devices.first { $0.pairState == .paired }
+            ?? model.devices.first { $0.id == model.primaryId }
     }
 
     @ViewBuilder private var main: some View {
