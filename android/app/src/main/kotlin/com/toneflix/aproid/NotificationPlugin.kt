@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import com.toneflix.aproid.protocol.Device
 import com.toneflix.aproid.protocol.NetworkPacket
 import com.toneflix.aproid.protocol.PacketType
@@ -31,6 +32,13 @@ object NotificationPlugin : Plugin {
 
     private val replies = ConcurrentHashMap<String, Replyable>()
 
+    private class SentReply(val text: String, val at: Long)
+
+    /** The last reply sent per notification key, to recognise the update that echoes it. */
+    private val sentReplies = ConcurrentHashMap<String, SentReply>()
+
+    private const val ECHO_WINDOW_MS = 30_000L
+
     fun hasAccess(context: Context): Boolean {
         val enabled = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners") ?: ""
         val me = ComponentName(context, NotificationMirrorService::class.java).flattenToString()
@@ -42,6 +50,9 @@ object NotificationPlugin : Plugin {
         Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     fun posted(context: Context, sbn: StatusBarNotification) {
+        // Messaging apps repost the notification with your own reply in it. Don't mirror that back.
+        if (isOwnMessage(sbn)) return
+
         val note = describe(context, sbn, silent = false) ?: return
 
         DeviceStore.sendToPaired(note.toPacket())
@@ -49,6 +60,7 @@ object NotificationPlugin : Plugin {
 
     fun removed(sbn: StatusBarNotification) {
         replies.values.removeAll { it.key == sbn.key }
+        sentReplies.remove(sbn.key)
         DeviceStore.sendToPaired(PhoneNotification.cancelPacket(sbn.key))
     }
 
@@ -89,6 +101,7 @@ object NotificationPlugin : Plugin {
         }
 
         try {
+            sentReplies[target.key] = SentReply(message, System.currentTimeMillis())
             send(context, target.action.actionIntent, intent)
             Log.i(TAG, "Sent reply to ${target.key}")
         } catch (e: Exception) {
@@ -106,6 +119,25 @@ object NotificationPlugin : Plugin {
         } else {
             pendingIntent.send(context, 0, fillIn)
         }
+    }
+
+    /** True when the newest message in the notification was written by the phone's owner. */
+    private fun isOwnMessage(sbn: StatusBarNotification): Boolean {
+        val style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(sbn.notification)
+        val last = style?.messages?.lastOrNull()
+        if (last != null) {
+            val sender = last.person ?: return true
+            val me = style.user
+            val sameKey = sender.key != null && sender.key == me.key
+            val sameName = sender.name != null && sender.name.toString() == me.name?.toString()
+
+            return sameKey || sameName
+        }
+
+        val sent = sentReplies[sbn.key] ?: return false
+        val text = sbn.notification.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
+
+        return System.currentTimeMillis() - sent.at < ECHO_WINDOW_MS && text.contains(sent.text)
     }
 
     /** Null for notifications we don't mirror: our own, ongoing ones, group summaries and empty ones. */
