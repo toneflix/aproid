@@ -19,6 +19,7 @@ public final class LanLink {
     private let identityProvider: () -> DeviceIdentity
     private let trustStore: TrustStore
     private let onLink: LinkCallback
+    private let isConnected: (String) -> Bool
     private let udpPortNumber: UInt16
     private let tcpPorts: ClosedRange<UInt16>
     private let serverContext: NIOSSLContext
@@ -35,11 +36,13 @@ public final class LanLink {
         trustStore: TrustStore,
         udpPort: UInt16 = AproidKit.udpPort,
         tcpPorts: ClosedRange<UInt16> = AproidKit.tcpPortRange,
+        isConnected: @escaping (String) -> Bool = { _ in false },
         onLink: @escaping LinkCallback
     ) throws {
         self.identityProvider = identityProvider
         self.trustStore = trustStore
         self.onLink = onLink
+        self.isConnected = isConnected
         self.udpPortNumber = udpPort
         self.tcpPorts = tcpPorts
 
@@ -125,6 +128,17 @@ public final class LanLink {
             .flatMapThrowing { channel in
                 try self.secureOutgoing(channel, peer: peer, host: host)
             }
+    }
+
+    /// Connects to a peer that announced itself over UDP, unless we already have a link to it.
+    /// Peers announce every few seconds, and reconnecting each time would drop the working link.
+    @discardableResult
+    public func handleAnnouncement(_ peer: DeviceIdentity, host: String) -> Bool {
+        guard peer.deviceId != ownDeviceId, !isConnected(peer.deviceId) else { return false }
+
+        connect(to: peer, host: host)
+
+        return true
     }
 
     func currentIdentity() -> DeviceIdentity {
@@ -396,10 +410,9 @@ final class DiscoveryHandler: ChannelInboundHandler {
 
         guard let packet = try? NetworkPacket.parse(Data(envelope.data.readableBytesView)),
               let identity = try? DeviceIdentity(packet: packet),
-              identity.deviceId != link.ownDeviceId,
               let host = envelope.remoteAddress.ipAddress
         else { return }
 
-        link.connect(to: identity, host: host)
+        link.handleAnnouncement(identity, host: host)
     }
 }
