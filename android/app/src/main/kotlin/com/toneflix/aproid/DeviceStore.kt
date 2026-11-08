@@ -87,11 +87,16 @@ object DeviceStore {
         val certFile = File(context.filesDir, "device.crt")
         val keyFile = File(context.filesDir, "device.key")
 
+        val deviceId = identity(context).deviceId
+
+        // Reuse the stored certificate only if it belongs to this device id. Peers refuse
+        // a certificate whose common name differs from the id we announce.
         if (certFile.exists() && keyFile.exists()) {
-            return DeviceCertificate.load(certFile.readBytes(), keyFile.readBytes())
+            val stored = runCatching { DeviceCertificate.load(certFile.readBytes(), keyFile.readBytes()) }.getOrNull()
+            if (stored != null && stored.deviceId == deviceId) return stored
         }
 
-        val certificate = DeviceCertificate.generate(identity(context).deviceId)
+        val certificate = DeviceCertificate.generate(deviceId)
         certFile.writeBytes(certificate.encodedCertificate)
         keyFile.writeBytes(certificate.encodedPrivateKey)
 

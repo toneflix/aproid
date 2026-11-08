@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key>
-    <string>com.toneflix.aproid</string>
+    <string>com.toneflix.aproid.app</string>
     <key>CFBundleName</key>
     <string>Aproid</string>
     <key>CFBundleDisplayName</key>
