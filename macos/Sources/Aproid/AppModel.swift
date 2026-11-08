@@ -140,8 +140,13 @@ final class AppModel: ObservableObject {
         let certURL = folder.appendingPathComponent("device.crt")
         let keyURL = folder.appendingPathComponent("device.key")
 
-        if let der = try? Data(contentsOf: certURL), let pem = try? String(contentsOf: keyURL, encoding: .utf8) {
-            return try DeviceCertificate(certificateDER: Array(der), privateKeyPEM: pem)
+        // Reuse the stored certificate only if it belongs to this device id. Peers refuse
+        // a certificate whose common name differs from the id we announce.
+        if let der = try? Data(contentsOf: certURL),
+           let pem = try? String(contentsOf: keyURL, encoding: .utf8),
+           let stored = try? DeviceCertificate(certificateDER: Array(der), privateKeyPEM: pem),
+           stored.deviceId == deviceId {
+            return stored
         }
 
         let certificate = try DeviceCertificate.generate(deviceId: deviceId)
