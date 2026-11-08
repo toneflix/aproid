@@ -23,6 +23,10 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
     private let devices: DeviceRegistry
     private let center: UNUserNotificationCenter?
 
+    /// What each shown notification said, so a resend after reconnecting or an unchanged update doesn't pop up again.
+    private var shown: [String: String] = [:]
+    private let lock = NSLock()
+
     /// True when running as a bundled app. `swift run` has no bundle, and
     /// Notification Center refuses to work without one.
     static var isAvailable: Bool { Bundle.main.bundleIdentifier != nil }
@@ -59,11 +63,18 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         guard let center else { return }
 
         if let id = PhoneNotification.cancelledId(packet) {
-            center.removeDeliveredNotifications(withIdentifiers: [Self.identifier(device: device.id, id: id)])
+            let identifier = Self.identifier(device: device.id, id: id)
+            lock.withLock { _ = shown.removeValue(forKey: identifier) }
+            center.removeDeliveredNotifications(withIdentifiers: [identifier])
             return
         }
 
         guard let note = PhoneNotification(packet: packet) else { return }
+
+        let identifier = Self.identifier(device: device.id, id: note.id)
+        let summary = "\(note.title)\n\(note.text)"
+        let isRepeat = lock.withLock { shown.updateValue(summary, forKey: identifier) == summary }
+        guard !isRepeat else { return }
 
         let content = UNMutableNotificationContent()
         content.title = note.title.isEmpty ? note.appName : note.title
@@ -72,9 +83,14 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         content.categoryIdentifier = note.replyId == nil ? Category.plain : Category.replyable
         content.userInfo = [Key.device: device.id, Key.id: note.id, Key.replyId: note.replyId ?? ""]
         content.threadIdentifier = "\(device.id).\(note.appName)"
-        if !note.silent { content.sound = .default }
+        if note.silent {
+            // Already on the phone before we connected: list it without a banner.
+            content.interruptionLevel = .passive
+        } else {
+            content.sound = .default
+        }
 
-        let request = UNNotificationRequest(identifier: Self.identifier(device: device.id, id: note.id), content: content, trigger: nil)
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
         center.add(request)
     }
 
@@ -85,8 +101,9 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        // A menu bar app is often frontmost; show banners anyway.
-        completionHandler([.banner, .list, .sound])
+        // A menu bar app is often frontmost; show banners anyway, except for quiet ones.
+        let isQuiet = notification.request.content.interruptionLevel == .passive
+        completionHandler(isQuiet ? [.list] : [.banner, .list, .sound])
     }
 
     func userNotificationCenter(
