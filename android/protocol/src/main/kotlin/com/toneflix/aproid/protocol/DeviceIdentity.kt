@@ -1,0 +1,64 @@
+package com.toneflix.aproid.protocol
+
+import java.util.UUID
+
+enum class DeviceType(val wire: String) {
+    DESKTOP("desktop"), LAPTOP("laptop"), PHONE("phone"), TABLET("tablet"), TV("tv");
+
+    companion object {
+        fun fromWire(value: String?): DeviceType = entries.firstOrNull { it.wire == value } ?: DESKTOP
+    }
+}
+
+data class DeviceIdentity(
+    val deviceId: String,
+    val deviceName: String,
+    val deviceType: DeviceType,
+    val protocolVersion: Int = PROTOCOL_VERSION,
+    val incomingCapabilities: Set<String> = Capabilities.mvp,
+    val outgoingCapabilities: Set<String> = Capabilities.mvp,
+    val tcpPort: Int? = null,
+) {
+    fun toPacket(): NetworkPacket = NetworkPacket(
+        type = PacketType.IDENTITY,
+        body = NetworkPacket.body(
+            "deviceId" to deviceId,
+            "deviceName" to deviceName,
+            "deviceType" to deviceType.wire,
+            "protocolVersion" to protocolVersion,
+            "incomingCapabilities" to incomingCapabilities.sorted(),
+            "outgoingCapabilities" to outgoingCapabilities.sorted(),
+            "tcpPort" to tcpPort,
+        ),
+    )
+
+    companion object {
+        private val ID_PATTERN = Regex("^[a-zA-Z0-9_]{32,38}$")
+        private val NAME_FORBIDDEN = Regex("[\"',;:.!?()\\[\\]<>]")
+
+        fun newDeviceId(): String = UUID.randomUUID().toString().replace("-", "")
+
+        fun isValidDeviceId(id: String): Boolean = ID_PATTERN.matches(id)
+
+        /** Protocol v8 names are 1 to 32 characters with no punctuation from a fixed list. */
+        fun sanitizeName(name: String): String {
+            val cleaned = NAME_FORBIDDEN.replace(name, "").trim().take(32)
+            return cleaned.ifEmpty { "Android" }
+        }
+
+        fun fromPacket(packet: NetworkPacket): DeviceIdentity {
+            if (packet.type != PacketType.IDENTITY) throw ProtocolException("not an identity packet: ${packet.type}")
+            val id = packet.string("deviceId") ?: throw ProtocolException("missing deviceId")
+            if (!isValidDeviceId(id)) throw ProtocolException("invalid deviceId")
+            return DeviceIdentity(
+                deviceId = id,
+                deviceName = sanitizeName(packet.string("deviceName") ?: ""),
+                deviceType = DeviceType.fromWire(packet.string("deviceType")),
+                protocolVersion = packet.int("protocolVersion") ?: 0,
+                incomingCapabilities = packet.stringList("incomingCapabilities").toSet(),
+                outgoingCapabilities = packet.stringList("outgoingCapabilities").toSet(),
+                tcpPort = packet.int("tcpPort"),
+            )
+        }
+    }
+}
