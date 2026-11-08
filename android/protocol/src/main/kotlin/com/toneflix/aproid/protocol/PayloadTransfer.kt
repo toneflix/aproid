@@ -31,7 +31,7 @@ class PayloadTransfer(certificate: DeviceCertificate, private val ports: IntRang
             val error = runCatching {
                 server.use { it.accept() }.use { socket ->
                     secure(socket, asServer = true, peerCertificate).use { ssl ->
-                        open().use { it.copyTo(ssl.outputStream) }
+                        open().use { it.copyTo(ssl.outputStream, BUFFER_SIZE) }
                         ssl.outputStream.flush()
                     }
                 }
@@ -57,6 +57,8 @@ class PayloadTransfer(certificate: DeviceCertificate, private val ports: IntRang
     }
 
     private fun secure(socket: Socket, asServer: Boolean, peerCertificate: X509Certificate): SSLSocket {
+        socket.sendBufferSize = SOCKET_BUFFER
+        socket.receiveBufferSize = SOCKET_BUFFER
         val ssl = tls.upgrade(socket, asServer)
         val presented = ssl.session.peerCertificates.firstOrNull() as? X509Certificate
 
@@ -103,6 +105,8 @@ class PayloadTransfer(certificate: DeviceCertificate, private val ports: IntRang
         const val ACCEPT_TIMEOUT_MS = 60_000
         const val CONNECT_TIMEOUT_MS = 10_000
         const val READ_TIMEOUT_MS = 30_000
-        const val BUFFER_SIZE = 64 * 1024
+        // Large reads and socket buffers keep a fast Wi-Fi link full instead of waiting on small writes.
+        const val BUFFER_SIZE = 256 * 1024
+        const val SOCKET_BUFFER = 1024 * 1024
     }
 }

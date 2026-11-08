@@ -25,6 +25,14 @@ class DevicePluginsTest {
         assertEquals(BatteryStatus(9, isCharging = false, isLow = true), BatteryStatus.fromPacket(NetworkPacket.parse(wire)))
     }
 
+    @Test fun resumedFileCarriesItsTransferAndOffset() {
+        val resumed = NetworkPacket.parse(Share.file("film.mp4", 1000, transferId = "t1", offset = 400).copy(payloadSize = 600).serialize())
+
+        assertEquals(Share.File("film.mp4", 600, "t1", 400), Share.fromPacket(resumed))
+        assertEquals("t1" to 400L, Share.resumeRequest(NetworkPacket.parse(Share.resume("t1", 400).serialize())))
+        assertNull(Share.resumeRequest(Share.link("https://example.com")))
+    }
+
     @Test fun locationRoundTripsAndRejectsNonsense() {
         val here = PhoneLocation(6.5244, 3.3792, 12.5, 1_700_000_000_000)
 

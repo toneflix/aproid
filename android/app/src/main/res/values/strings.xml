@@ -72,12 +72,14 @@
     <string name="share_send_failed_toast">Some files didn\'t send</string>
     <string name="share_not_connected">Your Mac isn\'t connected</string>
     <string name="share_sending">Sending to %1$s</string>
+    <string name="share_resuming">Resuming to %1$s</string>
     <string name="share_sent">Sent to %1$s</string>
     <string name="share_send_failed">Couldn\'t send to %1$s</string>
     <string name="share_receiving">Receiving %1$s from %2$s</string>
     <string name="share_received">From %1$s · Saved to Downloads</string>
     <string name="share_received_note">From %1$s · Saved to Downloads</string>
     <string name="share_save_failed">Couldn\'t save to Downloads</string>
+    <string name="share_paused">Paused · resumes when %1$s reconnects</string>
     <string name="share_stopped">Transfer from %1$s stopped</string>
     <string name="share_link_from">Link from %1$s</string>
     <string name="share_link_tap">From %1$s · Tap to open</string>

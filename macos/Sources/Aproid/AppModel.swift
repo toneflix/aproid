@@ -229,20 +229,9 @@ final class AppModel: ObservableObject {
     func sendFiles(_ urls: [URL], to id: String) {
         guard let device = connected[id] else { return }
 
-        for url in urls {
-            let started = Activity(.sending, title: url.lastPathComponent, detail: "Sending to \(device.name)")
-            record(started)
-
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                Self.send(url, to: device) { error in
-                    var done = started
-                    done.date = Date()
-                    done.kind = error == nil ? .sent : .failed
-                    done.detail = error == nil ? "Sent to \(device.name)" : "Could not send to \(device.name)"
-
-                    Task { @MainActor in self?.record(done) }
-                }
-            }
+        let share = share
+        DispatchQueue.global(qos: .userInitiated).async {
+            urls.forEach { share.send($0, to: device) }
         }
     }
 
@@ -284,32 +273,6 @@ final class AppModel: ObservableObject {
         }
 
         notificationsToday += 1
-    }
-
-    /// Offers one file to the phone. `completion` is called once, when it is done or failed.
-    private nonisolated static func send(_ url: URL, to device: Device, completion: @escaping (Error?) -> Void) {
-        let attributes: [FileAttributeKey: Any]
-        let source: FileHandle
-        do {
-            attributes = try FileManager.default.attributesOfItem(atPath: url.path)
-            source = try FileHandle(forReadingFrom: url)
-        } catch {
-            completion(error)
-            return
-        }
-
-        guard device.isPaired else {
-            try? source.close()
-            completion(ProtocolError("not paired"))
-            return
-        }
-
-        let size = (attributes[.size] as? NSNumber)?.int64Value ?? 0
-        let modified = (attributes[.modificationDate] as? Date).map { Int64($0.timeIntervalSince1970 * 1000) }
-        let packet = Share.filePacket(name: url.lastPathComponent, size: size, lastModifiedMillis: modified)
-
-        // On failure it calls completion itself.
-        device.sendWithPayload(packet, size: size, source: source, completion: completion)
     }
 
     private func start() {

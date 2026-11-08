@@ -125,7 +125,8 @@ private final class UploadHandler: ChannelInboundHandler {
     typealias InboundIn = ByteBuffer
     typealias OutboundOut = ByteBuffer
 
-    private static let chunkSize = 64 * 1024
+    // Large reads keep a fast Wi-Fi link full instead of waiting on small writes.
+    private static let chunkSize = 256 * 1024
 
     private let box: PeerCertificateBox
     private let expected: [UInt8]

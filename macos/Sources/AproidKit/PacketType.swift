@@ -36,6 +36,9 @@ public enum PacketType {
     public static let smsRequestConversation = "kdeconnect.sms.request_conversation"
     public static let telephony = "kdeconnect.telephony"
 
+    /// Asks the sender to send the rest of a file that stopped. Body: {"transferId", "offset"}.
+    public static let shareResume = "aproid.share.resume"
+
     /// Asks the phone where it is. Body: {}.
     public static let locationRequest = "aproid.location.request"
 
@@ -75,6 +78,7 @@ public enum Capabilities {
         PacketType.callRequest,
         PacketType.clipboardFile,
         PacketType.locationRequest,
+        PacketType.shareResume,
         PacketType.location,
         PacketType.heartbeat,
     ]

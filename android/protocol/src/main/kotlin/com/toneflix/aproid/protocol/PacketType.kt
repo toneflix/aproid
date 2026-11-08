@@ -35,6 +35,9 @@ object PacketType {
     const val SMS_REQUEST_CONVERSATION = "kdeconnect.sms.request_conversation"
     const val TELEPHONY = "kdeconnect.telephony"
 
+    /** Asks the sender to send the rest of a file that stopped. Body: {"transferId", "offset"}. */
+    const val SHARE_RESUME = "aproid.share.resume"
+
     /** Asks the phone where it is. Body: {}. */
     const val LOCATION_REQUEST = "aproid.location.request"
 
@@ -75,6 +78,7 @@ object Capabilities {
         PacketType.CALL_REQUEST,
         PacketType.CLIPBOARD_FILE,
         PacketType.LOCATION_REQUEST,
+        PacketType.SHARE_RESUME,
         PacketType.LOCATION,
         PacketType.HEARTBEAT,
     )
