@@ -236,6 +236,16 @@ final class LanLinkTests: XCTestCase {
         device.tick()
 
         XCTAssertEqual(phone.recorder.disconnected.take(), true)
+        XCTAssertTrue(onPhone.closeReason?.contains("heartbeat") == true)
+    }
+
+    func testIdleLinkStaysOpen() throws {
+        let (onPhone, onMac) = try connect()
+
+        Thread.sleep(forTimeInterval: 11)
+
+        XCTAssertTrue(onPhone.isOpen)
+        XCTAssertTrue(onMac.isOpen)
     }
 
     func testAnnouncementConnectsToANewPeer() throws {

@@ -26,6 +26,10 @@ class DeviceLink(
     @Volatile var isOpen: Boolean = true
         private set
 
+    /** Why the link closed, for logs. */
+    @Volatile var closeReason: String? = null
+        private set
+
     fun send(packet: NetworkPacket) {
         val bytes = packet.serialize().toByteArray(StandardCharsets.UTF_8)
 
@@ -37,7 +41,7 @@ class DeviceLink(
 
     fun startReading() {
         thread(name = "aproid-link-${identity.deviceId.take(8)}", isDaemon = true) {
-            try {
+            val reason = try {
                 while (isOpen) {
                     val line = reader.readLine() ?: break
                     if (line.isBlank()) continue
@@ -45,21 +49,25 @@ class DeviceLink(
                     val packet = runCatching { NetworkPacket.parse(line) }.getOrNull() ?: continue
                     onPacket?.invoke(packet)
                 }
-            } catch (_: Exception) {
-                // Socket closed or broken: handled below.
+                "peer closed the connection"
+            } catch (e: Exception) {
+                "read failed: $e"
             }
 
-            close()
+            close(reason)
         }
     }
 
     /** Who opened the TCP connection: us or the peer. */
     fun openerId(ownDeviceId: String): String = if (isOutgoing) ownDeviceId else identity.deviceId
 
-    override fun close() {
+    override fun close() = close("closed locally")
+
+    fun close(reason: String) {
         if (!isOpen) return
 
         isOpen = false
+        closeReason = reason
         runCatching { socket.close() }
         onClosed?.invoke()
     }

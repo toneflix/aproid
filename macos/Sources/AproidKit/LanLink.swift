@@ -373,6 +373,7 @@ final class LinkHandler: ChannelInboundHandler {
     }
 
     func errorCaught(context: ChannelHandlerContext, error: Error) {
+        if case .open(let deviceLink) = state { deviceLink.record("read failed: \(error)") }
         context.close(promise: nil)
     }
 

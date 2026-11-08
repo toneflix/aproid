@@ -102,7 +102,7 @@ public final class Device {
 
         let silent = clock() - lock.withLock { lastReceived }
         if silent > Self.heartbeatTimeoutSeconds {
-            link.close()
+            link.close(reason: "no heartbeat for \(Self.heartbeatTimeoutSeconds) seconds")
             return
         }
 

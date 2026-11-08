@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import OSLog
 import AproidKit
 
 /// What the menu shows for one connected device.
@@ -27,6 +28,13 @@ final class AppModel: ObservableObject {
     private var link: LanLink?
     private var timer: Timer?
     private let trustStore = DefaultsTrustStore()
+    private let log = Logger(subsystem: "com.toneflix.aproid.app", category: "link")
+
+    /// App Nap would slow the heartbeat timer and make the phone look gone.
+    private let activity = ProcessInfo.processInfo.beginActivity(
+        options: .userInitiatedAllowingIdleSystemSleep,
+        reason: "Keeps the phone connection alive"
+    )
 
     init() {
         // Menu bar only: no Dock icon.
@@ -82,10 +90,13 @@ final class AppModel: ObservableObject {
 
     private func started(_ link: LanLink) {
         self.link = link
-        timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
             link.broadcastIdentity()
             self?.connected.all.forEach { $0.tick() }
         }
+        // Common modes keep it running while the menu is open.
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
         link.broadcastIdentity()
     }
 
@@ -96,11 +107,12 @@ final class AppModel: ObservableObject {
     private func add(_ device: Device) {
         if let existing = connected[device.id], existing !== device,
            DeviceLink.keepsExisting(existing.link, over: device.link, ownDeviceId: identity.deviceId) {
-            device.link.close()
+            device.link.close(reason: "both sides connected at once; kept the other link")
             return
         }
 
-        if let old = connected.insert(device), old !== device { old.link.close() }
+        if let old = connected.insert(device), old !== device { old.link.close(reason: "replaced by a newer link") }
+        log.info("Connected to \(device.name, privacy: .public) (\(device.link.isOutgoing ? "we" : "they", privacy: .public) connected)")
         if device.isPaired { plugins.onPaired(device) }
 
         publish()
@@ -108,6 +120,8 @@ final class AppModel: ObservableObject {
 
     fileprivate func remove(_ device: Device) {
         guard connected.remove(device) else { return }
+
+        log.info("Disconnected from \(device.name, privacy: .public): \(device.link.closeReason ?? "unknown", privacy: .public)")
 
         publish()
     }
