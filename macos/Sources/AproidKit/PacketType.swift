@@ -9,6 +9,9 @@ public let udpPort: UInt16 = 1716
 /// TCP ports KDE Connect clients try, in order.
 public let tcpPortRange: ClosedRange<UInt16> = 1716...1764
 
+/// TCP ports a sender opens for payloads such as files.
+public let payloadPortRange: ClosedRange<UInt16> = 1739...1764
+
 /// Packet types. Standard KDE Connect ones use "kdeconnect.", our extensions use "aproid.".
 /// Keep in sync with android/protocol/.../PacketType.kt.
 public enum PacketType {
