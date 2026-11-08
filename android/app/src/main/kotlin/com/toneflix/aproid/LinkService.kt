@@ -2,6 +2,7 @@ package com.toneflix.aproid
 
 import android.annotation.SuppressLint
 import android.app.Notification
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -14,6 +15,10 @@ import android.os.PowerManager
 import android.provider.Settings
 import com.toneflix.aproid.protocol.Device
 import com.toneflix.aproid.protocol.LanLink
+import com.toneflix.aproid.protocol.PairState
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -27,16 +32,22 @@ class LinkService : Service() {
     private var multicastLock: WifiManager.MulticastLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
     private var scheduler: ScheduledExecutorService? = null
+    private val scope = MainScope()
+    private var statusText: String? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForegroundCompat()
-        if (scheduler == null) startLink()
+        if (scheduler == null) {
+            startLink()
+            showConnectionState()
+        }
         return START_STICKY
     }
 
     override fun onDestroy() {
+        scope.cancel()
         scheduler?.shutdownNow()
         link?.stop()
         DeviceStore.clear()
@@ -87,13 +98,35 @@ class LinkService : Service() {
         }, 1, 5, TimeUnit.SECONDS)
     }
 
-    private fun startForegroundCompat() {
-        val notification = Notification.Builder(this, CHANNEL_ID)
+    /** Keeps the service notification saying which paired devices are connected. */
+    private fun showConnectionState() {
+        val manager = getSystemService(NotificationManager::class.java)
+
+        scope.launch {
+            DeviceStore.states.collect { states ->
+                val names = states.filter { it.pairState == PairState.PAIRED }.map { it.name }
+                val text = if (names.isEmpty()) {
+                    getString(R.string.notification_running)
+                } else {
+                    getString(R.string.notification_connected, names.joinToString())
+                }
+                statusText = text
+                manager.notify(NOTIFICATION_ID, buildNotification(text))
+            }
+        }
+    }
+
+    private fun buildNotification(text: String): Notification =
+        Notification.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.app_name))
-            .setContentText(getString(R.string.notification_running))
+            .setContentText(text)
             .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .build()
+
+    private fun startForegroundCompat() {
+        val notification = buildNotification(statusText ?: getString(R.string.notification_running))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
         } else {
