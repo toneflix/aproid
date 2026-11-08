@@ -82,6 +82,7 @@ final class LanLinkTests: XCTestCase {
         let certificate: DeviceCertificate
         let trust: InMemoryTrustStore
         let recorder: Recorder
+        let connected: ConnectedSet
         let lan: LanLink
 
         init(name: String, type: DeviceType, ports: ClosedRange<UInt16>) throws {
@@ -89,11 +90,13 @@ final class LanLinkTests: XCTestCase {
             let certificate = try DeviceCertificate.generate(deviceId: identity.deviceId)
             let trust = InMemoryTrustStore()
             let recorder = Recorder()
+            let connected = ConnectedSet()
 
             self.identity = identity
             self.certificate = certificate
             self.trust = trust
             self.recorder = recorder
+            self.connected = connected
             // High ports so the test does not clash with a real KDE Connect install.
             lan = try LanLink(
                 identityProvider: { identity },
@@ -101,6 +104,7 @@ final class LanLinkTests: XCTestCase {
                 trustStore: trust,
                 udpPort: 41716,
                 tcpPorts: ports,
+                isConnected: { connected.contains($0) },
                 onLink: { recorder.links.put($0) }
             )
         }
@@ -171,5 +175,36 @@ final class LanLinkTests: XCTestCase {
         phone.lan.connect(to: announced, host: "127.0.0.1")
 
         XCTAssertNil(mac.recorder.links.take(timeout: 3))
+    }
+
+    func testAnnouncementConnectsToANewPeer() throws {
+        var announced = mac.identity
+        announced.tcpPort = mac.lan.tcpPort
+
+        XCTAssertTrue(phone.lan.handleAnnouncement(announced, host: "127.0.0.1"))
+        XCTAssertEqual(mac.recorder.links.take()?.identity.deviceId, phone.identity.deviceId)
+    }
+
+    func testAnnouncementKeepsTheExistingLink() throws {
+        var announced = mac.identity
+        announced.tcpPort = mac.lan.tcpPort
+        phone.connected.insert(mac.identity.deviceId)
+
+        XCTAssertFalse(phone.lan.handleAnnouncement(announced, host: "127.0.0.1"))
+        XCTAssertNil(mac.recorder.links.take(timeout: 2))
+    }
+}
+
+/// Device ids a test peer treats as already connected.
+private final class ConnectedSet: @unchecked Sendable {
+    private var ids: Set<String> = []
+    private let lock = NSLock()
+
+    func insert(_ id: String) {
+        lock.withLock { _ = ids.insert(id) }
+    }
+
+    func contains(_ id: String) -> Bool {
+        lock.withLock { ids.contains(id) }
     }
 }

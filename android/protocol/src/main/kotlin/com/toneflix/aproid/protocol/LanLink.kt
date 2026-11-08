@@ -31,6 +31,7 @@ class LanLink(
     private val onLink: (DeviceLink) -> Unit,
     private val udpPort: Int = UDP_PORT,
     private val tcpPorts: IntRange = TCP_PORT_RANGE,
+    private val isConnected: (deviceId: String) -> Boolean = { false },
 ) {
     private val tls = TlsUpgrader(certificate)
 
@@ -100,6 +101,18 @@ class LanLink(
             socket.close()
             throw e
         }
+    }
+
+    /**
+     * Connects to a peer that announced itself over UDP, unless we already have a link to it.
+     * Peers announce every few seconds, and reconnecting each time would drop the working link.
+     */
+    fun handleAnnouncement(peer: DeviceIdentity, address: InetAddress): Boolean {
+        if (peer.deviceId == identityProvider().deviceId || isConnected(peer.deviceId)) return false
+
+        thread(isDaemon = true) { runCatching { connect(peer, address) } }
+
+        return true
     }
 
     private fun currentIdentity(): DeviceIdentity = identityProvider().copy(tcpPort = tcpPort)
@@ -213,10 +226,8 @@ class LanLink(
             val identity = runCatching {
                 DeviceIdentity.fromPacket(NetworkPacket.parse(String(dp.data, dp.offset, dp.length, StandardCharsets.UTF_8)))
             }.getOrNull() ?: continue
-            if (identity.deviceId == identityProvider().deviceId) continue
 
-            val address = dp.address
-            thread(isDaemon = true) { runCatching { connect(identity, address) } }
+            handleAnnouncement(identity, dp.address)
         }
     }
 }

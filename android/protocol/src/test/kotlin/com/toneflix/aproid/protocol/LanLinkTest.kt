@@ -7,6 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.net.InetAddress
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
@@ -16,9 +17,13 @@ class LanLinkTest {
         val certificate = DeviceCertificate.generate(identity.deviceId)
         val trust = InMemoryTrustStore()
         val links = LinkedBlockingQueue<DeviceLink>()
+        val connected = ConcurrentHashMap.newKeySet<String>()
 
         // High ports so the test does not clash with a real KDE Connect install.
-        val lan = LanLink({ identity }, certificate, trust, { links.put(it) }, udpPort = 41716, tcpPorts = ports)
+        val lan = LanLink(
+            { identity }, certificate, trust, { links.put(it) },
+            udpPort = 41716, tcpPorts = ports, isConnected = { it in connected },
+        )
 
         fun nextLink(): DeviceLink = links.poll(10, TimeUnit.SECONDS) ?: error("no link")
     }
@@ -102,5 +107,20 @@ class LanLinkTest {
         runCatching { phone.lan.connect(mac.identity.copy(tcpPort = mac.lan.tcpPort), InetAddress.getLoopbackAddress()) }
 
         assertEquals(null, mac.links.poll(3, TimeUnit.SECONDS))
+    }
+
+    @Test fun announcementConnectsToANewPeer() {
+        val announced = mac.identity.copy(tcpPort = mac.lan.tcpPort)
+
+        assertTrue(phone.lan.handleAnnouncement(announced, InetAddress.getLoopbackAddress()))
+        assertEquals(phone.identity.deviceId, mac.nextLink().identity.deviceId)
+    }
+
+    @Test fun announcementKeepsTheExistingLink() {
+        val announced = mac.identity.copy(tcpPort = mac.lan.tcpPort)
+        phone.connected += mac.identity.deviceId
+
+        assertFalse(phone.lan.handleAnnouncement(announced, InetAddress.getLoopbackAddress()))
+        assertEquals(null, mac.links.poll(2, TimeUnit.SECONDS))
     }
 }

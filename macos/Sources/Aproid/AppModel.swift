@@ -53,12 +53,18 @@ final class AppModel: ObservableObject {
     private func start() {
         let me = identity
         let trustStore = trustStore
+        let connected = connected
 
         Task.detached { [weak self] in
             do {
                 // Creating the certificate on first launch is slow, so keep it off the main thread.
                 let certificate = try Self.loadCertificate(deviceId: me.deviceId)
-                let link = try LanLink(identityProvider: { me }, certificate: certificate, trustStore: trustStore) { deviceLink in
+                let link = try LanLink(
+                    identityProvider: { me },
+                    certificate: certificate,
+                    trustStore: trustStore,
+                    isConnected: { connected[$0]?.link.isOpen == true }
+                ) { deviceLink in
                     // Create the device right away on the network thread so no early packet is missed.
                     let device = Device(link: deviceLink, ownCertificate: certificate, trustStore: trustStore)
                     device.delegate = self
