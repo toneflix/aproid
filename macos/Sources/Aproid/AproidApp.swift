@@ -84,7 +84,9 @@ struct DeviceRow: View {
         case .notPaired: return "Not paired"
         case .requested: return "Waiting for the phone to accept"
         case .requestedByPeer: return "Wants to pair. Check the code matches."
-        case .paired: return "Paired"
+        case .paired:
+            guard let battery = device.battery else { return "Paired" }
+            return "Paired · \(battery.charge)%\(battery.isCharging ? " charging" : "")"
         }
     }
 
