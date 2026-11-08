@@ -1,14 +1,18 @@
 package com.toneflix.aproid
 
+import android.app.ActivityOptions
 import android.app.Notification
+import android.app.PendingIntent
 import android.app.RemoteInput
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.service.notification.StatusBarNotification
+import android.util.Log
 import com.toneflix.aproid.protocol.Device
 import com.toneflix.aproid.protocol.NetworkPacket
 import com.toneflix.aproid.protocol.PacketType
@@ -19,6 +23,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 /** Sends phone notifications to paired Macs and carries out their replies and dismissals. */
 object NotificationPlugin : Plugin {
+    private const val TAG = "AproidNotifications"
+
     override val incoming = setOf(PacketType.NOTIFICATION_REQUEST, PacketType.NOTIFICATION_REPLY)
 
     private class Replyable(val key: String, val action: Notification.Action)
@@ -68,14 +74,38 @@ object NotificationPlugin : Plugin {
     private fun reply(context: Context, packet: NetworkPacket) {
         val replyId = packet.string("requestReplyId") ?: return
         val message = packet.string("message") ?: return
-        val target = replies[replyId] ?: return
+        val target = replies[replyId]
+        if (target == null) {
+            Log.w(TAG, "Reply for unknown notification $replyId")
+            return
+        }
+
         val inputs = target.action.remoteInputs ?: return
-
         val results = Bundle().apply { inputs.forEach { putCharSequence(it.resultKey, message) } }
-        val intent = Intent()
+        val intent = Intent().addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         RemoteInput.addResultsToIntent(inputs, intent, results)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            RemoteInput.setResultsSource(intent, RemoteInput.SOURCE_FREE_FORM_INPUT)
+        }
 
-        runCatching { target.action.actionIntent.send(context, 0, intent) }
+        try {
+            send(context, target.action.actionIntent, intent)
+            Log.i(TAG, "Sent reply to ${target.key}")
+        } catch (e: Exception) {
+            Log.w(TAG, "Reply to ${target.key} failed", e)
+        }
+    }
+
+    /** Some apps answer replies by opening an activity, which Android 14 blocks from the background unless allowed. */
+    private fun send(context: Context, pendingIntent: PendingIntent, fillIn: Intent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val options = ActivityOptions.makeBasic()
+                .setPendingIntentBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                .toBundle()
+            pendingIntent.send(context, 0, fillIn, null, null, null, options)
+        } else {
+            pendingIntent.send(context, 0, fillIn)
+        }
     }
 
     /** Null for notifications we don't mirror: our own, ongoing ones, group summaries and empty ones. */
@@ -104,8 +134,11 @@ object NotificationPlugin : Plugin {
     }
 
     private fun replyIdFor(sbn: StatusBarNotification): String? {
-        val action = sbn.notification.actions?.firstOrNull { action ->
-            action.remoteInputs?.any { it.allowFreeFormInput } == true
+        val notification = sbn.notification
+        // Messaging apps put the reply action either on the notification or only in its wearable extras.
+        val candidates = notification.actions.orEmpty().toList() + Notification.WearableExtender(notification).actions
+        val action = candidates.firstOrNull { candidate ->
+            candidate.remoteInputs?.any { it.allowFreeFormInput } == true
         } ?: return null
 
         val existing = replies.entries.firstOrNull { it.value.key == sbn.key }?.key
