@@ -24,6 +24,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
@@ -55,6 +60,7 @@ class MainActivity : ComponentActivity() {
                             Button(onClick = { LinkService.start(this@MainActivity) }) { Text("Start") }
                             OutlinedButton(onClick = { LinkService.stop(this@MainActivity) }) { Text("Stop") }
                         }
+                        NotificationAccess()
                         Text("Nearby devices", style = MaterialTheme.typography.titleMedium)
                         DeviceList()
                     }
@@ -68,6 +74,29 @@ class MainActivity : ComponentActivity() {
 /** Runs a device action off the main thread, since it writes to the network. */
 private fun withDevice(id: String, action: (com.toneflix.aproid.protocol.Device) -> Unit) {
     thread(isDaemon = true) { DeviceStore.find(id)?.let(action) }
+}
+
+/** Asks for notification access until it is granted. Rechecks when the user comes back from Settings. */
+@Composable
+private fun NotificationAccess() {
+    val context = LocalContext.current
+    val granted = remember { mutableStateOf(NotificationPlugin.hasAccess(context)) }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        granted.value = NotificationPlugin.hasAccess(context)
+    }
+
+    if (granted.value) return
+
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Show notifications on your Mac", style = MaterialTheme.typography.titleSmall)
+            Text("Aproid needs notification access to send them.")
+            Button(onClick = { context.startActivity(NotificationPlugin.accessSettingsIntent()) }) {
+                Text("Allow access")
+            }
+        }
+    }
 }
 
 @Composable

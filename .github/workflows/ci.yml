@@ -34,3 +34,5 @@ jobs:
         run: swift build
       - name: Test
         run: swift test
+      - name: Bundle app
+        run: ./scripts/bundle.sh

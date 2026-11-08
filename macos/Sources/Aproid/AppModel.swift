@@ -17,9 +17,13 @@ final class AppModel: ObservableObject {
     @Published private(set) var devices: [DeviceState] = []
     @Published private(set) var error: String?
 
+    /// Notification Center only works when Aproid runs as a bundled app.
+    let notificationsAvailable = NotificationPlugin.isAvailable
+
     let identity: DeviceIdentity
 
-    private var connected: [String: Device] = [:]
+    private let connected = DeviceRegistry()
+    private let plugins: PluginRouter
     private var link: LanLink?
     private var timer: Timer?
     private let trustStore = DefaultsTrustStore()
@@ -33,6 +37,7 @@ final class AppModel: ObservableObject {
             deviceName: DeviceIdentity.sanitizeName(Host.current().localizedName ?? "Mac"),
             deviceType: Self.isLaptop() ? .laptop : .desktop
         )
+        plugins = PluginRouter([NotificationPlugin(devices: connected)])
 
         start()
     }
@@ -73,7 +78,7 @@ final class AppModel: ObservableObject {
         self.link = link
         timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
             link.broadcastIdentity()
-            Task { @MainActor in self?.connected.values.forEach { $0.tick() } }
+            self?.connected.all.forEach { $0.tick() }
         }
         link.broadcastIdentity()
     }
@@ -83,21 +88,20 @@ final class AppModel: ObservableObject {
     }
 
     private func add(_ device: Device) {
-        if let old = connected[device.id], old !== device { old.link.close() }
+        if let old = connected.insert(device), old !== device { old.link.close() }
+        if device.isPaired { plugins.onPaired(device) }
 
-        connected[device.id] = device
         publish()
     }
 
     fileprivate func remove(_ device: Device) {
-        guard connected[device.id] === device else { return }
+        guard connected.remove(device) else { return }
 
-        connected.removeValue(forKey: device.id)
         publish()
     }
 
     fileprivate func publish() {
-        devices = connected.values
+        devices = connected.all
             .map { device in
                 let state = device.pairState
                 let showsCode = state == .requested || state == .requestedByPeer
@@ -169,7 +173,13 @@ extension AppModel: DeviceDelegate {
     }
 
     nonisolated func device(_ device: Device, pairStateChanged state: PairState) {
+        if state == .paired { plugins.onPaired(device) }
+
         Task { @MainActor in self.publish() }
+    }
+
+    nonisolated func device(_ device: Device, received packet: NetworkPacket) {
+        plugins.dispatch(packet, from: device)
     }
 
     nonisolated func deviceDisconnected(_ device: Device) {
