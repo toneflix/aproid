@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import UserNotifications
 import AproidKit
 
@@ -18,6 +19,7 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         static let replyId = "replyId"
     }
 
+    private let log = Logger(subsystem: "com.toneflix.aproid.app", category: "notifications")
     private let devices: DeviceRegistry
     private let center: UNUserNotificationCenter?
 
@@ -98,11 +100,15 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         guard let deviceId = info[Key.device] as? String,
               let id = info[Key.id] as? String,
               let device = devices[deviceId]
-        else { return }
+        else {
+            log.warning("Notification response for a device that is not connected")
+            return
+        }
 
         if let text = response as? UNTextInputNotificationResponse,
            let replyId = info[Key.replyId] as? String, !replyId.isEmpty {
-            device.send(NotificationRequests.reply(to: replyId, message: text.userText))
+            let sent = device.send(NotificationRequests.reply(to: replyId, message: text.userText))
+            log.info("Reply to \(id, privacy: .public) sent: \(sent)")
             return
         }
 
