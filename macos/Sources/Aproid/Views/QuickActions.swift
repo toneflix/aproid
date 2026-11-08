@@ -1,9 +1,12 @@
+import AppKit
 import SwiftUI
 
 /// The 2×2 grid of things to do with the phone.
 struct QuickActions: View {
     let device: DeviceState
     @ObservedObject var model: AppModel
+    @ObservedObject var messages: MessagesStore
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
@@ -24,7 +27,23 @@ struct QuickActions: View {
             ) {
                 model.mirrorsNotifications.toggle()
             }
+            ActionTile(symbol: "message.fill", title: "Messages", subtitle: messagesSubtitle) {
+                showMessages()
+            }
+            ActionTile(symbol: "phone.fill", title: "Call", subtitle: "From your phone") {
+                showMessages()
+                messages.showsDialer = true
+            }
         }
+    }
+
+    private var messagesSubtitle: String {
+        messages.unreadCount == 0 ? "Your texts" : "\(messages.unreadCount) unread"
+    }
+
+    private func showMessages() {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        openWindow(id: AproidApp.messagesWindow)
     }
 
     private var clipboardSubtitle: String {

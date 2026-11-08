@@ -54,7 +54,7 @@ struct MenuPanel: View {
                 NowPlayingCard(deviceId: device.id, media: media, model: model)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
-            QuickActions(device: device, model: model)
+            QuickActions(device: device, model: model, messages: model.messages)
             DropZone(deviceId: device.id, model: model)
         } else {
             SearchingCard(hasNearby: !model.devices.isEmpty)

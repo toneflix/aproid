@@ -50,6 +50,7 @@ class LinkService : Service() {
     override fun onDestroy() {
         scope.cancel()
         BatteryPlugin.stop(this)
+        SmsPlugin.stop(this)
         scheduler?.shutdownNow()
         link?.stop()
         DeviceStore.clear()
@@ -65,6 +66,8 @@ class LinkService : Service() {
         FindMyPhonePlugin.start(this)
         ClipboardPlugin.start(this)
         SharePlugin.start(this)
+        SmsPlugin.start(this)
+        CallPlugin.start(this)
 
         val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         multicastLock = wifi.createMulticastLock("aproid").apply {

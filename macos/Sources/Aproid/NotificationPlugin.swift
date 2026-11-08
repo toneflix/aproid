@@ -12,6 +12,7 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
     private enum Category {
         static let plain = "phone.notification"
         static let replyable = "phone.notification.reply"
+        static let missedCall = "phone.call.missed"
     }
 
     private enum Key {
@@ -19,6 +20,7 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         static let id = "id"
         static let replyId = "replyId"
         static let file = "file"
+        static let callBack = "callBack"
     }
 
     private let log = Logger(subsystem: "com.toneflix.aproid.app", category: "notifications")
@@ -61,6 +63,12 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         center.setNotificationCategories([
             UNNotificationCategory(identifier: Category.plain, actions: [], intentIdentifiers: [], options: [.customDismissAction]),
             UNNotificationCategory(identifier: Category.replyable, actions: [reply], intentIdentifiers: [], options: [.customDismissAction]),
+            UNNotificationCategory(
+                identifier: Category.missedCall,
+                actions: [UNNotificationAction(identifier: Key.callBack, title: "Call back")],
+                intentIdentifiers: [],
+                options: []
+            ),
         ])
         center.delegate = self
         center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
@@ -129,6 +137,21 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
     }
 
+    /// A missed call, with a Call back button that dials from the phone.
+    func announceMissedCall(from caller: String, number: String, device: Device) {
+        guard let center else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = "Missed call"
+        content.subtitle = device.name
+        content.body = caller
+        content.categoryIdentifier = Category.missedCall
+        content.userInfo = [Key.device: device.id, Key.callBack: number]
+        content.sound = .default
+
+        center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
+    }
+
     // MARK: UNUserNotificationCenterDelegate
 
     func userNotificationCenter(
@@ -152,6 +175,11 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         if let path = info[Key.file] as? String {
             let url = URL(fileURLWithPath: path)
             DispatchQueue.main.async { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+            return
+        }
+
+        if let number = info[Key.callBack] as? String, response.actionIdentifier != UNNotificationDismissActionIdentifier {
+            Task { @MainActor in AppModel.shared.dial(number, name: nil) }
             return
         }
 

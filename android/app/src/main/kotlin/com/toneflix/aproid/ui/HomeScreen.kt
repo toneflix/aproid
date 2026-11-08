@@ -41,6 +41,7 @@ import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Sms
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -77,7 +78,9 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.toneflix.aproid.DeviceState
 import com.toneflix.aproid.DeviceStore
+import com.toneflix.aproid.CallPlugin
 import com.toneflix.aproid.ClipboardPlugin
+import com.toneflix.aproid.SmsPlugin
 import com.toneflix.aproid.LinkService
 import com.toneflix.aproid.NotificationPlugin
 import com.toneflix.aproid.R
@@ -310,10 +313,17 @@ private fun SetupCards() {
     val context = LocalContext.current
     var notifications by remember { mutableStateOf(NotificationPlugin.hasAccess(context)) }
     var background by remember { mutableStateOf(LinkService.isUnrestricted(context)) }
+    var phone by remember { mutableStateOf(CallPlugin.hasPermissions(context)) }
+    val askPhone = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        phone = CallPlugin.hasPermissions(context)
+        SmsPlugin.start(context)
+        CallPlugin.start(context)
+    }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         notifications = NotificationPlugin.hasAccess(context)
         background = LinkService.isUnrestricted(context)
+        phone = CallPlugin.hasPermissions(context)
     }
 
     AnimatedVisibility(!notifications) {
@@ -329,6 +339,13 @@ private fun SetupCards() {
             stringResource(R.string.setup_background),
             stringResource(R.string.setup_background_hint),
         ) { context.startActivity(LinkService.unrestrictIntent(context)) }
+    }
+    AnimatedVisibility(!phone) {
+        SetupCard(
+            Icons.Outlined.Sms,
+            stringResource(R.string.setup_phone),
+            stringResource(R.string.setup_phone_hint),
+        ) { askPhone.launch(CallPlugin.permissions) }
     }
 }
 

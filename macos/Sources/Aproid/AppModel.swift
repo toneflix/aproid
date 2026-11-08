@@ -17,11 +17,15 @@ struct DeviceState: Identifiable, Equatable {
 
 @MainActor
 final class AppModel: ObservableObject {
+    /// One model for the whole app, so the app delegate can reach it for tel: links.
+    static let shared = AppModel()
+
     @Published private(set) var devices: [DeviceState] = []
     @Published private(set) var error: String?
     @Published private(set) var recent: [Activity] = []
     @Published private(set) var clipboardSyncedAt: Date?
     @Published private(set) var notificationsToday = 0
+    @Published private(set) var call: ActiveCall?
     @Published var mirrorsNotifications: Bool {
         didSet {
             notifications.isEnabled = mirrorsNotifications
@@ -44,6 +48,12 @@ final class AppModel: ObservableObject {
     private let notifications: NotificationPlugin
     private let share = SharePlugin(folder: AppModel.downloads)
     private let mediaPlugin = MediaPlugin()
+    private let sms = SmsPlugin()
+    private let calls = CallPlugin()
+    private let callPanel = CallPanel()
+    private var messagesDevice: String?
+
+    let messages = MessagesStore()
     private var notificationsDay = Calendar.current.startOfDay(for: Date())
     private var link: LanLink?
     private var timer: Timer?
@@ -67,12 +77,22 @@ final class AppModel: ObservableObject {
         )
         clipboard = ClipboardPlugin(devices: connected)
         notifications = NotificationPlugin(devices: connected)
-        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin])
+        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
         notifications.isEnabled = mirrorsNotifications
 
         battery.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         mediaPlugin.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
+        sms.onMessages = { [weak self] messages, deviceId in Task { @MainActor in self?.messages.ingest(messages, from: deviceId) } }
+        calls.onState = { [weak self] state, device in
+            let deviceId = device.id
+            let deviceName = device.name
+            Task { @MainActor in self?.handleCall(state, deviceId: deviceId, deviceName: deviceName) }
+        }
+        messages.send = { [weak self] packet in
+            guard let id = self?.messagesDevice, let device = self?.connected[id] else { return false }
+            return device.send(packet)
+        }
         clipboard.onSync = { [weak self] in Task { @MainActor in self?.clipboardSyncedAt = Date() } }
         notifications.onShown = { [weak self] in Task { @MainActor in self?.countNotification() } }
         share.onActivity = { [weak self] activity in Task { @MainActor in self?.record(activity) } }
@@ -97,6 +117,63 @@ final class AppModel: ObservableObject {
 
     func seek(_ id: String, _ player: String, to position: Int64) {
         connected[id]?.send(MediaRequest.seek(player, to: position).toPacket())
+    }
+
+    // MARK: Calls
+
+    func answerCall() {
+        guard let call else { return }
+        connected[call.deviceId]?.send(Call.answer())
+    }
+
+    func declineCall() {
+        guard let call else { return }
+        connected[call.deviceId]?.send(Call.decline())
+        endCall()
+    }
+
+    func hangUp() {
+        guard let call else { return }
+        connected[call.deviceId]?.send(Call.hangUp())
+        endCall()
+    }
+
+    /// Places a call on the paired phone.
+    func dial(_ number: String, name: String?) {
+        let number = number.trimmingCharacters(in: .whitespaces)
+        guard !number.isEmpty, let phone = connected.all.first(where: \.isPaired), phone.send(Call.dial(number)) else { return }
+
+        call = ActiveCall(deviceId: phone.id, deviceName: phone.name, number: number, name: name, phase: .dialing)
+        callPanel.show(self)
+    }
+
+    private func handleCall(_ state: Call.State, deviceId: String, deviceName: String) {
+        if state.ended {
+            endCall()
+            return
+        }
+
+        let photo = state.photo.flatMap { Data(base64Encoded: $0) }.flatMap(NSImage.init(data:))
+        switch state.event {
+        case .ringing:
+            call = ActiveCall(deviceId: deviceId, deviceName: deviceName, number: state.number, name: state.contactName, photo: photo, phase: .ringing)
+            callPanel.show(self)
+        case .talking:
+            var current = call ?? ActiveCall(deviceId: deviceId, deviceName: deviceName, number: state.number, name: state.contactName, photo: photo, phase: .dialing)
+            if case .talking = current.phase {} else { current.phase = .talking(since: Date()) }
+            call = current
+            callPanel.show(self)
+        case .missed:
+            endCall()
+            if let device = connected[deviceId] {
+                notifications.announceMissedCall(from: state.contactName ?? state.number, number: state.number, device: device)
+            }
+        }
+    }
+
+    private func endCall() {
+        call = nil
+        callPanel.hide()
     }
 
     func sendClipboard(to id: String) {
@@ -265,6 +342,8 @@ final class AppModel: ObservableObject {
     }
 
     fileprivate func publish() {
+        syncMessages()
+
         devices = connected.all
             .map { device in
                 let state = device.pairState
@@ -282,6 +361,18 @@ final class AppModel: ObservableObject {
                 )
             }
             .sorted { $0.name < $1.name }
+    }
+
+    /// Texts come from the first paired phone.
+    private func syncMessages() {
+        let phone = connected.all.first { $0.isPaired }
+
+        if let phone, messagesDevice != phone.id || !messages.hasPhone {
+            messagesDevice = phone.id
+            messages.attach(phone.id)
+        } else if phone == nil, let id = messagesDevice {
+            messages.detach(id)
+        }
     }
 
     // MARK: Storage
