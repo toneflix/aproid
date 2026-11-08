@@ -82,11 +82,11 @@ class Device(
         if (!sendsHeartbeats) return
 
         if (clock() - lastReceived > HEARTBEAT_TIMEOUT_SECONDS) {
-            link.close()
+            link.close("no heartbeat for $HEARTBEAT_TIMEOUT_SECONDS seconds")
             return
         }
 
-        runCatching { link.send(heartbeatPacket(pong = false)) }.onFailure { link.close() }
+        runCatching { link.send(heartbeatPacket(pong = false)) }.onFailure { link.close("send failed: $it") }
     }
 
     private fun handle(packet: NetworkPacket) {
