@@ -1,13 +1,17 @@
 package com.toneflix.aproid
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
+import android.provider.Settings
 import com.toneflix.aproid.protocol.Device
 import com.toneflix.aproid.protocol.LanLink
 import java.util.concurrent.Executors
@@ -21,6 +25,7 @@ import java.util.concurrent.TimeUnit
 class LinkService : Service() {
     @Volatile private var link: LanLink? = null
     private var multicastLock: WifiManager.MulticastLock? = null
+    private var wifiLock: WifiManager.WifiLock? = null
     private var scheduler: ScheduledExecutorService? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -36,6 +41,7 @@ class LinkService : Service() {
         link?.stop()
         DeviceStore.clear()
         multicastLock?.release()
+        wifiLock?.release()
         link = null
         scheduler = null
         super.onDestroy()
@@ -44,6 +50,13 @@ class LinkService : Service() {
     private fun startLink() {
         val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         multicastLock = wifi.createMulticastLock("aproid").apply {
+            setReferenceCounted(false)
+            acquire()
+        }
+
+        // Stops Wi-Fi power saving from dropping the connection while the screen is off.
+        @Suppress("DEPRECATION")
+        wifiLock = wifi.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "aproid").apply {
             setReferenceCounted(false)
             acquire()
         }
@@ -93,6 +106,14 @@ class LinkService : Service() {
         fun start(context: Context) {
             context.startForegroundService(Intent(context, LinkService::class.java))
         }
+
+        /** True when Android lets the service keep its network while the phone sleeps. */
+        fun isUnrestricted(context: Context): Boolean =
+            context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName)
+
+        @SuppressLint("BatteryLife")
+        fun unrestrictIntent(context: Context): Intent =
+            Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}"))
 
         fun stop(context: Context) {
             context.stopService(Intent(context, LinkService::class.java))
