@@ -39,6 +39,15 @@ public enum PacketType {
     /// Asks the sender to send the rest of a file that stopped. Body: {"transferId", "offset"}.
     public static let shareResume = "aproid.share.resume"
 
+    /// Asks for a page of the phone's photos and videos. Body: {"before"?: ms, "count": n}.
+    public static let photosRequest = "aproid.photos.request"
+
+    /// A page of photos with small thumbnails. Body: {"photos": [...], "more": bool}.
+    public static let photos = "aproid.photos"
+
+    /// Asks the phone to send one photo in full, as a normal shared file. Body: {"id"}.
+    public static let photosDownload = "aproid.photos.download"
+
     /// Asks the phone where it is. Body: {}.
     public static let locationRequest = "aproid.location.request"
 
@@ -79,6 +88,9 @@ public enum Capabilities {
         PacketType.clipboardFile,
         PacketType.locationRequest,
         PacketType.shareResume,
+        PacketType.photosRequest,
+        PacketType.photos,
+        PacketType.photosDownload,
         PacketType.location,
         PacketType.heartbeat,
     ]

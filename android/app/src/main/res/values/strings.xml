@@ -45,6 +45,8 @@
     <string name="setup_allow">Allow</string>
     <string name="setup_phone">Texts and calls on your Mac</string>
     <string name="setup_location">Find your phone on a map</string>
+    <string name="setup_photos">Browse photos from your Mac</string>
+    <string name="setup_photos_hint">Lets your Mac see and download your photos and videos</string>
     <string name="setup_location_hint">Choose \"Allow all the time\" so your Mac can see where it is</string>
     <string name="setup_phone_hint">Read and send texts, and answer calls, from the Mac</string>
 

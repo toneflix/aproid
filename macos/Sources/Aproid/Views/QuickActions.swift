@@ -34,6 +34,10 @@ struct QuickActions: View {
                 showMessages()
                 messages.showsDialer = true
             }
+            ActionTile(symbol: "photo.on.rectangle", title: "Photos", subtitle: "Browse & download") {
+                NSApplication.shared.activate(ignoringOtherApps: true)
+                openWindow(id: AproidApp.photosWindow)
+            }
         }
     }
 

@@ -38,6 +38,15 @@ object PacketType {
     /** Asks the sender to send the rest of a file that stopped. Body: {"transferId", "offset"}. */
     const val SHARE_RESUME = "aproid.share.resume"
 
+    /** Asks for a page of the phone's photos and videos. Body: {"before"?: ms, "count": n}. */
+    const val PHOTOS_REQUEST = "aproid.photos.request"
+
+    /** A page of photos with small thumbnails. Body: {"photos": [...], "more": bool}. */
+    const val PHOTOS = "aproid.photos"
+
+    /** Asks the phone to send one photo in full, as a normal shared file. Body: {"id"}. */
+    const val PHOTOS_DOWNLOAD = "aproid.photos.download"
+
     /** Asks the phone where it is. Body: {}. */
     const val LOCATION_REQUEST = "aproid.location.request"
 
@@ -79,6 +88,9 @@ object Capabilities {
         PacketType.CLIPBOARD_FILE,
         PacketType.LOCATION_REQUEST,
         PacketType.SHARE_RESUME,
+        PacketType.PHOTOS_REQUEST,
+        PacketType.PHOTOS,
+        PacketType.PHOTOS_DOWNLOAD,
         PacketType.LOCATION,
         PacketType.HEARTBEAT,
     )

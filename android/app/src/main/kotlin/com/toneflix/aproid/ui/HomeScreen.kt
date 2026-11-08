@@ -84,6 +84,7 @@ import com.toneflix.aproid.ClipboardPlugin
 import com.toneflix.aproid.SmsPlugin
 import com.toneflix.aproid.LinkService
 import com.toneflix.aproid.LocationPlugin
+import com.toneflix.aproid.PhotosPlugin
 import com.toneflix.aproid.NotificationPlugin
 import com.toneflix.aproid.R
 import com.toneflix.aproid.Recent
@@ -333,7 +334,13 @@ private fun SetupCards() {
         }
     }
 
+    var photos by remember { mutableStateOf(PhotosPlugin.hasPermission(context)) }
+    val askPhotos = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        photos = PhotosPlugin.hasPermission(context)
+    }
+
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        photos = PhotosPlugin.hasPermission(context)
         location = LocationPlugin.hasPermission(context) && LocationPlugin.hasBackgroundPermission(context)
         notifications = NotificationPlugin.hasAccess(context)
         background = LinkService.isUnrestricted(context)
@@ -373,6 +380,13 @@ private fun SetupCards() {
                 askLocation.launch(LocationPlugin.permissions)
             }
         }
+    }
+    AnimatedVisibility(!photos) {
+        SetupCard(
+            Icons.Outlined.Image,
+            stringResource(R.string.setup_photos),
+            stringResource(R.string.setup_photos_hint),
+        ) { askPhotos.launch(PhotosPlugin.permissions) }
     }
 }
 

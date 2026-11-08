@@ -66,11 +66,14 @@ final class AppModel: ObservableObject {
     private let mediaPlugin = MediaPlugin()
     private let sms = SmsPlugin()
     private let locations = LocationPlugin()
+    private let photosPlugin = PhotosPlugin()
     private let calls = CallPlugin()
     private let callPanel = CallPanel()
     private var messagesDevice: String?
+    private var photosDevice: String?
 
     let messages = MessagesStore()
+    let photos = PhotosStore()
     private var notificationsDay = Calendar.current.startOfDay(for: Date())
     private var link: LanLink?
     private var timer: Timer?
@@ -94,7 +97,7 @@ final class AppModel: ObservableObject {
         )
         clipboard = ClipboardPlugin(devices: connected)
         notifications = NotificationPlugin(devices: connected)
-        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, locations])
+        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, locations, photosPlugin])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
         notifications.isEnabled = mirrorsNotifications
 
@@ -106,6 +109,11 @@ final class AppModel: ObservableObject {
             let deviceId = device.id
             let deviceName = device.name
             Task { @MainActor in self?.handleCall(state, deviceId: deviceId, deviceName: deviceName) }
+        }
+        photosPlugin.onPage = { [weak self] page, deviceId in Task { @MainActor in self?.photos.ingest(page, from: deviceId) } }
+        photos.send = { [weak self] packet in
+            guard let id = self?.primaryId, let device = self?.connected[id] else { return false }
+            return device.send(packet)
         }
         messages.send = { [weak self] packet in
             guard let id = self?.messagesDevice, let device = self?.connected[id] else { return false }
@@ -375,9 +383,16 @@ final class AppModel: ObservableObject {
         return connected.all.filter(\.isPaired).min { $0.name < $1.name }
     }
 
-    /// Texts come from the primary phone.
+    /// Texts and photos come from the primary phone.
     private func syncMessages() {
         let phone = primaryPhone
+
+        if let phone {
+            photos.attach(phone.id)
+            photosDevice = phone.id
+        } else if let id = photosDevice {
+            photos.detach(id)
+        }
 
         if let phone, messagesDevice != phone.id || !messages.hasPhone {
             messagesDevice = phone.id
