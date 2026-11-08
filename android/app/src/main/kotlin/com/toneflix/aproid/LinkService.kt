@@ -68,11 +68,13 @@ class LinkService : Service() {
         exec.execute {
             val certificate = DeviceStore.certificate(this)
             val trustStore = DeviceStore.trustStore(this)
+            val ownId = DeviceStore.identity(this).deviceId
             val newLink = LanLink(
                 identityProvider = { DeviceStore.identity(this) },
                 certificate = certificate,
                 trustStore = trustStore,
-                onLink = { DeviceStore.add(Device(it, certificate, trustStore)) },
+                onLink = { DeviceStore.add(Device(it, certificate, trustStore), ownId) },
+                isConnected = { DeviceStore.find(it)?.link?.isOpen == true },
             )
 
             runCatching { newLink.start() }
