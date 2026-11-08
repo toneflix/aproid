@@ -21,8 +21,15 @@ struct AproidApp: App {
     static let messagesWindow = "messages"
 }
 
-/// Opens tel: links, such as a phone number clicked in Safari, by calling from the phone.
+/// Offers the Services menu item, and opens tel: links, such as a number clicked in Safari, by calling from the phone.
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let services = ServiceProvider()
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApplication.shared.servicesProvider = services
+        NSUpdateDynamicServices()
+    }
+
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls where url.scheme?.lowercased() == "tel" {
             let number = (url.absoluteString.dropFirst("tel:".count).removingPercentEncoding ?? "")

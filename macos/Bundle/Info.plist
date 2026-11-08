@@ -31,6 +31,31 @@
             </array>
         </dict>
     </array>
+    <key>NSServices</key>
+    <array>
+        <dict>
+            <key>NSMenuItem</key>
+            <dict>
+                <key>default</key>
+                <string>Send to Phone with Aproid</string>
+            </dict>
+            <key>NSMessage</key>
+            <string>sendToPhone</string>
+            <key>NSPortName</key>
+            <string>Aproid</string>
+            <key>NSRequiredContext</key>
+            <dict/>
+            <key>NSSendFileTypes</key>
+            <array>
+                <string>public.item</string>
+            </array>
+            <key>NSSendTypes</key>
+            <array>
+                <string>public.url</string>
+                <string>public.utf8-plain-text</string>
+            </array>
+        </dict>
+    </array>
     <key>NSLocalNetworkUsageDescription</key>
     <string>Aproid finds and connects to your phone on the local network.</string>
 </dict>

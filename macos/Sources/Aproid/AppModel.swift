@@ -221,6 +221,22 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Sends a web link to open on the phone, or other text to put on its clipboard.
+    func sendText(_ text: String, to id: String) {
+        guard let device = connected[id] else { return }
+
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let url = URL(string: trimmed).flatMap { ["http", "https"].contains($0.scheme?.lowercased()) ? $0 : nil }
+        let packet = url.map { Share.linkPacket($0.absoluteString) } ?? Share.textPacket(trimmed)
+        guard device.send(packet) else { return }
+
+        if let url {
+            record(Activity(.link(url), title: url.host ?? trimmed, detail: "Opened on \(device.name)"))
+        } else {
+            record(Activity(.text, title: "“\(trimmed.prefix(60))”", detail: "Copied to \(device.name)"))
+        }
+    }
+
     func clearRecent() {
         recent.removeAll { !$0.isInProgress }
     }
