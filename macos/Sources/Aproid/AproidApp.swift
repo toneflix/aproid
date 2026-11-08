@@ -28,6 +28,13 @@ struct MenuContent: View {
                 Text(error).font(.caption).foregroundStyle(.red)
             }
 
+            if !model.notificationsAvailable {
+                Text("Notifications need the app bundle. Build it with macos/scripts/bundle.sh.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             Divider()
 
             if model.devices.isEmpty {
