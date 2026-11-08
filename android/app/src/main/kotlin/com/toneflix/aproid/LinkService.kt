@@ -8,6 +8,7 @@ import android.content.pm.ServiceInfo
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
+import com.toneflix.aproid.protocol.Device
 import com.toneflix.aproid.protocol.LanLink
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -18,7 +19,7 @@ import java.util.concurrent.TimeUnit
  * itself on the local network every few seconds.
  */
 class LinkService : Service() {
-    private var link: LanLink? = null
+    @Volatile private var link: LanLink? = null
     private var multicastLock: WifiManager.MulticastLock? = null
     private var scheduler: ScheduledExecutorService? = null
 
@@ -26,15 +27,17 @@ class LinkService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForegroundCompat()
-        if (link == null) startLink()
+        if (scheduler == null) startLink()
         return START_STICKY
     }
 
     override fun onDestroy() {
         scheduler?.shutdownNow()
         link?.stop()
+        DeviceStore.clear()
         multicastLock?.release()
         link = null
+        scheduler = null
         super.onDestroy()
     }
 
@@ -44,18 +47,29 @@ class LinkService : Service() {
             setReferenceCounted(false)
             acquire()
         }
-        val newLink = LanLink(
-            identityProvider = { DeviceStore.identity(this) },
-            onPeer = { peer, _ ->
-                // TODO: upgrade the socket to TLS and hand it to a Device object (see docs/ARCHITECTURE.md).
-                DeviceStore.onPeer(peer)
-            },
-        )
-        link = newLink
+
         val exec = Executors.newSingleThreadScheduledExecutor()
         scheduler = exec
-        exec.execute { runCatching { newLink.start() } }
-        exec.scheduleWithFixedDelay({ runCatching { newLink.broadcastIdentity() } }, 1, 5, TimeUnit.SECONDS)
+
+        // Creating the certificate on first launch is slow, so keep it off the main thread.
+        exec.execute {
+            val certificate = DeviceStore.certificate(this)
+            val trustStore = DeviceStore.trustStore(this)
+            val newLink = LanLink(
+                identityProvider = { DeviceStore.identity(this) },
+                certificate = certificate,
+                trustStore = trustStore,
+                onLink = { DeviceStore.add(Device(it, certificate, trustStore)) },
+            )
+
+            runCatching { newLink.start() }
+            link = newLink
+        }
+
+        exec.scheduleWithFixedDelay({
+            runCatching { link?.broadcastIdentity() }
+            DeviceStore.tickAll()
+        }, 1, 5, TimeUnit.SECONDS)
     }
 
     private fun startForegroundCompat() {
@@ -82,7 +96,6 @@ class LinkService : Service() {
 
         fun stop(context: Context) {
             context.stopService(Intent(context, LinkService::class.java))
-            DeviceStore.clear()
         }
     }
 }

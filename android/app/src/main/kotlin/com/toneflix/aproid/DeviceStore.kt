@@ -2,27 +2,66 @@ package com.toneflix.aproid
 
 import android.content.Context
 import android.os.Build
+import android.util.Base64
+import com.toneflix.aproid.protocol.Device
+import com.toneflix.aproid.protocol.DeviceCertificate
 import com.toneflix.aproid.protocol.DeviceIdentity
 import com.toneflix.aproid.protocol.DeviceType
-import com.toneflix.aproid.protocol.DiscoveredPeer
+import com.toneflix.aproid.protocol.PairState
+import com.toneflix.aproid.protocol.TrustStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import java.io.File
 
-/** This phone's identity (kept across launches) and the devices found so far. */
+/** What the UI shows for one connected device. */
+data class DeviceState(
+    val id: String,
+    val name: String,
+    val type: DeviceType,
+    val address: String,
+    val pairState: PairState,
+    val code: String?,
+)
+
+/** This phone's identity and certificate, trusted devices, and the devices connected now. */
 object DeviceStore {
     private const val PREFS = "aproid"
+    private const val TRUST_PREFS = "aproid_trusted"
     private const val KEY_ID = "device_id"
 
-    private val _peers = MutableStateFlow<Map<String, DiscoveredPeer>>(emptyMap())
-    val peers: StateFlow<Map<String, DiscoveredPeer>> = _peers.asStateFlow()
+    private val devices = linkedMapOf<String, Device>()
+
+    private val _states = MutableStateFlow<List<DeviceState>>(emptyList())
+    val states: StateFlow<List<DeviceState>> = _states.asStateFlow()
+
+    private val _pairRequest = MutableStateFlow<DeviceState?>(null)
+
+    /** A device waiting for the user to accept or reject pairing. */
+    val pairRequest: StateFlow<DeviceState?> = _pairRequest.asStateFlow()
+
+    val listener = object : Device.Listener {
+        override fun onPairRequest(device: Device, code: String) {
+            _pairRequest.value = device.toState()
+            publish()
+        }
+
+        override fun onPairStateChanged(device: Device, state: PairState) {
+            if (state != PairState.REQUESTED_BY_PEER && _pairRequest.value?.id == device.id) {
+                _pairRequest.value = null
+            }
+            publish()
+        }
+
+        override fun onDisconnected(device: Device) = remove(device)
+    }
 
     fun identity(context: Context): DeviceIdentity {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val id = prefs.getString(KEY_ID, null) ?: DeviceIdentity.newDeviceId().also {
             prefs.edit().putString(KEY_ID, it).apply()
         }
+
         return DeviceIdentity(
             deviceId = id,
             deviceName = DeviceIdentity.sanitizeName(Build.MODEL ?: "Android"),
@@ -30,11 +69,74 @@ object DeviceStore {
         )
     }
 
-    fun onPeer(peer: DiscoveredPeer) {
-        _peers.update { it + (peer.identity.deviceId to peer) }
+    /** Loads the certificate from app storage, creating it on first launch. */
+    fun certificate(context: Context): DeviceCertificate {
+        val certFile = File(context.filesDir, "device.crt")
+        val keyFile = File(context.filesDir, "device.key")
+
+        if (certFile.exists() && keyFile.exists()) {
+            return DeviceCertificate.load(certFile.readBytes(), keyFile.readBytes())
+        }
+
+        val certificate = DeviceCertificate.generate(identity(context).deviceId)
+        certFile.writeBytes(certificate.encodedCertificate)
+        keyFile.writeBytes(certificate.encodedPrivateKey)
+
+        return certificate
     }
 
-    fun clear() {
-        _peers.value = emptyMap()
+    fun trustStore(context: Context): TrustStore = PreferencesTrustStore(context.applicationContext)
+
+    @Synchronized fun add(device: Device) {
+        devices.remove(device.id)?.link?.close()
+        devices[device.id] = device
+        device.listener = listener
+        device.start()
+        publish()
+    }
+
+    @Synchronized fun remove(device: Device) {
+        if (devices[device.id] === device) devices.remove(device.id)
+        if (_pairRequest.value?.id == device.id) _pairRequest.value = null
+        publish()
+    }
+
+    @Synchronized fun find(id: String): Device? = devices[id]
+
+    @Synchronized fun tickAll() = devices.values.forEach { it.tick() }
+
+    @Synchronized fun clear() {
+        devices.values.toList().forEach { it.link.close() }
+        devices.clear()
+        _pairRequest.value = null
+        publish()
+    }
+
+    @Synchronized private fun publish() {
+        _states.value = devices.values.map { it.toState() }
+    }
+
+    private fun Device.toState() = DeviceState(
+        id = id,
+        name = name,
+        type = link.identity.deviceType,
+        address = link.address.hostAddress ?: "",
+        pairState = pairState,
+        code = if (pairState == PairState.REQUESTED || pairState == PairState.REQUESTED_BY_PEER) verificationCode else null,
+    )
+
+    private class PreferencesTrustStore(context: Context) : TrustStore {
+        private val prefs = context.getSharedPreferences(TRUST_PREFS, Context.MODE_PRIVATE)
+
+        override fun certificate(deviceId: String): ByteArray? =
+            prefs.getString(deviceId, null)?.let { Base64.decode(it, Base64.NO_WRAP) }
+
+        override fun trust(deviceId: String, encodedCertificate: ByteArray) {
+            prefs.edit().putString(deviceId, Base64.encodeToString(encodedCertificate, Base64.NO_WRAP)).apply()
+        }
+
+        override fun forget(deviceId: String) {
+            prefs.edit().remove(deviceId).apply()
+        }
     }
 }
