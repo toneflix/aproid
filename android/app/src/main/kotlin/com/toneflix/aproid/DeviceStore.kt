@@ -7,12 +7,15 @@ import com.toneflix.aproid.protocol.Device
 import com.toneflix.aproid.protocol.DeviceCertificate
 import com.toneflix.aproid.protocol.DeviceIdentity
 import com.toneflix.aproid.protocol.DeviceType
+import com.toneflix.aproid.protocol.NetworkPacket
 import com.toneflix.aproid.protocol.PairState
+import com.toneflix.aproid.protocol.PluginRouter
 import com.toneflix.aproid.protocol.TrustStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
+import java.util.concurrent.Executors
 
 /** What the UI shows for one connected device. */
 data class DeviceState(
@@ -32,6 +35,11 @@ object DeviceStore {
 
     private val devices = linkedMapOf<String, Device>()
 
+    private val plugins = PluginRouter(listOf(NotificationPlugin))
+
+    /** Network writes must stay off the main thread, so all plugin sends go through here. */
+    private val sender = Executors.newSingleThreadExecutor()
+
     private val _states = MutableStateFlow<List<DeviceState>>(emptyList())
     val states: StateFlow<List<DeviceState>> = _states.asStateFlow()
 
@@ -50,7 +58,12 @@ object DeviceStore {
             if (state != PairState.REQUESTED_BY_PEER && _pairRequest.value?.id == device.id) {
                 _pairRequest.value = null
             }
+            if (state == PairState.PAIRED) plugins.onPaired(device)
             publish()
+        }
+
+        override fun onPacket(device: Device, packet: NetworkPacket) {
+            plugins.dispatch(device, packet)
         }
 
         override fun onDisconnected(device: Device) = remove(device)
@@ -92,7 +105,18 @@ object DeviceStore {
         devices[device.id] = device
         device.listener = listener
         device.start()
+        if (device.isPaired) plugins.onPaired(device)
         publish()
+    }
+
+    fun send(device: Device, packet: NetworkPacket) {
+        sender.execute { runCatching { device.send(packet) } }
+    }
+
+    fun sendToPaired(packet: NetworkPacket) {
+        val targets = synchronized(this) { devices.values.filter { it.isPaired } }
+
+        targets.forEach { send(it, packet) }
     }
 
     @Synchronized fun remove(device: Device) {

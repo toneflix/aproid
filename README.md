@@ -4,7 +4,7 @@ Aproid connects an Android phone to a Mac the way an iPhone connects to one: sha
 
 It speaks the [KDE Connect](https://kdeconnect.kde.org/) protocol, so it also works with existing KDE Connect clients. The apps themselves are our own, written from scratch, with the goal of being better than both KDE Connect and Microsoft Phone Link.
 
-> Status: early. The phone and the Mac find each other on Wi-Fi, connect over TLS and pair with a matching code on both screens. Features come next. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> Status: early. The phone and the Mac connect over TLS, pair with a matching code, and phone notifications show on the Mac with reply and dismiss. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Repository layout
 
@@ -31,10 +31,11 @@ cd android
 ```sh
 cd macos
 swift test
-swift run Aproid                # starts the menu bar app
+./scripts/bundle.sh             # builds macos/build/Aproid.app
+open build/Aproid.app           # starts the menu bar app
 ```
 
-Or open `macos/Package.swift` in Xcode. The first time it runs, macOS asks for permission to find devices on the local network. Allow it.
+`swift run Aproid` or running from Xcode also works, but without an app bundle macOS won't show notifications. The first time the app runs, macOS asks to find devices on the local network and to show notifications. Allow both.
 
 ## Trying it
 
@@ -43,6 +44,7 @@ Or open `macos/Package.swift` in Xcode. The first time it runs, macOS asks for p
 3. Open Aproid on the phone and tap **Start**.
 4. Each device should show the other in its list within a few seconds.
 5. Tap **Pair** on one side, check the code matches on both, and accept on the other.
+6. On the phone, tap **Allow access** and turn on notification access for Aproid. New notifications now show on the Mac. Reply from the banner, or dismiss it to clear it on the phone too.
 
 If KDE Connect is running on either device it may hold port 1716. Aproid falls back to the next free port, but discovery is most reliable with KDE Connect closed.
 

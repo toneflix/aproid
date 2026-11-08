@@ -53,10 +53,13 @@ Done:
 - Pairing UI with the verification code on both apps.
 - The Mac side runs on SwiftNIO and swift-nio-ssl, because Network.framework cannot start TLS on a connection that is already open.
 
+- `Plugin` and `PluginRouter`: each feature declares the packet types it accepts, and the router hands packets from paired devices to it.
+- Notifications plugin: Android sends `kdeconnect.notification` from a `NotificationListenerService`; the Mac shows them in Notification Center with a Reply field, and sends back `kdeconnect.notification.reply` or `kdeconnect.notification.request` (`cancel`) on dismiss. On pairing the Mac asks for all current notifications (`request: true`).
+
 Next, in order:
 
 1. Check against a real KDE Connect install: the verification code derivation and certificate fields.
-2. First plugins: ping, battery, clipboard, share (files and links), notifications.
+2. Notification app icons (sent as payloads), then ping, battery, clipboard and share (files and links).
 
 ## Platform limits to design around
 
