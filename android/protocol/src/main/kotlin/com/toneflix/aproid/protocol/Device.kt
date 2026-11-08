@@ -1,5 +1,8 @@
 package com.toneflix.aproid.protocol
 
+import java.io.InputStream
+import java.io.OutputStream
+
 /**
  * A connected peer: its encrypted link plus pairing. Packets from a device that
  * is not paired are dropped, except pairing packets.
@@ -26,6 +29,8 @@ class Device(
     val name: String get() = link.identity.deviceName
 
     var listener: Listener? = null
+
+    private val payloads by lazy { PayloadTransfer(ownCertificate) }
 
     @Volatile private var lastReceived = clock()
 
@@ -61,6 +66,32 @@ class Device(
         link.send(packet)
 
         return true
+    }
+
+    /**
+     * Sends [packet] with a payload that the peer downloads from us, such as a file.
+     * [open] is called once the peer connects. Returns false when not paired.
+     */
+    fun sendWithPayload(
+        packet: NetworkPacket,
+        size: Long,
+        open: () -> InputStream,
+        onDone: (Throwable?) -> Unit = {},
+    ): Boolean {
+        if (!isPaired) return false
+
+        val port = payloads.offer(link.certificate, open, onDone)
+        link.send(packet.copy(payloadSize = size, payloadTransferInfo = NetworkPacket.body("port" to port)))
+
+        return true
+    }
+
+    /** Downloads the payload of a packet from this device into [sink]. Blocks until done. */
+    fun receivePayload(packet: NetworkPacket, sink: OutputStream) {
+        val size = packet.payloadSize ?: throw ProtocolException("packet has no payload")
+        val port = packet.payloadPort ?: throw ProtocolException("packet has no payload port")
+
+        payloads.receive(link.address, port, size, link.certificate, sink)
     }
 
     fun requestPair() = apply(pairing.requestPair(clock()))

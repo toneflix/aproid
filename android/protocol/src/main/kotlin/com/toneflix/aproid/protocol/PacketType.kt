@@ -9,6 +9,9 @@ const val UDP_PORT = 1716
 /** TCP ports KDE Connect clients try, in order. */
 val TCP_PORT_RANGE = 1716..1764
 
+/** TCP ports a sender opens for payloads such as files. */
+val PAYLOAD_PORT_RANGE = 1739..1764
+
 /** Packet types. Standard KDE Connect ones use "kdeconnect.", our extensions use "aproid.". */
 object PacketType {
     const val IDENTITY = "kdeconnect.identity"

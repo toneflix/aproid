@@ -38,6 +38,9 @@ data class NetworkPacket(
     fun int(key: String): Int? = (body[key] as? JsonPrimitive)?.intOrNull
     fun long(key: String): Long? = (body[key] as? JsonPrimitive)?.longOrNull
     fun bool(key: String): Boolean? = (body[key] as? JsonPrimitive)?.booleanOrNull
+
+    /** The port the sender opened for this packet's payload. */
+    val payloadPort: Int? get() = (payloadTransferInfo?.get("port") as? JsonPrimitive)?.intOrNull
     fun stringList(key: String): List<String> =
         (body[key] as? kotlinx.serialization.json.JsonArray)
             ?.mapNotNull { (it as? JsonPrimitive)?.content }

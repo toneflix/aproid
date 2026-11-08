@@ -31,4 +31,18 @@ class DevicePluginsTest {
         assertNull(Clipboard.content(Clipboard.packet("")))
         assertNull(Clipboard.content(FindMyPhone.request()))
     }
+
+    @Test fun sharePacketsParse() {
+        val file = Share.file("a.txt", 5).copy(payloadSize = 5)
+
+        assertEquals(Share.File("a.txt", 5), Share.fromPacket(file))
+        assertEquals(Share.Link("https://example.com"), Share.fromPacket(Share.link("https://example.com")))
+        assertEquals(Share.Text("hi"), Share.fromPacket(Share.text("hi")))
+    }
+
+    @Test fun sharedFileNameCannotLeaveTheFolder() {
+        assertEquals("passwd", Share.File("../../etc/passwd", 1).safeName)
+        assertEquals("evil.txt", Share.File("C:\\evil.txt", 1).safeName)
+        assertEquals("file", Share.File("..", 1).safeName)
+    }
 }
