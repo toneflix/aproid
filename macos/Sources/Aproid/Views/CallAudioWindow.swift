@@ -73,13 +73,13 @@ struct CallAudioWindow: View {
     private var bluetoothDetail: AnyView {
         switch audio.stage {
         case .macOff:
-            return AnyView(StepHint(symbol: "laptopcomputer", text: "Turn on Bluetooth on this Mac.", action: ("Open Bluetooth Settings", audio.openBluetoothSettings)))
+            return AnyView(StepHint(icon: .laptop, text: "Turn on Bluetooth on this Mac.", action: ("Open Bluetooth Settings", audio.openBluetoothSettings)))
         case .phoneOff:
-            return AnyView(StepHint(symbol: "iphone", text: "Turn on Bluetooth on your phone.", action: ("Check again", audio.refresh)))
+            return AnyView(StepHint(icon: .smartphone, text: "Turn on Bluetooth on your phone.", action: ("Check again", audio.refresh)))
         case .notAllowed:
-            return AnyView(StepHint(symbol: "hand.raised", text: "Open Aproid on your phone and allow Nearby devices.", action: ("Check again", audio.refresh)))
+            return AnyView(StepHint(icon: .hand, text: "Open Aproid on your phone and allow Nearby devices.", action: ("Check again", audio.refresh)))
         case .noPhone, .checking:
-            return AnyView(StepHint(symbol: "wifi", text: "Waiting for your phone to connect to Aproid…", action: nil))
+            return AnyView(StepHint(icon: .wifi, text: "Waiting for your phone to connect to Aproid…", action: nil))
         default:
             return AnyView(EmptyView())
         }
@@ -88,16 +88,16 @@ struct CallAudioWindow: View {
     private var pairDetail: AnyView {
         switch audio.stage {
         case .notPaired:
-            return AnyView(StepHint(symbol: "link", text: "Your phone asks to pair with \(audio.macName).", action: ("Pair", audio.pair)))
+            return AnyView(StepHint(icon: .link, text: "Your phone asks to pair with \(audio.macName).", action: ("Pair", audio.pair)))
         case .pairing:
             return AnyView(StepHint(
-                symbol: "number",
+                icon: .hash,
                 text: "Check that the same code shows on both screens, then confirm on each. Nothing yet? Pick \(audio.macName) in your phone's Bluetooth settings.",
                 action: ("Open Bluetooth Settings", audio.openBluetoothSettings),
                 isBusy: true
             ))
         case .failed(let reason) where !audio.isPaired:
-            return AnyView(StepHint(symbol: "exclamationmark.triangle.fill", text: reason, action: ("Try again", audio.pair), isWarning: true))
+            return AnyView(StepHint(icon: .triangleAlert, text: reason, action: ("Try again", audio.pair), isWarning: true))
         default:
             return AnyView(EmptyView())
         }
@@ -106,13 +106,13 @@ struct CallAudioWindow: View {
     private var connectDetail: AnyView {
         switch audio.stage {
         case .connecting:
-            return AnyView(StepHint(symbol: "dot.radiowaves.left.and.right", text: "Connecting to \(audio.phoneName ?? "your phone")…", action: nil, isBusy: true))
+            return AnyView(StepHint(icon: .radio, text: "Connecting to \(audio.phoneName ?? "your phone")…", action: nil, isBusy: true))
         case .paused:
-            return AnyView(StepHint(symbol: "pause.circle", text: "Paired. Turn on “Use this Mac for calls” to connect.", action: nil))
+            return AnyView(StepHint(icon: .circlePause, text: "Paired. Turn on “Use this Mac for calls” to connect.", action: nil))
         case .ready:
-            return AnyView(StepHint(symbol: "checkmark.seal.fill", text: "Calls now play here. Use the call banner to move them back to your phone.", action: nil))
+            return AnyView(StepHint(icon: .badgeCheck, text: "Calls now play here. Use the call banner to move them back to your phone.", action: nil))
         case .failed(let reason) where audio.isPaired:
-            return AnyView(StepHint(symbol: "exclamationmark.triangle.fill", text: reason, action: ("Try again", audio.retry), isWarning: true))
+            return AnyView(StepHint(icon: .triangleAlert, text: reason, action: ("Try again", audio.retry), isWarning: true))
         default:
             return AnyView(EmptyView())
         }
@@ -159,9 +159,8 @@ private struct CallAudioHero: View {
         .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).stroke(Theme.border))
     }
 
-    private func glyph(_ symbol: String, size: CGFloat) -> some View {
-        Image(systemName: symbol)
-            .font(.system(size: size, weight: .regular))
+    private func glyph(_ icon: Lucide, size: CGFloat) -> some View {
+        Image(lucide: icon, size: size, weight: .regular)
             .foregroundStyle(Theme.accent)
             .frame(width: 64, height: 64)
     }
@@ -217,7 +216,7 @@ private struct SetupStep<Detail: View>: View {
             ZStack {
                 Circle().fill(circleFill).frame(width: 26, height: 26)
                 if state == .done {
-                    Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
+                    Image(lucide: .check, size: 11, weight: .bold).foregroundStyle(.white)
                 } else {
                     Text("\(number)").font(.system(size: 12, weight: .bold)).foregroundStyle(state == .active ? Color.white : Color.secondary)
                 }
@@ -249,7 +248,7 @@ private struct SetupStep<Detail: View>: View {
 }
 
 private struct StepHint: View {
-    let symbol: String
+    let icon: Lucide
     let text: String
     let action: (String, () -> Void)?
     var isBusy = false
@@ -261,8 +260,7 @@ private struct StepHint: View {
                 if isBusy {
                     ProgressView().controlSize(.small)
                 } else {
-                    Image(systemName: symbol)
-                        .font(.system(size: 12, weight: .semibold))
+                    Image(lucide: icon, size: 12, weight: .semibold)
                         .foregroundStyle(isWarning ? Theme.warn : Theme.accent)
                 }
                 Text(text)
@@ -291,8 +289,7 @@ struct CallAudioRow: View {
                 .fill(audio.isReady ? Theme.okTint : Theme.tint)
                 .frame(width: 34, height: 34)
                 .overlay(
-                    Image(systemName: audio.audioOnMac ? "waveform" : "headphones")
-                        .font(.system(size: 14, weight: .semibold))
+                    Image(lucide: audio.audioOnMac ? .audioLines : .headphones, size: 14, weight: .semibold)
                         .foregroundStyle(audio.isReady ? Theme.ok : Theme.accent)
                 )
 

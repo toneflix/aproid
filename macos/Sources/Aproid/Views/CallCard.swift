@@ -34,13 +34,13 @@ struct CallCard: View {
 
             switch call.phase {
             case .ringing:
-                RoundButton(symbol: "phone.down.fill", color: .red, help: "Decline") { model.declineCall() }
-                RoundButton(symbol: "phone.fill", color: .green, help: audio.isReady ? "Answer on this Mac" : "Answer on your phone") {
+                RoundButton(icon: .phoneOff, color: .red, help: "Decline") { model.declineCall() }
+                RoundButton(icon: .phone, color: .green, help: audio.isReady ? "Answer on this Mac" : "Answer on your phone") {
                     model.answerCall()
                 }
             case .dialing, .talking:
                 RoundButton(
-                    symbol: call.isMuted ? "mic.slash.fill" : "mic.fill",
+                    icon: call.isMuted ? .micOff : .mic,
                     color: call.isMuted ? .primary : Theme.thumb,
                     foreground: call.isMuted ? Theme.card : .primary,
                     help: call.isMuted ? "Unmute" : "Mute"
@@ -49,7 +49,7 @@ struct CallCard: View {
                 }
                 if audio.isReady {
                     RoundButton(
-                        symbol: audio.audioOnMac ? "iphone" : "laptopcomputer",
+                        icon: audio.audioOnMac ? .smartphone : .laptop,
                         color: Theme.thumb,
                         foreground: .primary,
                         help: audio.audioOnMac ? "Move the audio to your phone" : "Move the audio to this Mac"
@@ -57,7 +57,7 @@ struct CallCard: View {
                         model.switchCallAudio()
                     }
                 }
-                RoundButton(symbol: "phone.down.fill", color: .red, help: "Hang up") { model.hangUp() }
+                RoundButton(icon: .phoneOff, color: .red, help: "Hang up") { model.hangUp() }
             }
         }
         .padding(.horizontal, 16)
@@ -78,7 +78,7 @@ struct CallCard: View {
                 HStack(spacing: 4) {
                     Text(Self.duration(context.date.timeIntervalSince(since)))
                     Text("·")
-                    Image(systemName: audio.audioOnMac ? "laptopcomputer" : "iphone")
+                    Image(lucide: audio.audioOnMac ? .laptop : .smartphone, size: 11)
                     Text(audio.audioOnMac ? "On this Mac" : "On your phone")
                 }
             }
@@ -96,7 +96,7 @@ struct CallCard: View {
 }
 
 private struct RoundButton: View {
-    let symbol: String
+    let icon: Lucide
     let color: Color
     var foreground: Color = .white
     let help: String
@@ -104,8 +104,7 @@ private struct RoundButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 16, weight: .semibold))
+            Image(lucide: icon, size: 16, weight: .semibold)
                 .foregroundStyle(foreground)
                 .frame(width: 40, height: 40)
                 .background(Circle().fill(color))

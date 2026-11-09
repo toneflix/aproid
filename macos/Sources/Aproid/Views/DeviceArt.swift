@@ -64,8 +64,7 @@ struct BatteryRing: View {
                 Text(charge.map { "\($0)%" } ?? "–")
                     .font(.system(size: 12, weight: .bold).monospacedDigit())
                 if isCharging {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 8))
+                    Image(lucide: .zap, size: 8)
                         .foregroundStyle(color)
                 }
             }

@@ -25,10 +25,10 @@ struct MessagesWindow: View {
         .frame(minWidth: 760, minHeight: 500)
         .toolbar {
             ToolbarItemGroup {
-                Button { store.showsDialer = true } label: { Label("Call", systemImage: "phone") }
+                Button { store.showsDialer = true } label: { Label("Call", lucide: .phone) }
                     .help("Call a number from your phone")
                     .disabled(!store.hasPhone)
-                Button { composing = true } label: { Label("New message", systemImage: "square.and.pencil") }
+                Button { composing = true } label: { Label("New message", lucide: .squarePen) }
                     .help("Send a new text")
                     .disabled(!store.hasPhone)
             }
@@ -114,8 +114,7 @@ private struct EmptyDetail: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 40, weight: .light))
+            Image(lucide: .messagesSquare, size: 40, weight: .light)
                 .foregroundStyle(Theme.accent)
             Text(hasPhone ? "Pick a conversation" : "Your phone isn't connected")
                 .font(.system(size: 17, weight: .semibold))
@@ -201,8 +200,7 @@ private struct ConversationView: View {
             Spacer()
             if let number = conversation.addresses.first?.address, conversation.addresses.count == 1 {
                 Button { model.dial(number, name: conversation.addresses.first?.name) } label: {
-                    Image(systemName: "phone.fill")
-                        .font(.system(size: 13, weight: .semibold))
+                    Image(lucide: .phone, size: 13, weight: .semibold)
                         .foregroundStyle(Theme.accent)
                         .frame(width: 32, height: 32)
                         .background(Theme.tint, in: Circle())
@@ -229,9 +227,8 @@ private struct ConversationView: View {
                 .onSubmit(send)
 
             Button(action: send) {
-                Image(systemName: "arrow.up")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white)
+                Image(lucide: .arrowUp, size: 13, weight: .bold)
+                    .foregroundStyle(Theme.onAccent)
                     .frame(width: 32, height: 32)
                     .background(Circle().fill(canSend ? Theme.accent : Color.secondary.opacity(0.4)))
             }
@@ -274,7 +271,7 @@ private struct Bubble: View {
                     Text(message.body)
                         .font(.system(size: 13))
                         .textSelection(.enabled)
-                        .foregroundStyle(message.isIncoming ? Color.primary : Color.white)
+                        .foregroundStyle(message.isIncoming ? Color.primary : Theme.onAccent)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(
@@ -299,7 +296,7 @@ private struct PendingBubble: View {
             VStack(alignment: .trailing, spacing: 2) {
                 Text(text.body)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onAccent)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(RoundedRectangle(cornerRadius: 17, style: .continuous).fill(Theme.accent.opacity(0.6)))
@@ -396,7 +393,7 @@ private struct DialSheet: View {
                 Button("Cancel") { dismiss() }
                     .keyboardShortcut(.cancelAction)
                 Spacer()
-                Button(action: call) { Label("Call", systemImage: "phone.fill") }
+                Button(action: call) { Label("Call", lucide: .phone) }
                     .keyboardShortcut(.defaultAction)
                     .disabled(number.trimmingCharacters(in: .whitespaces).isEmpty)
             }

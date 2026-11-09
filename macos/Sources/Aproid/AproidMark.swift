@@ -13,9 +13,9 @@ struct AproidMark: Shape {
         endPoint: UnitPoint(x: 0.47217, y: 0.00006)
     )
 
-    /// The dark background of the app icon.
+    /// The gold background of the app icon.
     static let tile = LinearGradient(
-        colors: [Color(hex: 0x16233F), Color(hex: 0x060B18)],
+        colors: [Color(hex: 0xF6C101), Color(hex: 0xBB8C01)],
         startPoint: .top,
         endPoint: .bottom
     )

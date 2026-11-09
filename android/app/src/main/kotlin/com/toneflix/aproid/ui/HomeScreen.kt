@@ -1,5 +1,6 @@
 package com.toneflix.aproid.ui
 
+import androidx.annotation.DrawableRes
 import android.content.ClipboardManager
 import android.content.Context
 import android.net.Uri
@@ -34,21 +35,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.BatteryChargingFull
-import androidx.compose.material.icons.outlined.ContentPaste
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.Bluetooth
-import androidx.compose.material.icons.outlined.Cast
-import androidx.compose.material.icons.outlined.Link
-import androidx.compose.material.icons.outlined.TouchApp
-import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Sms
-import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -72,7 +58,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -167,7 +152,7 @@ private fun Header(mac: DeviceState?) {
         Text("Aproid", fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp, modifier = Modifier.weight(1f))
         Box {
             IconButton(onClick = { menu = true }) {
-                Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.home_settings), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(painterResource(R.drawable.lucide_settings), contentDescription = stringResource(R.string.home_settings), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 DropdownMenuItem(
@@ -221,7 +206,7 @@ private fun ConnectedHero(mac: DeviceState) {
         LaptopArt(180.dp, Modifier.align(Alignment.CenterHorizontally).padding(vertical = 4.dp)) {
             // The Aproid menu, open on the Mac's screen.
             Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.TopEnd) {
-                Box(Modifier.size(54.dp, 22.dp).background(Color.White, RoundedCornerShape(6.dp)))
+                Box(Modifier.size(54.dp, 22.dp).background(Toneflix.cyan, RoundedCornerShape(6.dp)))
             }
         }
 
@@ -236,7 +221,7 @@ private fun ConnectedHero(mac: DeviceState) {
 private fun Pill(content: @Composable () -> Unit) {
     Row(
         Modifier
-            .background(Color.White.copy(alpha = 0.16f), CircleShape)
+            .background(Aproid.colors.onHero.copy(alpha = 0.1f), CircleShape)
             .padding(start = 10.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -289,14 +274,14 @@ private fun QuickTiles(mac: DeviceState) {
     }
 
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Tile(Icons.Outlined.UploadFile, stringResource(R.string.home_send_files), Modifier.weight(1f)) { pick.launch("*/*") }
-        Tile(Icons.Outlined.ContentPaste, stringResource(R.string.home_clipboard), Modifier.weight(1f)) {
+        Tile(R.drawable.lucide_file_up, stringResource(R.string.home_send_files), Modifier.weight(1f)) { pick.launch("*/*") }
+        Tile(R.drawable.lucide_clipboard, stringResource(R.string.home_clipboard), Modifier.weight(1f)) {
             val sent = ClipboardPlugin.send(context)
             val message = if (sent) R.string.clipboard_sent else R.string.clipboard_empty
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
-        Tile(Icons.Outlined.Link, stringResource(R.string.home_open_link), Modifier.weight(1f)) { linkDialog = true }
-        Tile(Icons.Outlined.Cast, stringResource(R.string.home_mirror), Modifier.weight(1f)) { ScreenPlugin.mirror(context, mac.id) }
+        Tile(R.drawable.lucide_link, stringResource(R.string.home_open_link), Modifier.weight(1f)) { linkDialog = true }
+        Tile(R.drawable.lucide_cast, stringResource(R.string.home_mirror), Modifier.weight(1f)) { ScreenPlugin.mirror(context, mac.id) }
     }
 
     if (linkDialog) {
@@ -305,7 +290,7 @@ private fun QuickTiles(mac: DeviceState) {
 }
 
 @Composable
-private fun Tile(icon: ImageVector, label: String, modifier: Modifier, onClick: () -> Unit) {
+private fun Tile(@DrawableRes icon: Int, label: String, modifier: Modifier, onClick: () -> Unit) {
     Column(
         modifier
             .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.medium)
@@ -318,13 +303,13 @@ private fun Tile(icon: ImageVector, label: String, modifier: Modifier, onClick: 
             Modifier.size(48.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+            Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
         }
         Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
 }
 
-/** Amber cards for the permissions Aproid still needs. Each disappears once granted. */
+/** Cyan cards for the permissions Aproid still needs. Each disappears once granted. */
 @Composable
 private fun SetupCards() {
     val context = LocalContext.current
@@ -372,28 +357,28 @@ private fun SetupCards() {
 
     AnimatedVisibility(!notifications) {
         SetupCard(
-            Icons.Outlined.Notifications,
+            R.drawable.lucide_bell,
             stringResource(R.string.setup_notifications),
             stringResource(R.string.setup_notifications_hint),
         ) { context.startActivity(NotificationPlugin.accessSettingsIntent()) }
     }
     AnimatedVisibility(!background) {
         SetupCard(
-            Icons.Outlined.BatteryChargingFull,
+            R.drawable.lucide_battery_charging,
             stringResource(R.string.setup_background),
             stringResource(R.string.setup_background_hint),
         ) { context.startActivity(LinkService.unrestrictIntent(context)) }
     }
     AnimatedVisibility(!phone) {
         SetupCard(
-            Icons.Outlined.Sms,
+            R.drawable.lucide_message_square,
             stringResource(R.string.setup_phone),
             stringResource(R.string.setup_phone_hint),
         ) { askPhone.launch(CallPlugin.permissions) }
     }
     AnimatedVisibility(!location) {
         SetupCard(
-            Icons.Outlined.LocationOn,
+            R.drawable.lucide_map_pin,
             stringResource(R.string.setup_location),
             stringResource(R.string.setup_location_hint),
         ) {
@@ -406,14 +391,14 @@ private fun SetupCards() {
     }
     AnimatedVisibility(!photos) {
         SetupCard(
-            Icons.Outlined.Image,
+            R.drawable.lucide_image,
             stringResource(R.string.setup_photos),
             stringResource(R.string.setup_photos_hint),
         ) { askPhotos.launch(PhotosPlugin.permissions) }
     }
     AnimatedVisibility(!nearby) {
         SetupCard(
-            Icons.Outlined.Bluetooth,
+            R.drawable.lucide_bluetooth,
             stringResource(R.string.setup_nearby),
             stringResource(R.string.setup_nearby_hint),
         ) { askNearby.launch(NearbyBeacon.permissions) }
@@ -421,7 +406,7 @@ private fun SetupCards() {
     AnimatedVisibility(control != ScreenControlService.Status.ON) {
         val stopped = control == ScreenControlService.Status.STOPPED
         SetupCard(
-            Icons.Outlined.TouchApp,
+            R.drawable.lucide_pointer,
             stringResource(if (stopped) R.string.setup_control_stopped else R.string.setup_control),
             stringResource(if (stopped) R.string.setup_control_stopped_hint else R.string.setup_control_hint),
         ) { context.startActivity(ScreenControlService.settingsIntent()) }
@@ -429,7 +414,7 @@ private fun SetupCards() {
 }
 
 @Composable
-private fun SetupCard(icon: ImageVector, title: String, hint: String, onAllow: () -> Unit) {
+private fun SetupCard(@DrawableRes icon: Int, title: String, hint: String, onAllow: () -> Unit) {
     val colors = Aproid.colors
 
     Row(
@@ -441,7 +426,7 @@ private fun SetupCard(icon: ImageVector, title: String, hint: String, onAllow: (
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(40.dp).background(colors.setupChip, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
-            Icon(icon, contentDescription = null, tint = colors.onSetup, modifier = Modifier.size(20.dp))
+            Icon(painterResource(icon), contentDescription = null, tint = colors.onSetup, modifier = Modifier.size(20.dp))
         }
         Column(Modifier.weight(1f)) {
             Text(title, color = colors.onSetup, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
@@ -545,7 +530,7 @@ private fun RecentRow(item: RecentItem, onOpen: () -> Unit) {
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                recentIcon(item),
+                painterResource(recentIcon(item)),
                 contentDescription = null,
                 tint = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
@@ -588,12 +573,13 @@ private fun RecentRow(item: RecentItem, onOpen: () -> Unit) {
     }
 }
 
-private fun recentIcon(item: RecentItem): ImageVector = when {
-    item.kind == RecentItem.Kind.FAILED -> Icons.Outlined.ErrorOutline
-    item.kind == RecentItem.Kind.LINK -> Icons.Outlined.Link
-    item.kind == RecentItem.Kind.TEXT -> Icons.Outlined.ContentPaste
-    item.mimeType?.startsWith("image/") == true -> Icons.Outlined.Image
-    else -> Icons.Outlined.Description
+@DrawableRes
+private fun recentIcon(item: RecentItem): Int = when {
+    item.kind == RecentItem.Kind.FAILED -> R.drawable.lucide_circle_alert
+    item.kind == RecentItem.Kind.LINK -> R.drawable.lucide_link
+    item.kind == RecentItem.Kind.TEXT -> R.drawable.lucide_clipboard
+    item.mimeType?.startsWith("image/") == true -> R.drawable.lucide_image
+    else -> R.drawable.lucide_file_text
 }
 
 @Composable

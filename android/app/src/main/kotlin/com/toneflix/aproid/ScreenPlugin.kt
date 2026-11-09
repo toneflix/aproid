@@ -63,7 +63,7 @@ object ScreenPlugin : Plugin {
         // Android only lets the app open the permission screen from the background when tapped.
         val tap = PendingIntent.getActivity(context, 4, captureIntent(context), PendingIntent.FLAG_IMMUTABLE)
         val notification = Notification.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_menu_slideshow)
+            .setSmallIcon(R.drawable.lucide_cast)
             .setContentTitle(context.getString(R.string.screen_ask_title, device.name))
             .setContentText(context.getString(R.string.screen_ask_text))
             .setContentIntent(tap)

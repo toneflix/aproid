@@ -11,8 +11,7 @@ struct DropZone: View {
     var body: some View {
         Button { model.chooseFiles(for: deviceId) } label: {
             HStack(spacing: 8) {
-                Image(systemName: targeted ? "arrow.down.circle.fill" : "arrow.down.to.line")
-                    .font(.system(size: 14, weight: .semibold))
+                Image(lucide: targeted ? .circleArrowDown : .arrowDownToLine, size: 14, weight: .semibold)
                 Text(targeted ? "Release to send" : "Drop files here to send them to your phone")
                     .font(.system(size: 12, weight: .medium))
             }
