@@ -474,6 +474,10 @@ public sealed partial class PanelWindow : Window
         hotkey.Click += (_, _) => Model.OpensWithHotkey = hotkey.IsChecked;
         SettingsMenu.Items.Add(hotkey);
 
+        var photosFolder = new ToggleMenuFlyoutItem { Text = "Show phone photos in Explorer", IsChecked = Model.ShowsPhotosInExplorer };
+        photosFolder.Click += (_, _) => Model.ShowsPhotosInExplorer = photosFolder.IsChecked;
+        SettingsMenu.Items.Add(photosFolder);
+
         var switcher = new MenuFlyoutSubItem { Text = "Switch phones with" };
         foreach (var (style, label) in new[] { (PhoneSwitcherStyle.Carousel, "Card carousel"), (PhoneSwitcherStyle.Menu, "Menu on the phone name") })
         {

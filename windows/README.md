@@ -16,7 +16,11 @@ dotnet test tests/Aproid.Core.Tests
 dotnet run --project src/Aproid -r win-x64 -p:Platform=x64
 ```
 
-CI publishes a self-contained build as the `Aproid-windows-x64` artifact: unzip it and run `Aproid.exe`.
+CI publishes a self-contained build as the `Aproid-windows-x64` artifact (unzip it and run `Aproid.exe`) and the installer as `Aproid-windows-setup`.
+
+## Releases
+
+Push a tag like `windows-v1.2.3` and the Windows release workflow publishes `Aproid-Setup-1.2.3.exe` on GitHub. Installed copies check those releases twice a day and offer to update. The installer isn't signed, so on first install Windows SmartScreen asks: pick "More info", then "Run anyway".
 
 On first launch Windows Firewall asks whether Aproid may use the network. Allow it on private networks, or the phone can't find this PC.
 
@@ -27,6 +31,10 @@ Pairing with the verification code, phone notifications with replies, shared cli
 Texts in the Messages window, calls with a banner to answer, mute and hang up, media controls for what the phone plays, the phone's photos in the Photos window, and several paired phones with a card carousel.
 
 Mirror and control the phone's screen from the panel's Mirror tile. When the phone is off your Wi-Fi but in Bluetooth range, Aproid finds it over Bluetooth and can ask it to turn on its hotspot and join it. Windows only shares the Wi-Fi name with apps when location is allowed for apps, so turn that on if Aproid doesn't remember the hotspot.
+
+Your phone's 2,000 most recent photos show in Explorer under `Phone Photos` in your user folder. They take no space until opened, when Aproid fetches the original from the phone. Turn it off in the panel's settings menu.
+
+Win+Shift+A opens the panel from anywhere. Pin Aproid to the taskbar for jump list shortcuts to Messages, Photos, mirroring and ringing your phone.
 
 Right-click files in Explorer and pick "Send to phone" (on Windows 11 it's under "Show more options"). To call `tel:` links from your phone, pick Aproid for TEL in Settings > Apps > Default apps.
 

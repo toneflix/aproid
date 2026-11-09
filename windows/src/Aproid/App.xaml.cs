@@ -124,7 +124,7 @@ public partial class App : Application
 
     private void ShowTrayMenu()
     {
-        switch (tray!.ShowMenu(["Open Aproid", "Messages", "Photos", "Open Downloads", null, "Quit Aproid"]))
+        switch (tray!.ShowMenu(["Open Aproid", "Messages", "Photos", "Phone Photos folder", "Open Downloads", null, "Quit Aproid"]))
         {
             case 0:
                 panel!.ShowNear(tray.Bounds);
@@ -136,9 +136,12 @@ public partial class App : Application
                 model!.ShowPhotos();
                 break;
             case 3:
+                Explorer.Open(model!.PhonePhotosFolder);
+                break;
+            case 4:
                 Explorer.Open(AppPaths.Downloads);
                 break;
-            case 5:
+            case 6:
                 Quit();
                 break;
         }
