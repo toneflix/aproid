@@ -13,6 +13,7 @@ class PhoneNotificationTest {
         time = 1_700_000_000_000,
         replyId = "f3b2c1",
         iconHash = "900150983cd24fb0d6963f7d28e17f72",
+        actions = listOf("Mark as read", "Archive"),
     )
 
     @Test fun roundTrips() {
@@ -52,5 +53,18 @@ class PhoneNotificationTest {
         assertEquals(PacketType.NOTIFICATION_REPLY, reply.type)
         assertEquals("f3b2c1", reply.string("requestReplyId"))
         assertEquals("On my way", reply.string("message"))
+    }
+
+    @Test fun actionRoundTripsAndNeedsBothFields() {
+        val pressed = NotificationAction.fromPacket(NetworkPacket.parse(NotificationRequests.action("k1", "Archive").serialize()))
+
+        assertEquals(NotificationAction("k1", "Archive"), pressed)
+        assertNull(NotificationAction.fromPacket(NetworkPacket(PacketType.NOTIFICATION_ACTION, NetworkPacket.body("key" to "k1"))))
+    }
+
+    @Test fun readsKdeConnectActions() {
+        val wire = """{"id":1,"type":"kdeconnect.notification","body":{"id":"k1","appName":"Gmail","title":"Bo","text":"hi","actions":["Archive","Reply"]}}"""
+
+        assertEquals(listOf("Archive", "Reply"), PhoneNotification.fromPacket(NetworkPacket.parse(wire))?.actions)
     }
 }

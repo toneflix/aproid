@@ -5,7 +5,8 @@ namespace Aproid.Core;
 
 /// A notification mirrored from the phone ("kdeconnect.notification").
 /// `ReplyId` is set when the notification can be answered with text. `IconHash` names the icon sent as
-/// the packet's payload, so the receiver can reuse one it already has. Mirrors PhoneNotification.kt and .swift.
+/// the packet's payload, so the receiver can reuse one it already has. `Actions` are the titles of the notification's
+/// buttons, such as "Mark as read", pressed with `NotificationRequests.Action`. Mirrors PhoneNotification.kt and .swift.
 public sealed record PhoneNotification(
     string Id,
     string AppName,
@@ -15,8 +16,12 @@ public sealed record PhoneNotification(
     bool IsClearable = true,
     string? ReplyId = null,
     bool Silent = false,
-    string? IconHash = null)
+    string? IconHash = null,
+    IReadOnlyList<string>? Actions = null)
 {
+    /// The button titles, never null.
+    public IReadOnlyList<string> ActionTitles => Actions ?? [];
+
     /// Null for removals and malformed packets.
     public static PhoneNotification? FromPacket(NetworkPacket packet)
     {
@@ -26,6 +31,7 @@ public sealed record PhoneNotification(
         var time = long.TryParse(packet.GetString("time"), out var parsed) ? parsed : packet.GetLong("time") ?? 0;
         var replyId = packet.GetString("requestReplyId");
         var iconHash = packet.GetString("payloadHash");
+        var actions = packet.GetStringList("actions").Where(a => a.Length > 0).ToList();
 
         return new PhoneNotification(
             id,
@@ -36,7 +42,8 @@ public sealed record PhoneNotification(
             packet.GetBool("isClearable") ?? true,
             string.IsNullOrEmpty(replyId) ? null : replyId,
             packet.GetBool("silent") ?? false,
-            string.IsNullOrEmpty(iconHash) ? null : iconHash);
+            string.IsNullOrEmpty(iconHash) ? null : iconHash,
+            actions.Count > 0 ? actions : null);
     }
 
     public NetworkPacket ToPacket()
@@ -54,6 +61,7 @@ public sealed record PhoneNotification(
         };
         if (ReplyId is not null) body["requestReplyId"] = ReplyId;
         if (IconHash is not null) body["payloadHash"] = IconHash;
+        if (ActionTitles.Count > 0) body["actions"] = new JsonArray(ActionTitles.Select(a => (JsonNode?)JsonValue.Create(a)).ToArray());
 
         return new NetworkPacket(PacketType.Notification, body);
     }
@@ -78,4 +86,21 @@ public static class NotificationRequests
 
     public static NetworkPacket Reply(string replyId, string message) =>
         new(PacketType.NotificationReply, new JsonObject { ["requestReplyId"] = replyId, ["message"] = message });
+
+    /// Presses the button titled `action` on notification `id`.
+    public static NetworkPacket Action(string id, string action) =>
+        new(PacketType.NotificationAction, new JsonObject { ["key"] = id, ["action"] = action });
+}
+
+/// A button the computer pressed on a phone notification.
+public sealed record NotificationAction(string Id, string Action)
+{
+    public static NotificationAction? FromPacket(NetworkPacket packet)
+    {
+        if (packet.Type != PacketType.NotificationAction) return null;
+        if (packet.GetString("key") is not { Length: > 0 } id) return null;
+        if (packet.GetString("action") is not { Length: > 0 } action) return null;
+
+        return new NotificationAction(id, action);
+    }
 }
