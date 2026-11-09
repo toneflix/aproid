@@ -18,8 +18,8 @@ BRANDING = ROOT / "branding"
 RES = ROOT / "android/app/src/main/res"
 MAC = ROOT / "macos"
 
-TILE_TOP = "#16233F"
-TILE_BOTTOM = "#060B18"
+TILE_TOP = "#F6C101"
+TILE_BOTTOM = "#BB8C01"
 
 
 class Rasterizer:
@@ -75,7 +75,7 @@ class Brand:
         )
 
     def tile_svg(self, rounded=True):
-        """The 1024px app icon: the mark on a dark tile, following the macOS icon grid when rounded."""
+        """The 1024px app icon: the mark on a gold tile, following the macOS icon grid when rounded."""
         side = 600
         offset = 512 - side / 2
         x1, y1, x2, y2 = self._gradient_points(side, offset, offset)
@@ -183,7 +183,7 @@ struct AproidMark: Shape {{
         endPoint: UnitPoint(x: {x1:.5f}, y: {y1:.5f})
     )
 
-    /// The dark background of the app icon.
+    /// The gold background of the app icon.
     static let tile = LinearGradient(
         colors: [Color(hex: 0x{TILE_TOP.lstrip("#")}), Color(hex: 0x{TILE_BOTTOM.lstrip("#")})],
         startPoint: .top,
