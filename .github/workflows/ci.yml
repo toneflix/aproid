@@ -30,6 +30,12 @@ jobs:
         working-directory: macos
     steps:
       - uses: actions/checkout@v4
+      # Liquid Glass needs the macOS 26 SDK, so build with Xcode 26 when the runner has it.
+      - name: Pick Xcode
+        run: |
+          xcode=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$xcode" ]; then sudo xcode-select -s "$xcode"; fi
+          swift --version
       - name: Build
         run: swift build
       - name: Test
