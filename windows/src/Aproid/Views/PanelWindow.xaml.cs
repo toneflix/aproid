@@ -79,7 +79,7 @@ public sealed partial class PanelWindow : Window
     public bool IsShown => AppWindow.IsVisible;
 
     /// Opens or closes the panel from the tray icon. A click that just closed it by taking focus away does not reopen it.
-    public void Toggle(RECT? tray)
+    internal void Toggle(RECT? tray)
     {
         if (IsShown)
         {
@@ -92,7 +92,7 @@ public sealed partial class PanelWindow : Window
         ShowNear(tray);
     }
 
-    public void ShowNear(RECT? tray)
+    internal void ShowNear(RECT? tray)
     {
         anchor = tray;
         Fit();

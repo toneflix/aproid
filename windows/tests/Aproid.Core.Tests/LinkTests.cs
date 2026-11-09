@@ -244,7 +244,7 @@ public sealed class LanLinkTests : IDisposable
     }
 
     [Fact]
-    public void FileTravelsOverItsOwnTlsConnection()
+    public async Task FileTravelsOverItsOwnTlsConnection()
     {
         var (phoneDevice, pcDevice) = ConnectPaired();
         var bytes = new byte[3 * 1024 * 1024 + 17];
@@ -258,7 +258,7 @@ public sealed class LanLinkTests : IDisposable
 
         var sink = new MemoryStream();
         long progress = 0;
-        pcDevice.ReceivePayloadAsync(offer, sink, n => Interlocked.Add(ref progress, n)).Wait(TimeSpan.FromSeconds(20));
+        await pcDevice.ReceivePayloadAsync(offer, sink, n => Interlocked.Add(ref progress, n)).WaitAsync(TimeSpan.FromSeconds(20));
 
         Assert.Equal(bytes, sink.ToArray());
         Assert.Equal(bytes.Length, Interlocked.Read(ref progress));
@@ -267,7 +267,7 @@ public sealed class LanLinkTests : IDisposable
     }
 
     [Fact]
-    public void LiveStreamIsReadUntilTheSenderCloses()
+    public async Task LiveStreamIsReadUntilTheSenderCloses()
     {
         var (phoneDevice, pcDevice) = ConnectPaired();
         var bytes = new byte[100_000];
@@ -278,11 +278,11 @@ public sealed class LanLinkTests : IDisposable
         var announced = pc.Recorder.Packets.Take()!;
 
         var received = new MemoryStream();
-        pcDevice.ReceiveStreamAsync(announced, data =>
+        await pcDevice.ReceiveStreamAsync(announced, data =>
         {
             received.Write(data.Span);
             return ValueTask.CompletedTask;
-        }).Wait(TimeSpan.FromSeconds(20));
+        }).WaitAsync(TimeSpan.FromSeconds(20));
 
         Assert.Equal(bytes, received.ToArray());
     }

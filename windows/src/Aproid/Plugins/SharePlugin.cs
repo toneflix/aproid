@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Aproid.Core;
 using Aproid.Model;
 using Microsoft.Windows.AppNotifications.Builder;
@@ -301,7 +300,7 @@ internal sealed class SharePlugin(string folder, TransferStore store, ToastCente
             return;
         }
 
-        Process.Start(new ProcessStartInfo(url.AbsoluteUri) { UseShellExecute = true });
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url.AbsoluteUri) { UseShellExecute = true });
         OnActivity?.Invoke(new Activity(ActivityKind.Link, url.Host, $"Opened from {device.Name}") { Url = url.AbsoluteUri });
     }
 
