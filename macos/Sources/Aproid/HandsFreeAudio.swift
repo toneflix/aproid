@@ -46,6 +46,11 @@ final class HandsFreeAudio: NSObject, ObservableObject {
 
     var isReady: Bool { stage == .ready }
 
+    /// Whether calls on this phone are heard and answered on this Mac.
+    func carries(_ deviceId: String) -> Bool {
+        isReady && phoneId == deviceId
+    }
+
     /// The phone reports this Mac among its paired Bluetooth devices.
     var isPaired: Bool { status?.paired == true }
 
@@ -56,7 +61,8 @@ final class HandsFreeAudio: NSObject, ObservableObject {
     var send: ((NetworkPacket) -> Bool)?
 
     private static let enabledKey = "callAudioEnabled"
-    private var phoneId: String?
+    /// The phone whose calls this Mac carries.
+    private(set) var phoneId: String?
     private var isOnline = false
     private var status: CallAudio.Status?
     private var handsFree: IOBluetoothHandsFreeDevice?
