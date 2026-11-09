@@ -346,7 +346,7 @@ private fun SetupCards() {
         photos = PhotosPlugin.hasPermission(context)
     }
 
-    var control by remember { mutableStateOf(ScreenControlService.isEnabled(context)) }
+    var control by remember { mutableStateOf(ScreenControlService.status(context)) }
     var nearby by remember { mutableStateOf(NearbyBeacon.hasPermission(context)) }
     val askNearby = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         nearby = NearbyBeacon.hasPermission(context)
@@ -354,7 +354,7 @@ private fun SetupCards() {
     }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        control = ScreenControlService.isEnabled(context)
+        control = ScreenControlService.status(context)
         nearby = NearbyBeacon.hasPermission(context)
         photos = PhotosPlugin.hasPermission(context)
         location = LocationPlugin.hasPermission(context) && LocationPlugin.hasBackgroundPermission(context)
@@ -411,11 +411,12 @@ private fun SetupCards() {
             stringResource(R.string.setup_nearby_hint),
         ) { askNearby.launch(NearbyBeacon.permissions) }
     }
-    AnimatedVisibility(!control) {
+    AnimatedVisibility(control != ScreenControlService.Status.ON) {
+        val stopped = control == ScreenControlService.Status.STOPPED
         SetupCard(
             Icons.Outlined.TouchApp,
-            stringResource(R.string.setup_control),
-            stringResource(R.string.setup_control_hint),
+            stringResource(if (stopped) R.string.setup_control_stopped else R.string.setup_control),
+            stringResource(if (stopped) R.string.setup_control_stopped_hint else R.string.setup_control_hint),
         ) { context.startActivity(ScreenControlService.settingsIntent()) }
     }
 }
