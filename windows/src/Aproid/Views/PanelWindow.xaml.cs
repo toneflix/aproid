@@ -353,6 +353,14 @@ public sealed partial class PanelWindow : Window
         Model.ShowDialer();
     }
 
+    private void Mirror_Click(object sender, RoutedEventArgs e)
+    {
+        if (FocusedId is not string id) return;
+
+        Hide();
+        Model.StartMirroring(id);
+    }
+
     private void Photos_Click(object sender, RoutedEventArgs e)
     {
         Hide();

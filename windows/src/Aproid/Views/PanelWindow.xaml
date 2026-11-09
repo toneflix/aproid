@@ -244,7 +244,8 @@
                         <views:ActionTile Grid.Row="1" Grid.Column="1" Icon="{x:Bind NotificationsIcon(Model.MirrorsNotifications), Mode=OneWay}" Title="Notifications" Subtitle="{x:Bind Model.NotificationsSubtitle, Mode=OneWay}" IsOn="{x:Bind Model.MirrorsNotifications, Mode=OneWay}" Click="Notifications_Click" />
                         <views:ActionTile Grid.Row="2" Icon="MessageSquare" Title="Messages" Subtitle="{x:Bind Model.MessagesSubtitle, Mode=OneWay}" Click="Messages_Click" />
                         <views:ActionTile Grid.Row="2" Grid.Column="1" Icon="Phone" Title="Call" Subtitle="From your phone" Click="Call_Click" />
-                        <views:ActionTile Grid.Row="3" Grid.ColumnSpan="2" Icon="Images" Title="Photos" Subtitle="Browse &amp; download" Click="Photos_Click" />
+                        <views:ActionTile Grid.Row="3" Icon="Cast" Title="Mirror" Subtitle="See &amp; use your phone" Click="Mirror_Click" />
+                        <views:ActionTile Grid.Row="3" Grid.Column="1" Icon="Images" Title="Photos" Subtitle="Browse &amp; download" Click="Photos_Click" />
                     </Grid>
 
                     <!-- Drop files to send them -->

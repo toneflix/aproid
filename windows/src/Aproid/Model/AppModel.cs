@@ -27,6 +27,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private readonly CallPlugin calls = new();
     private readonly LocationPlugin locations = new();
     private readonly PhotosPlugin photos = new();
+    private readonly ScreenPlugin screen = new();
     private LanLink? link;
     private DispatcherQueueTimer? timer;
     private DateOnly notificationsDay = DateOnly.FromDateTime(DateTime.Now);
@@ -78,7 +79,21 @@ public sealed class AppModel : Observable, IDeviceDelegate
             if (args.PropertyName == nameof(MessagesStore.UnreadCount)) Raise(nameof(MessagesSubtitle));
         };
         Photos.Send = packet => Primary is Device phone && phone.Send(packet);
-        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos]);
+        screen.OnStarted = (device, info) =>
+        {
+            // Reset now, on the network thread, so the stream's first frames aren't lost.
+            Video.Reset();
+            var (id, name) = (device.Id, device.Name);
+            ui.TryEnqueue(() =>
+            {
+                Mirror.Started(id, name, info.Width, info.Height);
+                ScreenStarted?.Invoke(Video.CreateSource((uint)Math.Max(info.Width, 0), (uint)Math.Max(info.Height, 0)));
+            });
+        };
+        screen.OnFrame = frame => Video.Push(frame);
+        screen.OnEnded = id => ui.TryEnqueue(() => Mirror.Ended(id));
+        Mirror.Send = (id, packet) => connected[id]?.Send(packet) == true;
+        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen]);
 
         share.Restore();
     }
@@ -88,6 +103,10 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public MessagesStore Messages { get; } = new();
 
     public PhotosStore Photos { get; } = new();
+
+    public ScreenMirror Mirror { get; } = new();
+
+    internal ScreenVideo Video { get; } = new();
 
     /// The call the call card shows.
     public ActiveCall? Call
@@ -551,6 +570,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         if (!connected.Remove(device)) return;
 
         media.Forget(device.Id);
+        Mirror.Ended(device.Id);
         if (Call?.DeviceId == device.Id) EndCall();
 
         Publish();
@@ -660,4 +680,18 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public void ShowPhotos() => PhotosRequested?.Invoke();
 
     public void ShowDialer() => DialerRequested?.Invoke();
+
+    /// Asks the phone to share its screen and opens the window that shows it.
+    public void StartMirroring(string id)
+    {
+        if (connected[id] is not { IsPaired: true } device) return;
+
+        Mirror.Begin(id, device.Name);
+        MirrorRequested?.Invoke();
+    }
+
+    public event Action? MirrorRequested;
+
+    /// A phone started streaming its screen, whether asked here or on the phone. Carries the decoder's source.
+    public event Action<Windows.Media.Core.MediaStreamSource>? ScreenStarted;
 }
