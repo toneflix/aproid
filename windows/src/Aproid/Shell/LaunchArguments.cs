@@ -18,7 +18,7 @@ internal sealed record LaunchArguments(IReadOnlyList<string> Files, string? Numb
         {
             if (argument == Startup.BackgroundArgument) background = true;
             else if (argument == Integration.SendArgument) sending = true;
-            else if (argument.StartsWith("tel:", StringComparison.OrdinalIgnoreCase)) number = Number(argument);
+            else if (argument.StartsWith("tel:", StringComparison.OrdinalIgnoreCase)) number = DigitsOf(argument);
             else if (sending && File.Exists(argument)) files.Add(argument);
         }
 
@@ -46,7 +46,7 @@ internal sealed record LaunchArguments(IReadOnlyList<string> Files, string? Numb
     }
 
     /// The digits of a tel: link, keeping + * and #.
-    private static string? Number(string link)
+    private static string? DigitsOf(string link)
     {
         var number = new string(Uri.UnescapeDataString(link[4..]).Where(c => char.IsAsciiDigit(c) || c is '+' or '*' or '#').ToArray());
 
