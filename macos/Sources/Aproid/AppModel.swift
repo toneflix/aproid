@@ -29,7 +29,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var notificationsToday = 0
     @Published private(set) var call: ActiveCall?
 
-    /// The paired phone the panel, Messages, calls and the Services menu use.
+    /// The paired phone the panel, Messages, calls and the Share menu use.
     @Published private(set) var primaryId: String?
 
     /// The phone the user picked when several are paired. Kept across launches.
@@ -54,6 +54,9 @@ final class AppModel: ObservableObject {
             UserDefaults.standard.set(mirrorsNotifications, forKey: "mirrorsNotifications")
         }
     }
+
+    /// Sends what is shared from the Share menu.
+    private(set) lazy var shareInbox = ShareInbox(model: self)
 
     static let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
         ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads")
