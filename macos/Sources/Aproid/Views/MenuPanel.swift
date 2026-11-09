@@ -60,6 +60,7 @@ struct MenuPanel: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
             QuickActions(device: device, model: model, messages: model.messages)
+            CallAudioRow(audio: model.callAudio)
             DropZone(deviceId: device.id, model: model)
         } else {
             SearchingCard(hasNearby: !model.devices.isEmpty)

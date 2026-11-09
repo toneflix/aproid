@@ -18,7 +18,7 @@ The goal is an app better than both KDE Connect and Microsoft Phone Link. Each s
 ## 3. Messages and calls
 - SMS and MMS: read threads, send, get new messages live
 - Calls: see who's calling, answer, reject, dial from the Mac
-- Test: the Mac as a Bluetooth hands-free device, for call audio on the Mac
+- Call audio on the Mac, with the Mac as a Bluetooth hands-free device (experimental, needs testing on real Macs)
 
 ## 4. Where we beat KDE Connect and Phone Link
 These are the reasons someone would pick Aproid. Packets for them use the `aproid.` prefix.

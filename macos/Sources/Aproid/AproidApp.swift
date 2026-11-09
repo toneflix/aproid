@@ -21,10 +21,16 @@ struct AproidApp: App {
             PhotosWindow(store: model.photos)
         }
         .defaultSize(width: 860, height: 640)
+
+        Window("Call Audio", id: AproidApp.callAudioWindow) {
+            CallAudioWindow(audio: model.callAudio)
+        }
+        .windowResizability(.contentSize)
     }
 
     static let messagesWindow = "messages"
     static let photosWindow = "photos"
+    static let callAudioWindow = "callAudio"
 }
 
 /// Opens links handed to the app: aproid://share from the Share menu, and tel: numbers, such as one clicked in Safari.

@@ -16,6 +16,7 @@ struct ActiveCall: Equatable {
     var name: String?
     var photo: NSImage?
     var phase: Phase
+    var isMuted = false
 
     var title: String { name ?? number }
 }
@@ -45,7 +46,7 @@ final class CallPanel {
             return
         }
 
-        let size = NSSize(width: 360, height: 112)
+        let size = NSSize(width: 380, height: 112)
         let panel = NSPanel(
             contentRect: NSRect(origin: .zero, size: size),
             styleMask: [.nonactivatingPanel, .borderless, .fullSizeContentView],
@@ -58,7 +59,7 @@ final class CallPanel {
         panel.backgroundColor = .clear
         panel.hasShadow = true
         panel.isMovableByWindowBackground = true
-        panel.contentView = NSHostingView(rootView: CallCard(model: model))
+        panel.contentView = NSHostingView(rootView: CallCard(model: model, audio: model.callAudio))
 
         if let screen = NSScreen.main?.visibleFrame {
             panel.setFrameOrigin(NSPoint(x: screen.maxX - size.width - 16, y: screen.maxY - size.height - 12))
