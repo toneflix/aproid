@@ -97,6 +97,14 @@ private struct PanelHeader: View {
                 Picker("Switch phones with", selection: $model.switcherStyle) {
                     ForEach(PhoneSwitcherStyle.allCases) { Text($0.title).tag($0) }
                 }
+                Toggle("Open at login", isOn: $model.opensAtLogin)
+                Menu("Keyboard shortcuts") {
+                    Toggle("Use shortcuts", isOn: $model.usesShortcuts)
+                    Divider()
+                    ForEach(model.shortcuts.shortcuts, id: \.symbol) { shortcut in
+                        Text("\(shortcut.symbol)   \(shortcut.title)")
+                    }
+                }
                 Button("Open Downloads") { NSWorkspace.shared.open(AppModel.downloads) }
 
                 let paired = model.devices.filter { $0.pairState == .paired }
