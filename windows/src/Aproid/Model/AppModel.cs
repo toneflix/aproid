@@ -40,6 +40,9 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private ActiveCall? call;
     private string? finding;
     private string? messagesDevice;
+    private readonly List<string> waitingFiles = [];
+    private string? waitingNumber;
+    private DateTimeOffset waitingSince;
 
     public AppModel(DispatcherQueue ui)
     {
@@ -115,7 +118,11 @@ public sealed class AppModel : Observable, IDeviceDelegate
         get => devices;
         private set
         {
-            if (Set(ref devices, value)) Raise(nameof(HasOtherPhones));
+            if (!Set(ref devices, value)) return;
+
+            Raise(nameof(HasOtherPhones));
+            Raise(nameof(NextPhone));
+            Raise(nameof(ShowsCarousel));
         }
     }
 
@@ -128,6 +135,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
             if (!Set(ref focused, value)) return;
 
             Raise(nameof(HasOtherPhones));
+            Raise(nameof(NextPhone));
+            Raise(nameof(ShowsCarousel));
             Raise(nameof(ShowsSearching));
             Raise(nameof(ShowsPairing));
             Raise(nameof(ShowsPhone));
@@ -185,6 +194,29 @@ public sealed class AppModel : Observable, IDeviceDelegate
             Raise(nameof(NotificationsSubtitle));
             Raise(nameof(PhoneSummary));
         }
+    }
+
+    public PhoneSwitcherStyle SwitcherStyle
+    {
+        get => settings.SwitcherStyle;
+        set
+        {
+            if (settings.SwitcherStyle == value) return;
+
+            settings.SwitcherStyle = value;
+            Raise();
+            Raise(nameof(ShowsCarousel));
+        }
+    }
+
+    /// The paired phone after the one shown, wrapping round, when there is more than one.
+    public DeviceState? NextPhone => new DeviceFocus(Focused?.Id).Next(Devices.Where(d => d.IsPaired), d => d.Id, d => d.Name) is { } next && next.Id != Focused?.Id ? next : null;
+
+    public bool ShowsCarousel => SwitcherStyle == PhoneSwitcherStyle.Carousel && NextPhone is not null;
+
+    public void ShowNextPhone()
+    {
+        if (NextPhone is DeviceState next) Select(next.Id);
     }
 
     public bool StartsWithWindows
@@ -332,7 +364,13 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public void Dial(string number, string? name = null)
     {
         var trimmed = number.Trim();
-        if (trimmed.Length == 0 || Primary is not Device phone || !phone.Send(Core.Call.Dial(trimmed))) return;
+        if (trimmed.Length == 0) return;
+
+        if (Primary is not Device phone || !phone.Send(Core.Call.Dial(trimmed)))
+        {
+            Record(new Activity(ActivityKind.Failed, $"Couldn't call {trimmed}", "Connect your phone first"));
+            return;
+        }
 
         Call = new ActiveCall(phone.Id, phone.Name, trimmed, name, null, CallPhase.Dialing);
     }
@@ -410,6 +448,39 @@ public sealed class AppModel : Observable, IDeviceDelegate
             : new Activity(ActivityKind.Text, $"“{(trimmed.Length > 60 ? trimmed[..60] : trimmed)}”", $"Copied to {device.Name}"));
     }
 
+    /// Files and tel: links handed over by Windows. Right after Aproid starts no phone is connected yet,
+    /// so they wait up to a minute for one.
+    public void Handover(IReadOnlyList<string> files, string? number)
+    {
+        waitingFiles.AddRange(files);
+        waitingNumber = number ?? waitingNumber;
+        waitingSince = DateTimeOffset.Now;
+
+        SendWaiting();
+    }
+
+    private void SendWaiting()
+    {
+        if (waitingFiles.Count == 0 && waitingNumber is null) return;
+
+        if (Primary is Device phone)
+        {
+            if (waitingFiles.Count > 0) SendFiles(waitingFiles.ToList(), phone.Id);
+            if (waitingNumber is string number) Dial(number);
+        }
+        else if (DateTimeOffset.Now - waitingSince < TimeSpan.FromMinutes(1))
+        {
+            return;
+        }
+        else
+        {
+            Record(new Activity(ActivityKind.Failed, "Nothing was sent", "No phone connected. Open Aproid on your phone and try again."));
+        }
+
+        waitingFiles.Clear();
+        waitingNumber = null;
+    }
+
     public void ClearRecent()
     {
         foreach (var done in Recent.Where(a => !a.IsInProgress).ToList()) Recent.Remove(done);
@@ -453,6 +524,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         {
             Task.Run(() => lan.BroadcastIdentity());
             foreach (var device in connected.All) device.Tick();
+            SendWaiting();
             Raise(nameof(ClipboardSubtitle));
         };
         timer.Start();
@@ -512,6 +584,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         Others = Devices.Where(d => d.Id != Focused?.Id).ToList();
 
         SyncStores(primary);
+        SendWaiting();
     }
 
     /// The paired phone the panel, Messages and Photos use. Every paired phone stays connected.
@@ -579,7 +652,12 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     public event Action? PhotosRequested;
 
+    /// The dialer should open, to call from the phone.
+    public event Action? DialerRequested;
+
     public void ShowMessages(string? number = null) => MessagesRequested?.Invoke(number);
 
     public void ShowPhotos() => PhotosRequested?.Invoke();
+
+    public void ShowDialer() => DialerRequested?.Invoke();
 }

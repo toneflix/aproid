@@ -52,14 +52,34 @@ public sealed partial class MessagesWindow : Window
 
     public MessagesStore Store { get; }
 
-    /// Brings the window forward, starting a text to `number` when one is given.
-    public void Present(string? number = null)
+    /// Brings the window forward, starting a text to `number` when one is given, or opening the dialer.
+    public void Present(string? number = null, bool dial = false)
     {
         AppWindow.Show(true);
         Activate();
 
         if (Store.IsEmpty) Store.Refresh();
-        if (number is not null) DispatcherQueue.TryEnqueue(() => _ = ComposeAsync(number));
+        if (number is not null) WhenLoaded(() => _ = ComposeAsync(number));
+        else if (dial) WhenLoaded(() => _ = DialAsync());
+    }
+
+    /// Dialogs need the window's content on screen, which a new window doesn't have yet.
+    private void WhenLoaded(Action action)
+    {
+        var root = (FrameworkElement)Content;
+        if (root.XamlRoot is not null && root.IsLoaded)
+        {
+            DispatcherQueue.TryEnqueue(() => action());
+            return;
+        }
+
+        void Loaded(object sender, RoutedEventArgs e)
+        {
+            root.Loaded -= Loaded;
+            action();
+        }
+
+        root.Loaded += Loaded;
     }
 
     // Bound helpers

@@ -39,6 +39,9 @@ public sealed partial class PanelWindow : Window
         Model = model;
         InitializeComponent();
 
+        // Acrylic follows Windows' transparency setting and turns solid when it is off.
+        SystemBackdrop = new DesktopAcrylicBackdrop();
+
         hwnd = WindowNative.GetWindowHandle(this);
         AppWindow.IsShownInSwitchers = false;
         AppWindow.SetIcon(AppPaths.WindowIcon);
@@ -239,6 +242,11 @@ public sealed partial class PanelWindow : Window
 
     public Lucide NotificationsIcon(bool on) => on ? Lucide.BellRing : Lucide.BellOff;
 
+    /// The carousel runs to the window's edge so the next card looks cut off by it.
+    public Thickness CarouselBleed(bool carousel) => carousel ? new Thickness(0, 0, -14, 0) : new Thickness(0);
+
+    public string NextTitle(DeviceState? next) => next is null ? "" : $"Show {next.Name}";
+
     public Visibility HasMedia(DeviceState? device) => Shown(device?.Media is not null);
 
     public Visibility HasLength(DeviceState? device) => Shown(device?.Media?.Player.Length > 0);
@@ -312,10 +320,37 @@ public sealed partial class PanelWindow : Window
 
     private void Notifications_Click(object sender, RoutedEventArgs e) => Model.MirrorsNotifications = !Model.MirrorsNotifications;
 
+    private void NextPhone_Click(object sender, RoutedEventArgs e)
+    {
+        Model.ShowNextPhone();
+        SlideIn();
+    }
+
+    /// The new phone's card slides in from the right, where it was peeking.
+    private void SlideIn()
+    {
+        var duration = new Duration(TimeSpan.FromMilliseconds(320));
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var shift = new DoubleAnimation { From = 60, To = 0, Duration = duration, EasingFunction = ease };
+        var fade = new DoubleAnimation { From = 0.4, To = 1, Duration = duration, EasingFunction = ease };
+        Storyboard.SetTarget(shift, HeroShift);
+        Storyboard.SetTargetProperty(shift, "X");
+        Storyboard.SetTarget(fade, Hero);
+        Storyboard.SetTargetProperty(fade, "Opacity");
+
+        new Storyboard { Children = { shift, fade } }.Begin();
+    }
+
     private void Messages_Click(object sender, RoutedEventArgs e)
     {
         Hide();
         Model.ShowMessages();
+    }
+
+    private void Call_Click(object sender, RoutedEventArgs e)
+    {
+        Hide();
+        Model.ShowDialer();
     }
 
     private void Photos_Click(object sender, RoutedEventArgs e)
@@ -422,6 +457,15 @@ public sealed partial class PanelWindow : Window
         var startup = new ToggleMenuFlyoutItem { Text = "Start with Windows", IsChecked = Model.StartsWithWindows };
         startup.Click += (_, _) => Model.StartsWithWindows = startup.IsChecked;
         SettingsMenu.Items.Add(startup);
+
+        var switcher = new MenuFlyoutSubItem { Text = "Switch phones with" };
+        foreach (var (style, label) in new[] { (PhoneSwitcherStyle.Carousel, "Card carousel"), (PhoneSwitcherStyle.Menu, "Menu on the phone name") })
+        {
+            var item = new RadioMenuFlyoutItem { Text = label, GroupName = "switcher", IsChecked = Model.SwitcherStyle == style };
+            item.Click += (_, _) => Model.SwitcherStyle = style;
+            switcher.Items.Add(item);
+        }
+        SettingsMenu.Items.Add(switcher);
 
         var downloads = new MenuFlyoutItem { Text = "Open Downloads" };
         downloads.Click += (_, _) => Explorer.Open(AppPaths.Downloads);

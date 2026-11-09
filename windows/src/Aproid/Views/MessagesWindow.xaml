@@ -6,7 +6,7 @@
     xmlns:model="using:Aproid.Model"
     Title="Messages">
 
-    <Grid Background="{ThemeResource AproidPanelBrush}">
+    <Grid Background="{ThemeResource AproidGlassBrush}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="310" />
             <ColumnDefinition Width="*" />

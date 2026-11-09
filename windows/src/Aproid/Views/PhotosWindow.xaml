@@ -6,7 +6,7 @@
     xmlns:model="using:Aproid.Model"
     Title="Photos">
 
-    <Grid x:Name="Root" Background="{ThemeResource AproidPanelBrush}" KeyDown="Root_KeyDown">
+    <Grid x:Name="Root" Background="{ThemeResource AproidGlassBrush}" KeyDown="Root_KeyDown">
         <Grid.Resources>
             <CollectionViewSource x:Name="MonthsSource" IsSourceGrouped="True" />
         </Grid.Resources>
