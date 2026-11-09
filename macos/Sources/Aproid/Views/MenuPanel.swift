@@ -36,6 +36,7 @@ struct MenuPanel: View {
         .background(Theme.panel)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: model.devices)
         .animation(.easeOut(duration: 0.2), value: model.recent)
+        .fitsWindowHeight()
     }
 
     /// The device the big cards are about: one asking to pair first, then the first paired one.

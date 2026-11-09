@@ -20,6 +20,15 @@ final class PhotosStore: ObservableObject {
     @Published private(set) var downloading: Set<Int64> = []
     @Published var selection: Set<Int64> = []
 
+    /// The photo open in the viewer.
+    @Published private(set) var viewing: Int64?
+    /// Full photos fetched for the viewer, saved in a temporary folder.
+    @Published private(set) var previews: [Int64: URL] = [:]
+    /// Photos the phone couldn't send for the viewer.
+    @Published private(set) var failedPreviews: Set<Int64> = []
+
+    private var requestedPreviews: Set<Int64> = []
+
     /// Sends a packet to the phone the photos come from. Set by the app model.
     var send: ((NetworkPacket) -> Bool)?
 
@@ -73,6 +82,8 @@ final class PhotosStore: ObservableObject {
 
         hasPhone = false
         loading = false
+        failedPreviews.formUnion(requestedPreviews)
+        requestedPreviews = []
     }
 
     /// Loads from the newest photo again.
@@ -110,6 +121,68 @@ final class PhotosStore: ObservableObject {
         loading = false
     }
 
+    var viewed: PhonePhoto? {
+        viewing.flatMap { id in photos.first { $0.id == id } }
+    }
+
+    /// Opens a photo in the viewer and fetches it in full, along with the next one so stepping through is quick.
+    func open(_ id: Int64) {
+        viewing = id
+        selection = [id]
+        fetchPreview(id)
+
+        if let next = neighbour(of: id, by: 1), !next.isVideo { fetchPreview(next.id) }
+        if let index = photos.firstIndex(where: { $0.id == id }), index >= photos.count - 5 { loadMore() }
+    }
+
+    /// Moves the viewer to the previous (-1) or next (1) photo.
+    func step(_ offset: Int) {
+        guard let id = viewing, let photo = neighbour(of: id, by: offset) else { return }
+
+        open(photo.id)
+    }
+
+    func canStep(_ offset: Int) -> Bool {
+        viewing.flatMap { neighbour(of: $0, by: offset) } != nil
+    }
+
+    func closeViewer() {
+        viewing = nil
+    }
+
+    func retryPreview(_ id: Int64) {
+        failedPreviews.remove(id)
+        requestedPreviews.remove(id)
+        fetchPreview(id)
+    }
+
+    func ingestPreview(_ id: Int64, url: URL?, from deviceId: String) {
+        guard deviceId == self.deviceId else { return }
+
+        requestedPreviews.remove(id)
+        if let url {
+            previews[id] = url
+        } else {
+            failedPreviews.insert(id)
+        }
+    }
+
+    private func fetchPreview(_ id: Int64) {
+        guard previews[id] == nil, !failedPreviews.contains(id), !requestedPreviews.contains(id) else { return }
+
+        if send?(Photos.download(id: id, preview: true)) == true {
+            requestedPreviews.insert(id)
+        } else {
+            failedPreviews.insert(id)
+        }
+    }
+
+    private func neighbour(of id: Int64, by offset: Int) -> PhonePhoto? {
+        guard let index = photos.firstIndex(where: { $0.id == id }), photos.indices.contains(index + offset) else { return nil }
+
+        return photos[index + offset]
+    }
+
     /// Asks the phone to send these in full. They arrive in Downloads like any shared file.
     func download(_ ids: Set<Int64>) {
         for id in ids.sorted() where !downloading.contains(id) {
@@ -122,6 +195,10 @@ final class PhotosStore: ObservableObject {
         thumbnails = [:]
         selection = []
         downloading = []
+        viewing = nil
+        previews = [:]
+        failedPreviews = []
+        requestedPreviews = []
         more = true
         loading = false
     }

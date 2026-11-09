@@ -45,8 +45,11 @@ public enum PacketType {
     /// A page of photos with small thumbnails. Body: {"photos": [...], "more": bool}.
     public static let photos = "aproid.photos"
 
-    /// Asks the phone to send one photo in full, as a normal shared file. Body: {"id"}.
+    /// Asks the phone to send one photo in full: as a normal shared file, or as `photosFile` to view. Body: {"id", "preview"?}.
     public static let photosDownload = "aproid.photos.download"
+
+    /// One photo or video in full, for the Mac to show rather than keep. Body: {"id", "name", "mimeType"}, with a payload.
+    public static let photosFile = "aproid.photos.file"
 
     /// Starts or stops mirroring the phone's screen. Body: {"action": "start"|"stop", "maxSize"?, "bitrate"?}.
     public static let screenRequest = "aproid.screen.request"
@@ -100,6 +103,7 @@ public enum Capabilities {
         PacketType.photosRequest,
         PacketType.photos,
         PacketType.photosDownload,
+        PacketType.photosFile,
         PacketType.screenRequest,
         PacketType.screen,
         PacketType.screenInput,

@@ -19,7 +19,15 @@ final class PhotosTests: XCTestCase {
     func testRequestsRoundTrip() throws {
         XCTAssertEqual(Photos.request(try wire(Photos.request(before: 1_700_000_000_000))), Photos.Request(before: 1_700_000_000_000, count: 40))
         XCTAssertEqual(Photos.request(try wire(Photos.request(count: 5000))), Photos.Request(before: nil, count: 200))
-        XCTAssertEqual(Photos.downloadId(try wire(Photos.download(id: 12))), 12)
-        XCTAssertNil(Photos.downloadId(Photos.request()))
+        XCTAssertEqual(Photos.download(try wire(Photos.download(id: 12))), Photos.Download(id: 12, preview: false))
+        XCTAssertEqual(Photos.download(try wire(Photos.download(id: 12, preview: true))), Photos.Download(id: 12, preview: true))
+        XCTAssertNil(Photos.download(Photos.request()))
+    }
+
+    func testPreviewFileRoundTrips() throws {
+        let file = Photos.File(id: 12, name: "IMG_2041.heic", mimeType: "image/heic")
+
+        XCTAssertEqual(Photos.file(try wire(Photos.filePacket(file))), file)
+        XCTAssertNil(Photos.file(Photos.download(id: 12)))
     }
 }

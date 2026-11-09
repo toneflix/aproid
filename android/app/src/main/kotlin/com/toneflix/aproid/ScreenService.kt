@@ -46,35 +46,35 @@ class ScreenService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) {
-            stopSelf()
-            return START_NOT_STICKY
-        }
-
-        val pending = ScreenPlugin.pending
         if (intent == null) return START_NOT_STICKY
+
+        if (intent.action == ACTION_STOP) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         val resultData = intent.extraData()
-        if (pending == null || resultData == null || projection != null) return START_NOT_STICKY
+        if (projection != null || resultData == null) return START_NOT_STICKY
 
-        // Android requires the foreground service before the recording can begin.
-        val device = DeviceStore.find(pending.deviceId)
-        val shown = notification(device?.name ?: "")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, shown, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
-        } else {
-            startForeground(NOTIFICATION_ID, shown)
-        }
+        // A service started with startForegroundService must go foreground, even when it then gives up.
+        val pending = ScreenPlugin.pending
+        val device = pending?.let { DeviceStore.find(it.deviceId) }
+        goForeground(device?.name ?: "")
 
-        if (device == null || !device.isPaired) {
+        if (pending == null || device == null || !device.isPaired) {
             stopSelf()
             return START_NOT_STICKY
         }
 
-        val manager = getSystemService(MediaProjectionManager::class.java)
-        val projection = manager.getMediaProjection(intent.getIntExtra(EXTRA_RESULT, 0), resultData) ?: run {
+        val projection = runCatching {
+            getSystemService(MediaProjectionManager::class.java)
+                .getMediaProjection(intent.getIntExtra(EXTRA_RESULT, 0), resultData)
+        }.onFailure { Log.w(TAG, "Could not start the recording", it) }.getOrNull()
+        if (projection == null) {
             stopSelf()
             return START_NOT_STICKY
         }
+
         projection.registerCallback(object : MediaProjection.Callback() {
             override fun onStop() {
                 main.post { stopSelf() }
@@ -92,16 +92,25 @@ class ScreenService : Service() {
         val (width, height) = videoSize(pending.maxSize)
 
         // Encoding starts once the Mac connects, so the first frame it gets is the settings and a key frame.
-        val offered = device.sendWithPayload(Screen.started(width, height), Screen.STREAM, open = {
+        DeviceStore.offer(device, Screen.started(width, height), Screen.STREAM, open = {
             main.post { startEncoding(width, height) }
             queue.stream
         }) { error ->
             Log.i(TAG, "Screen stream ended: ${error?.message ?: "closed"}")
             main.post { stopSelf() }
         }
-        if (!offered) stopSelf()
 
         return START_NOT_STICKY
+    }
+
+    private fun goForeground(macName: String) {
+        val shown = notification(macName)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, shown, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+        } else {
+            startForeground(NOTIFICATION_ID, shown)
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -149,16 +158,22 @@ class ScreenService : Service() {
         val density = resources.displayMetrics.densityDpi
         val current = display
         if (current == null) {
-            display = projection.createVirtualDisplay(
-                "Aproid",
-                width,
-                height,
-                density,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                next.surface,
-                null,
-                null,
-            )
+            display = runCatching {
+                projection.createVirtualDisplay(
+                    "Aproid",
+                    width,
+                    height,
+                    density,
+                    DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                    next.surface,
+                    null,
+                    null,
+                )
+            }.getOrElse {
+                Log.w(TAG, "Could not start the recording", it)
+                stopSelf()
+                return
+            }
         } else {
             current.resize(width, height, density)
             current.surface = next.surface
@@ -195,6 +210,7 @@ class ScreenService : Service() {
             .setSmallIcon(android.R.drawable.ic_menu_slideshow)
             .setContentTitle(getString(R.string.screen_mirroring, macName))
             .setContentText(getString(R.string.screen_mirroring_hint))
+            .setContentIntent(MainActivity.pendingIntent(this))
             .setOngoing(true)
             .addAction(Notification.Action.Builder(null, getString(R.string.screen_stop), stop).build())
             .build()
@@ -216,7 +232,20 @@ class ScreenService : Service() {
         private var skipping = false
 
         init {
-            val format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, width, height).apply {
+            // Some encoders reject an explicit profile or level, so fall back to their defaults.
+            runCatching { codec.configure(format(width, height, bitrate, tuned = true), null, null, MediaCodec.CONFIGURE_FLAG_ENCODE) }
+                .onFailure {
+                    codec.reset()
+                    codec.configure(format(width, height, bitrate, tuned = false), null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
+                }
+            surface = codec.createInputSurface()
+            codec.start()
+
+            thread(name = "aproid-screen", isDaemon = true) { drain() }
+        }
+
+        private fun format(width: Int, height: Int, bitrate: Int, tuned: Boolean) =
+            MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, width, height).apply {
                 setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
                 setInteger(MediaFormat.KEY_BIT_RATE, bitrate)
                 setInteger(MediaFormat.KEY_FRAME_RATE, 60)
@@ -224,15 +253,11 @@ class ScreenService : Service() {
                 // A still screen makes no new frames; repeat the last one so the Mac never waits long.
                 setLong(MediaFormat.KEY_REPEAT_PREVIOUS_FRAME_AFTER, 100_000)
                 setInteger(MediaFormat.KEY_PRIORITY, 0)
-                setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline)
-                setInteger(MediaFormat.KEY_LEVEL, MediaCodecInfo.CodecProfileLevel.AVCLevel41)
+                if (tuned) {
+                    setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline)
+                    setInteger(MediaFormat.KEY_LEVEL, MediaCodecInfo.CodecProfileLevel.AVCLevel41)
+                }
             }
-            codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
-            surface = codec.createInputSurface()
-            codec.start()
-
-            thread(name = "aproid-screen", isDaemon = true) { drain() }
-        }
 
         private fun drain() {
             val info = MediaCodec.BufferInfo()

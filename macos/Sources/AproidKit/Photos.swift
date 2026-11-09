@@ -64,7 +64,8 @@ public struct PhonePhoto: Equatable, Identifiable, Sendable {
     }
 }
 
-/// Browsing the phone's gallery from the Mac. Full photos come back as normal shared files. Mirrors Photos.kt.
+/// Browsing the phone's gallery from the Mac. Full photos come back as normal shared files, or as `photosFile` to view.
+/// Mirrors Photos.kt.
 public enum Photos {
     public static let page = 40
 
@@ -76,6 +77,25 @@ public enum Photos {
     public struct Page: Equatable, Sendable {
         public var photos: [PhonePhoto]
         public var more: Bool
+    }
+
+    /// A request for one photo in full; `preview` asks for it to view instead of to keep.
+    public struct Download: Equatable, Sendable {
+        public var id: Int64
+        public var preview: Bool
+    }
+
+    /// A full photo or video sent to view.
+    public struct File: Equatable, Sendable {
+        public var id: Int64
+        public var name: String
+        public var mimeType: String
+
+        public init(id: Int64, name: String, mimeType: String) {
+            self.id = id
+            self.name = name
+            self.mimeType = mimeType
+        }
     }
 
     public static func request(before: Int64? = nil, count: Int64 = Int64(page)) -> NetworkPacket {
@@ -105,11 +125,29 @@ public enum Photos {
         return Page(photos: photos, more: packet.bool("more") ?? false)
     }
 
-    public static func download(id: Int64) -> NetworkPacket {
-        NetworkPacket(type: PacketType.photosDownload, body: ["id": .int(id)])
+    public static func download(id: Int64, preview: Bool = false) -> NetworkPacket {
+        var body: [String: JSONValue] = ["id": .int(id)]
+        if preview { body["preview"] = .bool(true) }
+        return NetworkPacket(type: PacketType.photosDownload, body: body)
     }
 
-    public static func downloadId(_ packet: NetworkPacket) -> Int64? {
-        packet.type == PacketType.photosDownload ? packet.int("id") : nil
+    public static func download(_ packet: NetworkPacket) -> Download? {
+        guard packet.type == PacketType.photosDownload, let id = packet.int("id") else { return nil }
+
+        return Download(id: id, preview: packet.bool("preview") ?? false)
+    }
+
+    public static func filePacket(_ file: File) -> NetworkPacket {
+        NetworkPacket(type: PacketType.photosFile, body: [
+            "id": .int(file.id),
+            "name": .string(file.name),
+            "mimeType": .string(file.mimeType),
+        ])
+    }
+
+    public static func file(_ packet: NetworkPacket) -> File? {
+        guard packet.type == PacketType.photosFile, let id = packet.int("id") else { return nil }
+
+        return File(id: id, name: packet.string("name") ?? "", mimeType: packet.string("mimeType") ?? "image/jpeg")
     }
 }

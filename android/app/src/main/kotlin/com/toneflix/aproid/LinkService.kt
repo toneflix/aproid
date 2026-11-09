@@ -152,6 +152,7 @@ class LinkService : Service() {
         return Notification.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
+            .setContentIntent(MainActivity.pendingIntent(this))
             .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

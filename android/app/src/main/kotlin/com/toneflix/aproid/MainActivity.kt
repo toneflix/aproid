@@ -1,6 +1,9 @@
 package com.toneflix.aproid
 
 import android.Manifest
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -25,6 +28,16 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AproidTheme { HomeScreen(phoneName = me.deviceName) }
+        }
+    }
+
+    companion object {
+        /** Brings the app to the front, or opens it, when a notification is tapped. */
+        fun pendingIntent(context: Context): PendingIntent {
+            val open = Intent(context, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+
+            return PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         }
     }
 }

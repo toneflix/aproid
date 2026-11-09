@@ -35,7 +35,7 @@ swift test
 open build/Aproid.app           # starts the menu bar app
 ```
 
-`swift run Aproid` or running from Xcode also works, but without an app bundle macOS won't show notifications. The first time the app runs, macOS asks to find devices on the local network and to show notifications. Allow both.
+`swift run Aproid` or running from Xcode also works, but without an app bundle macOS won't show notifications or the Share menu entry. The first time the app runs, macOS asks to find devices on the local network and to show notifications. Allow both.
 
 ## Trying it
 
@@ -45,6 +45,7 @@ open build/Aproid.app           # starts the menu bar app
 4. Each device should show the other in its list within a few seconds.
 5. Tap **Pair** on one side, check the code matches on both, and accept on the other.
 6. On the phone, tap **Allow access** and turn on notification access for Aproid. New notifications now show on the Mac. Reply from the banner, or dismiss it to clear it on the phone too.
+7. To send something from the Mac, use **Share > Aproid** in Finder, Safari, Photos or any app with a Share menu. If Aproid isn't listed, turn it on in System Settings > General > Login Items & Extensions > Sharing (on macOS 13 and 14: Privacy & Security > Extensions > Sharing).
 
 If KDE Connect is running on either device it may hold port 1716. Aproid falls back to the next free port, but discovery is most reliable with KDE Connect closed.
 

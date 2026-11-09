@@ -19,6 +19,10 @@ struct PhotosWindow: View {
                     Slider(value: $size, in: 88...220)
                         .frame(width: 110)
                         .help("Thumbnail size")
+                    Button { if let id = store.selection.first { store.open(id) } } label: { Label("View", systemImage: "eye") }
+                        .keyboardShortcut(.space, modifiers: [])
+                        .help("View the selected photo (Space)")
+                        .disabled(store.selection.count != 1 || store.viewing != nil)
                     Button { store.refresh() } label: { Label("Refresh", systemImage: "arrow.clockwise") }
                         .help("Load the newest photos")
                         .disabled(!store.hasPhone)
@@ -29,6 +33,13 @@ struct PhotosWindow: View {
                     .disabled(store.selection.isEmpty || !store.hasPhone)
                 }
             }
+            .overlay {
+                if let photo = store.viewed {
+                    PhotoViewer(store: store, photo: photo)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.18), value: store.viewing != nil)
             .onAppear { if store.photos.isEmpty { store.loadMore() } }
     }
 
@@ -78,9 +89,10 @@ struct PhotosWindow: View {
                                 isSelected: store.selection.contains(photo.id),
                                 isDownloading: store.downloading.contains(photo.id)
                             )
-                            .onTapGesture(count: 2) { store.download([photo.id]) }
+                            .onTapGesture(count: 2) { store.open(photo.id) }
                             .onTapGesture { toggle(photo.id) }
                             .contextMenu {
+                                Button("Open") { store.open(photo.id) }
                                 Button("Download to Downloads") { store.download([photo.id]) }
                             }
                             .onAppear { if photo.id == store.photos.last?.id { store.loadMore() } }
