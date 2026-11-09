@@ -39,7 +39,7 @@ struct MenuPanel: View {
         }
         .padding(14)
         .frame(width: Theme.panelWidth)
-        .background(Theme.panel)
+        .glassBackdrop()
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: model.devices)
         .animation(.easeOut(duration: 0.2), value: model.recent)
         .fitsWindowHeight()

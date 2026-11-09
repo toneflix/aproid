@@ -62,8 +62,7 @@ struct CallCard: View {
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Theme.border))
+        .glassSurface(cornerRadius: 20, fallback: AnyShapeStyle(.regularMaterial))
         .padding(4)
     }
 

@@ -65,20 +65,16 @@ private struct PhoneChip: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
             .frame(minWidth: 110, alignment: .leading)
-            .background(background, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .glassSurface(cornerRadius: 10, tint: isFocused || hovering ? Theme.tint : nil)
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(isFocused ? Theme.goldEdge : Theme.border, lineWidth: isFocused ? 1.5 : 1)
+                    .stroke(isFocused ? Theme.goldEdge : .clear, lineWidth: 1.5)
             )
         }
         .buttonStyle(PressStyle())
         .onHover { hovering = $0 }
         .help(isFocused ? "\(phone.name) is shown" : "Show \(phone.name)")
         .accessibilityAddTraits(isFocused ? .isSelected : [])
-    }
-
-    private var background: Color {
-        isFocused || hovering ? Theme.tint : Theme.card
     }
 
     private var detail: String {
