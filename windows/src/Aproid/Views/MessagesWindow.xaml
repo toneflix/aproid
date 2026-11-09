@@ -75,7 +75,7 @@
         <!-- The open conversation -->
         <Border Grid.Column="1" Background="{ThemeResource AproidCardBrush}" BorderBrush="{ThemeResource AproidBorderBrush}" BorderThickness="1,0,0,0">
             <Grid>
-                <StackPanel Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind views:MessagesWindow.Not(Store.HasSelection), Mode=OneWay}">
+                <StackPanel Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind views:MessagesWindow.Hidden(Store.HasSelection), Mode=OneWay}">
                     <Border Width="64" Height="64" CornerRadius="32" Background="{ThemeResource AproidTintBrush}" HorizontalAlignment="Center">
                         <views:LucideIcon Icon="MessagesSquare" Size="28" Foreground="{ThemeResource AproidAccentBrush}" />
                     </Border>
@@ -110,7 +110,7 @@
                         <ListView.Header>
                             <StackPanel HorizontalAlignment="Center" Padding="0,6">
                                 <ProgressRing IsActive="{x:Bind Store.IsLoadingThread, Mode=OneWay}" Visibility="{x:Bind Store.IsLoadingThread, Mode=OneWay}" Width="18" Height="18" />
-                                <HyperlinkButton Content="Load earlier messages" FontSize="11" Click="LoadEarlier_Click" Visibility="{x:Bind views:MessagesWindow.Not(Store.IsLoadingThread), Mode=OneWay}" />
+                                <HyperlinkButton Content="Load earlier messages" FontSize="11" Click="LoadEarlier_Click" Visibility="{x:Bind views:MessagesWindow.Hidden(Store.IsLoadingThread), Mode=OneWay}" />
                             </StackPanel>
                         </ListView.Header>
                         <ListView.ItemContainerStyle>

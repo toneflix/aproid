@@ -64,7 +64,8 @@ public sealed partial class MessagesWindow : Window
 
     // Bound helpers
 
-    public static bool Not(bool value) => !value;
+    /// Function bindings can't turn a bool into Visibility themselves, so this returns it directly.
+    public static Visibility Hidden(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
     public static FontWeight Weight(bool unread) => unread ? Microsoft.UI.Text.FontWeights.Bold : Microsoft.UI.Text.FontWeights.SemiBold;
 

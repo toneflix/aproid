@@ -239,9 +239,9 @@ public sealed partial class PanelWindow : Window
 
     public Lucide NotificationsIcon(bool on) => on ? Lucide.BellRing : Lucide.BellOff;
 
-    public bool HasMedia(DeviceState? device) => device?.Media is not null;
+    public Visibility HasMedia(DeviceState? device) => Shown(device?.Media is not null);
 
-    public bool HasLength(DeviceState? device) => device?.Media?.Player.Length > 0;
+    public Visibility HasLength(DeviceState? device) => Shown(device?.Media?.Player.Length > 0);
 
     public string MediaTitle(DeviceState? device) => device?.Media?.Player.Title ?? "";
 
@@ -256,13 +256,18 @@ public sealed partial class PanelWindow : Window
 
     public bool CanGoNext(DeviceState? device) => device?.Media?.Player.CanGoNext == true;
 
-    public bool IsFinding(string? finding, DeviceState? device) => finding is not null && finding == device?.Id;
+    public Visibility IsFinding(string? finding, DeviceState? device) => Shown(finding is not null && finding == device?.Id);
 
     public string FindTitle(DeviceState? device) => device is null ? "" : $"Finding {device.Name}";
 
-    public bool HasLocation(PhoneLocation? location) => location is not null;
+    public Visibility HasLocation(PhoneLocation? location) => Shown(location is not null);
 
-    public bool NoLocation(PhoneLocation? location) => location is null;
+    public Visibility NoLocation(PhoneLocation? location) => Shown(location is null);
+
+    public bool IsLocating(PhoneLocation? location) => location is null;
+
+    // Function bindings can't turn a bool into Visibility themselves, so these return it directly.
+    private static Visibility Shown(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
 
     public string LocationDetail(PhoneLocation? location)
     {

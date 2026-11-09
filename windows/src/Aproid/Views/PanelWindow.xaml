@@ -162,7 +162,7 @@
                             <Grid Height="170" CornerRadius="10" Background="{ThemeResource AproidThumbBrush}">
                                 <WebView2 x:Name="Map" Visibility="{x:Bind HasLocation(Model.Found), Mode=OneWay}" />
                                 <StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind NoLocation(Model.Found), Mode=OneWay}">
-                                    <ProgressRing IsActive="{x:Bind NoLocation(Model.Found), Mode=OneWay}" Width="18" Height="18" />
+                                    <ProgressRing IsActive="{x:Bind IsLocating(Model.Found), Mode=OneWay}" Width="18" Height="18" />
                                     <TextBlock Text="Ringing and asking where it is…" Style="{StaticResource AproidCaption}" />
                                 </StackPanel>
                             </Grid>

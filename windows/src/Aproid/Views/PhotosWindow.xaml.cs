@@ -58,7 +58,8 @@ public sealed partial class PhotosWindow : Window
         return !viewed.IsVideo && Pictures.FromFile(file) is { } full ? full : Pictures.FromBase64(viewed.Thumbnail);
     }
 
-    public bool IsPlayableVideo(string? file, PhotoItem? viewed) => viewed?.IsVideo == true && file is not null;
+    public Visibility IsPlayableVideo(string? file, PhotoItem? viewed) =>
+        viewed?.IsVideo == true && file is not null ? Visibility.Visible : Visibility.Collapsed;
 
     public string ViewedName(PhotoItem? viewed) => viewed?.Name ?? "";
 
