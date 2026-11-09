@@ -1,0 +1,36 @@
+name: Windows release
+
+# Tag a version as windows-v1.2.3 to publish Aproid-Setup-1.2.3.exe as a GitHub release.
+# The Windows app checks these releases for updates.
+on:
+  push:
+    tags: ["windows-v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Protocol tests
+        run: dotnet test tests/Aproid.Core.Tests
+      - name: Read the version from the tag
+        id: version
+        shell: bash
+        run: echo "number=${GITHUB_REF_NAME#windows-v}" >> "$GITHUB_OUTPUT"
+      - name: Build app and installer
+        run: ./scripts/package.ps1 -Version ${{ steps.version.outputs.number }}
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Aproid for Windows ${{ steps.version.outputs.number }}
+          files: windows/publish/Aproid-Setup-*.exe
+          generate_release_notes: true
