@@ -23,6 +23,8 @@ class ScreenTest {
             ScreenInput.Swipe(0.5, 0.8, 0.5, 0.2, 300),
             ScreenInput.Text("hello"),
             ScreenInput.Key(ScreenInput.BACK),
+            ScreenInput.Key(ScreenInput.WORD_LEFT, select = true),
+            ScreenInput.Key(ScreenInput.SELECT_ALL),
         )
 
         for (input in inputs) assertEquals(input, ScreenInput.fromPacket(wire(input.toPacket())))
