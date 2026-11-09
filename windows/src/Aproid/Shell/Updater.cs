@@ -88,7 +88,7 @@ internal sealed class Updater(ToastCenter toasts)
             .AddText($"You have {CurrentText}. Aproid restarts to update, which takes a few seconds.")
             .AddButton(ToastCenter.Button("Update now", "update", key))
             .AddButton(ToastCenter.Button("What's new", "notes", key)),
-        (action, _) =>
+        (action, input) =>
         {
             if (action == "update") _ = InstallAsync(release);
             else if (action == "notes") Explorer.Open(release.Page);
