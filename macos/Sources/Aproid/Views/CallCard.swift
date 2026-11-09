@@ -35,7 +35,7 @@ struct CallCard: View {
             switch call.phase {
             case .ringing:
                 RoundButton(icon: .phoneOff, color: .red, help: "Decline") { model.declineCall() }
-                RoundButton(icon: .phone, color: .green, help: audio.isReady ? "Answer on this Mac" : "Answer on your phone") {
+                RoundButton(icon: .phone, color: .green, help: audio.carries(call.deviceId) ? "Answer on this Mac" : "Answer on \(call.deviceName)") {
                     model.answerCall()
                 }
             case .dialing, .talking:
@@ -47,7 +47,7 @@ struct CallCard: View {
                 ) {
                     model.toggleMute()
                 }
-                if audio.isReady {
+                if audio.carries(call.deviceId) {
                     RoundButton(
                         icon: audio.audioOnMac ? .smartphone : .laptop,
                         color: Theme.thumb,
@@ -70,7 +70,7 @@ struct CallCard: View {
     @ViewBuilder private func status(_ call: ActiveCall) -> some View {
         switch call.phase {
         case .ringing:
-            Text(call.name == nil ? "Incoming call · \(answersOn)" : "\(call.number) · \(answersOn)")
+            Text(call.name == nil ? "Incoming call · \(answersOn(call))" : "\(call.number) · \(answersOn(call))")
         case .dialing:
             Text("Calling from \(call.deviceName)…")
         case .talking(let since):
@@ -78,15 +78,16 @@ struct CallCard: View {
                 HStack(spacing: 4) {
                     Text(Self.duration(context.date.timeIntervalSince(since)))
                     Text("·")
-                    Image(lucide: audio.audioOnMac ? .laptop : .smartphone, size: 11)
-                    Text(audio.audioOnMac ? "On this Mac" : "On your phone")
+                    let onMac = audio.audioOnMac && audio.carries(call.deviceId)
+                    Image(lucide: onMac ? .laptop : .smartphone, size: 11)
+                    Text(onMac ? "On this Mac" : "On \(call.deviceName)")
                 }
             }
         }
     }
 
-    private var answersOn: String {
-        audio.isReady ? "Answers on this Mac" : (model.call?.deviceName ?? "Your phone")
+    private func answersOn(_ call: ActiveCall) -> String {
+        audio.carries(call.deviceId) ? "Answers on this Mac" : call.deviceName
     }
 
     private static func duration(_ seconds: TimeInterval) -> String {

@@ -34,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -139,7 +140,8 @@ data class SendProgress(val reading: TransferProgress.Snapshot, val done: Boolea
 private fun ShareSheet(outgoing: Outgoing, onClose: () -> Unit) {
     val context = LocalContext.current
     val devices by DeviceStore.states.collectAsStateWithLifecycle()
-    val macs = devices.filter { it.pairState == PairState.PAIRED }
+    val focusId by DeviceStore.focusId.collectAsStateWithLifecycle()
+    val macs = devices.filter { it.pairState == PairState.PAIRED }.sortedByDescending { it.id == focusId }
     val progress = remember { mutableStateMapOf<String, SendProgress>() }
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -181,7 +183,20 @@ private fun ShareSheet(outgoing: Outgoing, onClose: () -> Unit) {
         ) {
             Summary(outgoing)
 
-            Text(stringResource(R.string.share_send_to), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.share_send_to),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                if (macs.size > 1 && macs.any { it.id !in progress }) {
+                    TextButton(onClick = { macs.forEach(send) }) {
+                        Text(stringResource(R.string.share_send_all), fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
 
             if (macs.isEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {

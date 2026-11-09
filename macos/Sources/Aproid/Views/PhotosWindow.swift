@@ -5,6 +5,7 @@ import AproidKit
 /// The phone's photos and videos, newest first, grouped by month.
 struct PhotosWindow: View {
     @ObservedObject var store: PhotosStore
+    @ObservedObject var model: AppModel
 
     @State private var size: CGFloat = 132
 
@@ -15,6 +16,9 @@ struct PhotosWindow: View {
             .navigationTitle("Photos")
             .navigationSubtitle(subtitle)
             .toolbar {
+                ToolbarItem(placement: .navigation) {
+                    PhonePicker(model: model)
+                }
                 ToolbarItemGroup {
                     Slider(value: $size, in: 88...220)
                         .frame(width: 110)

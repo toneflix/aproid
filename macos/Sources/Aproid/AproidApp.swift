@@ -20,7 +20,7 @@ struct AproidApp: App {
         .defaultSize(width: 900, height: 620)
 
         Window("Photos", id: AproidApp.photosWindow) {
-            PhotosWindow(store: model.photos)
+            PhotosWindow(store: model.photos, model: model)
         }
         .defaultSize(width: 860, height: 640)
 
