@@ -9,7 +9,8 @@ final class PhoneNotificationTests: XCTestCase {
         text: "Are you coming?",
         time: 1_700_000_000_000,
         replyId: "f3b2c1",
-        iconHash: "900150983cd24fb0d6963f7d28e17f72"
+        iconHash: "900150983cd24fb0d6963f7d28e17f72",
+        actions: ["Mark as read", "Archive"]
     )
 
     func testRoundTrips() throws {
@@ -50,5 +51,19 @@ final class PhoneNotificationTests: XCTestCase {
         XCTAssertEqual(reply.type, PacketType.notificationReply)
         XCTAssertEqual(reply.string("requestReplyId"), "f3b2c1")
         XCTAssertEqual(reply.string("message"), "On my way")
+    }
+
+    func testActionRoundTripsAndNeedsBothFields() throws {
+        let pressed = NotificationAction(packet: try NetworkPacket.parse(try NotificationRequests.action(id: "k1", action: "Archive").serialize()))
+
+        XCTAssertEqual(pressed, NotificationAction(id: "k1", action: "Archive"))
+        XCTAssertNil(NotificationAction(packet: NetworkPacket(type: PacketType.notificationAction, body: ["key": .string("k1")])))
+    }
+
+    /// The same packet the Kotlin test reads.
+    func testReadsKdeConnectActions() throws {
+        let wire = #"{"id":1,"type":"kdeconnect.notification","body":{"id":"k1","appName":"Gmail","title":"Bo","text":"hi","actions":["Archive","Reply"]}}"#
+
+        XCTAssertEqual(PhoneNotification(packet: try NetworkPacket.parse(wire))?.actions, ["Archive", "Reply"])
     }
 }
