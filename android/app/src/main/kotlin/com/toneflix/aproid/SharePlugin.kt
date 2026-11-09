@@ -173,7 +173,7 @@ object SharePlugin : Plugin {
         }
 
         val notification = Notification.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setSmallIcon(R.drawable.lucide_download)
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(tap)

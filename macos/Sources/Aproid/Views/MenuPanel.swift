@@ -11,7 +11,7 @@ struct MenuPanel: View {
             PanelHeader(model: model)
 
             if let error = model.error {
-                Banner(symbol: "exclamationmark.triangle.fill", text: error)
+                Banner(icon: .triangleAlert, text: error)
             }
 
             main
@@ -26,7 +26,7 @@ struct MenuPanel: View {
             }
 
             if !model.notificationsAvailable {
-                Banner(symbol: "bell.slash", text: "Notifications need the app bundle. Build it with macos/scripts/bundle.sh.")
+                Banner(icon: .bellOff, text: "Notifications need the app bundle. Build it with macos/scripts/bundle.sh.")
             }
 
             PanelFooter(name: model.identity.deviceName)
@@ -97,8 +97,7 @@ private struct PanelHeader: View {
                 Divider()
                 Button("Quit Aproid") { NSApplication.shared.terminate(nil) }
             } label: {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 14, weight: .medium))
+                Image(lucide: .settings, size: 14, weight: .medium)
                     .foregroundStyle(.secondary)
             }
             .menuStyle(.borderlessButton)
@@ -110,7 +109,7 @@ private struct PanelHeader: View {
     }
 }
 
-/// The app icon in miniature: the logo mark on its dark tile.
+/// The app icon in miniature: the logo mark on its gold tile.
 struct AppGlyph: View {
     var size: CGFloat = 26
 
@@ -182,8 +181,7 @@ private struct HotspotCard: View {
                 .fill(Theme.tint)
                 .frame(width: 34, height: 34)
                 .overlay(
-                    Image(systemName: "personalhotspot")
-                        .font(.system(size: 14, weight: .semibold))
+                    Image(lucide: .wifi, size: 14, weight: .semibold)
                         .foregroundStyle(Theme.accent)
                 )
 
@@ -213,12 +211,12 @@ private struct HotspotCard: View {
 
 /// A one-line warning card.
 struct Banner: View {
-    let symbol: String
+    let icon: Lucide
     let text: String
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
-            Image(systemName: symbol).foregroundStyle(Theme.warn)
+            Image(lucide: icon, size: 13).foregroundStyle(Theme.warn)
             Text(text)
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)

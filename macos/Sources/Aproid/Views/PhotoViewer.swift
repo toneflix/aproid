@@ -25,10 +25,10 @@ struct PhotoViewer: View {
             .padding(.vertical, 56)
 
             HStack {
-                StepButton(symbol: "chevron.left", key: .leftArrow, help: "Previous") { store.step(-1) }
+                StepButton(icon: .chevronLeft, key: .leftArrow, help: "Previous") { store.step(-1) }
                     .disabled(!store.canStep(-1))
                 Spacer()
-                StepButton(symbol: "chevron.right", key: .rightArrow, help: "Next") { store.step(1) }
+                StepButton(icon: .chevronRight, key: .rightArrow, help: "Next") { store.step(1) }
                     .disabled(!store.canStep(1))
             }
             .padding(.horizontal, 14)
@@ -40,7 +40,7 @@ struct PhotoViewer: View {
     private var topBar: some View {
         HStack(spacing: 12) {
             Button { store.closeViewer() } label: {
-                Image(systemName: "xmark").font(.system(size: 13, weight: .semibold))
+                Image(lucide: .x, size: 13, weight: .semibold)
             }
             .buttonStyle(ViewerButtonStyle())
             .keyboardShortcut(.cancelAction)
@@ -59,7 +59,7 @@ struct PhotoViewer: View {
                 ProgressView().controlSize(.small)
             }
             Button { store.download([photo.id]) } label: {
-                Label("Download", systemImage: "square.and.arrow.down").font(.system(size: 12, weight: .medium))
+                Label("Download", lucide: .download, size: 12).font(.system(size: 12, weight: .medium))
             }
             .buttonStyle(ViewerButtonStyle())
             .disabled(store.downloading.contains(photo.id) || !store.hasPhone)
@@ -101,7 +101,7 @@ private struct PreviewMedia: View {
 
             VStack(spacing: 10) {
                 if failed {
-                    Image(systemName: "exclamationmark.triangle").font(.system(size: 26, weight: .light))
+                    Image(lucide: .triangleAlert, size: 26, weight: .light)
                     Text("Couldn't get this \(photo.isVideo ? "video" : "photo") from your phone").font(.callout)
                     Button("Try again", action: retry).controlSize(.small)
                 } else {
@@ -205,15 +205,14 @@ private struct VideoPreview: NSViewRepresentable {
 }
 
 private struct StepButton: View {
-    let symbol: String
+    let icon: Lucide
     let key: KeyEquivalent
     let help: String
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 16, weight: .semibold))
+            Image(lucide: icon, size: 16, weight: .semibold)
                 .frame(width: 38, height: 38)
                 .background(.ultraThinMaterial, in: Circle())
         }

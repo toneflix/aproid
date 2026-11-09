@@ -32,25 +32,25 @@ struct Activity: Identifiable, Equatable {
 
     var isInProgress: Bool { kind == .receiving || kind == .sending }
 
-    var symbol: String {
+    var icon: Lucide {
         switch kind {
-        case .link: return "link"
-        case .text: return "doc.on.clipboard"
-        case .failed: return "exclamationmark.triangle"
-        case .receiving, .received, .sending, .sent: return Self.fileSymbol(title)
+        case .link: return .link
+        case .text: return .clipboard
+        case .failed: return .triangleAlert
+        case .receiving, .received, .sending, .sent: return Self.fileIcon(title)
         }
     }
 
-    private static func fileSymbol(_ name: String) -> String {
-        guard let type = UTType(filenameExtension: (name as NSString).pathExtension) else { return "doc" }
+    private static func fileIcon(_ name: String) -> Lucide {
+        guard let type = UTType(filenameExtension: (name as NSString).pathExtension) else { return .file }
 
-        if type.conforms(to: .image) { return "photo" }
-        if type.conforms(to: .movie) { return "film" }
-        if type.conforms(to: .audio) { return "waveform" }
-        if type.conforms(to: .pdf) { return "doc.richtext" }
-        if type.conforms(to: .archive) { return "doc.zipper" }
+        if type.conforms(to: .image) { return .image }
+        if type.conforms(to: .movie) { return .film }
+        if type.conforms(to: .audio) { return .audioLines }
+        if type.conforms(to: .pdf) { return .fileText }
+        if type.conforms(to: .archive) { return .fileArchive }
 
-        return "doc"
+        return .file
     }
 }
 

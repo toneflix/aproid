@@ -19,15 +19,15 @@ struct PhotosWindow: View {
                     Slider(value: $size, in: 88...220)
                         .frame(width: 110)
                         .help("Thumbnail size")
-                    Button { if let id = store.selection.first { store.open(id) } } label: { Label("View", systemImage: "eye") }
+                    Button { if let id = store.selection.first { store.open(id) } } label: { Label("View", lucide: .eye) }
                         .keyboardShortcut(.space, modifiers: [])
                         .help("View the selected photo (Space)")
                         .disabled(store.selection.count != 1 || store.viewing != nil)
-                    Button { store.refresh() } label: { Label("Refresh", systemImage: "arrow.clockwise") }
+                    Button { store.refresh() } label: { Label("Refresh", lucide: .rotateCw) }
                         .help("Load the newest photos")
                         .disabled(!store.hasPhone)
                     Button { store.download(store.selection) } label: {
-                        Label("Download", systemImage: "square.and.arrow.down")
+                        Label("Download", lucide: .download)
                     }
                     .help("Save the selected photos to Downloads")
                     .disabled(store.selection.isEmpty || !store.hasPhone)
@@ -47,8 +47,7 @@ struct PhotosWindow: View {
     private var content: some View {
         if store.photos.isEmpty {
             VStack(spacing: 10) {
-                Image(systemName: store.hasPhone ? "photo.on.rectangle.angled" : "iphone.slash")
-                    .font(.system(size: 34, weight: .light))
+                Image(lucide: store.hasPhone ? .images : .unplug, size: 34, weight: .light)
                     .foregroundStyle(Theme.accent)
                 Text(emptyText)
                     .font(.callout)
@@ -154,15 +153,14 @@ private struct PhotoTile: View {
                     Image(nsImage: image).resizable().scaledToFill()
                 } else {
                     Theme.thumb.overlay(
-                        Image(systemName: photo.isVideo ? "video" : "photo").foregroundStyle(.secondary)
+                        Image(lucide: photo.isVideo ? .video : .image, size: 18).foregroundStyle(.secondary)
                     )
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             .overlay(alignment: .bottomLeading) {
                 if photo.isVideo {
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 10, weight: .bold))
+                    Image(lucide: .play, size: 10, weight: .bold)
                         .foregroundStyle(.white)
                         .padding(5)
                         .background(.black.opacity(0.45), in: Circle())
@@ -171,17 +169,9 @@ private struct PhotoTile: View {
             }
             .overlay(alignment: .topTrailing) {
                 if isDownloading {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(Theme.onAccent, Theme.accent)
-                        .font(.system(size: 18))
-                        .padding(6)
+                    TileBadge(icon: .arrowDownToLine)
                 } else if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(Theme.onAccent, Theme.accent)
-                        .font(.system(size: 18))
-                        .padding(6)
+                    TileBadge(icon: .check)
                 }
             }
             .overlay(
@@ -192,5 +182,19 @@ private struct PhotoTile: View {
             .contentShape(Rectangle())
             .onHover { hovering = $0 }
             .help("\(photo.name)\n\(PhotosStore.date(photo).formatted(date: .abbreviated, time: .shortened))")
+    }
+}
+
+/// A small accent circle in a thumbnail's corner, showing its state.
+private struct TileBadge: View {
+    let icon: Lucide
+
+    var body: some View {
+        Image(lucide: icon, size: 11, weight: .bold)
+            .foregroundStyle(Theme.onAccent)
+            .frame(width: 20, height: 20)
+            .background(Theme.accent, in: Circle())
+            .overlay(Circle().stroke(Theme.onAccent, lineWidth: 1.5))
+            .padding(6)
     }
 }

@@ -43,8 +43,7 @@ private struct RecentRow: View {
                 .fill(item.kind == .failed ? Theme.warn.opacity(0.15) : Theme.thumb)
                 .frame(width: 34, height: 34)
                 .overlay(
-                    Image(systemName: item.symbol)
-                        .font(.system(size: 14, weight: .medium))
+                    Image(lucide: item.icon, size: 14, weight: .medium)
                         .foregroundStyle(item.kind == .failed ? Theme.warn : Color.secondary)
                 )
 
