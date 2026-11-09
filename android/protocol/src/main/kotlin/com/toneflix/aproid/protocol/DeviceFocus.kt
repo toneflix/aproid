@@ -10,6 +10,16 @@ class DeviceFocus(private val preferredId: String?) {
         val preferred = devices.firstOrNull { id(it) == preferredId }
         if (preferred != null) return preferred
 
-        return devices.minWithOrNull(compareBy<T>({ name(it) }, { id(it) }))
+        return devices.minWithOrNull(order(id, name))
     }
+
+    /** The device after the preferred one, by name then id, wrapping round to the first. */
+    fun <T> next(devices: List<T>, id: (T) -> String, name: (T) -> String): T? {
+        val ordered = devices.sortedWith(order(id, name))
+        val index = ordered.indexOfFirst { id(it) == preferredId }
+
+        return ordered.getOrNull((index + 1) % ordered.size.coerceAtLeast(1))
+    }
+
+    private fun <T> order(id: (T) -> String, name: (T) -> String) = compareBy<T>({ name(it) }, { id(it) })
 }

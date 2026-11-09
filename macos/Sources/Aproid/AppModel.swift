@@ -55,6 +55,11 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// How the panel switches between several paired phones.
+    @Published var switcherStyle: PhoneSwitcherStyle {
+        didSet { UserDefaults.standard.set(switcherStyle.rawValue, forKey: "switcherStyle") }
+    }
+
     /// Sends what is shared from the Share menu.
     private(set) lazy var shareInbox = ShareInbox(model: self)
 
@@ -123,6 +128,7 @@ final class AppModel: ObservableObject {
         notifications = NotificationPlugin(devices: connected)
         plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
+        switcherStyle = UserDefaults.standard.string(forKey: "switcherStyle").flatMap(PhoneSwitcherStyle.init(rawValue:)) ?? .carousel
         notifications.isEnabled = mirrorsNotifications
 
         battery.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
@@ -171,6 +177,17 @@ final class AppModel: ObservableObject {
         share.restore()
         start()
         clipboard.startWatching()
+    }
+
+    /// The paired phone after the one shown, wrapping round to the first.
+    var nextPhone: DeviceState? {
+        DeviceFocus(preferredId: primaryId).next(devices.filter { $0.pairState == .paired }, id: \.id, name: \.name)
+    }
+
+    func showNextPhone() {
+        guard let next = nextPhone, next.id != primaryId else { return }
+
+        selectedPhone = next.id
     }
 
     func requestPair(_ id: String) { connected[id]?.requestPair() }

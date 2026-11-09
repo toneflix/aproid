@@ -69,7 +69,7 @@ class LinkService : Service() {
     }
 
     private fun startLink() {
-        DeviceStore.restoreFocus(this)
+        DeviceStore.restorePreferences(this)
         BatteryPlugin.start(this)
         FindMyPhonePlugin.start(this)
         ClipboardPlugin.start(this)
