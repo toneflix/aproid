@@ -1,0 +1,56 @@
+using System.Runtime.InteropServices;
+
+namespace Aproid.Model;
+
+/// Where Aproid keeps its files.
+internal static class AppPaths
+{
+    private static readonly Guid DownloadsFolder = new("374DE290-123F-4565-9164-39C4925E467B");
+
+    /// Settings, keys and paired devices: %LOCALAPPDATA%\Aproid.
+    public static string Data { get; } = Folder(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Aproid"));
+
+    /// Notification icons and pasted files, safe to delete.
+    public static string Cache { get; } = Folder(Path.Combine(Data, "Cache"));
+
+    /// Where received files go.
+    public static string Downloads { get; } = Folder(KnownDownloads() ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"));
+
+    public static string Settings => Path.Combine(Data, "settings.json");
+
+    public static string TrustedDevices => Path.Combine(Data, "trusted.json");
+
+    public static string Transfers => Path.Combine(Data, "transfers.json");
+
+    public static string Certificate => Path.Combine(Data, "device.pfx");
+
+    public static string AppIcon => Path.Combine(AppContext.BaseDirectory, "Assets", "Aproid.png");
+
+    public static string WindowIcon => Path.Combine(AppContext.BaseDirectory, "Assets", "Aproid.ico");
+
+    public static string TrayIcon => Path.Combine(AppContext.BaseDirectory, "Assets", "Tray.ico");
+
+    private static string Folder(string path)
+    {
+        Directory.CreateDirectory(path);
+
+        return path;
+    }
+
+    private static string? KnownDownloads()
+    {
+        if (SHGetKnownFolderPath(DownloadsFolder, 0, IntPtr.Zero, out var pointer) != 0) return null;
+
+        try
+        {
+            return Marshal.PtrToStringUni(pointer);
+        }
+        finally
+        {
+            Marshal.FreeCoTaskMem(pointer);
+        }
+    }
+
+    [DllImport("shell32.dll")]
+    private static extern int SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid id, uint flags, IntPtr token, out IntPtr path);
+}
