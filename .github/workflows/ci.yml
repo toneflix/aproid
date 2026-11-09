@@ -36,3 +36,23 @@ jobs:
         run: swift test
       - name: Bundle app
         run: ./scripts/bundle.sh
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Protocol tests
+        run: dotnet test tests/Aproid.Core.Tests
+      - name: Build app
+        run: dotnet publish src/Aproid -c Release -r win-x64 -p:Platform=x64 --self-contained true -o publish/Aproid
+      - name: Upload app
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aproid-windows-x64
+          path: windows/publish/Aproid
