@@ -226,4 +226,23 @@ public class PhoneFeatureTests
 
     [Fact]
     public void NoDevicesPicksNothing() => Assert.Null(Pick("a", []));
+
+    private static Peer? Next(string? preferredId, Peer[]? list = null) =>
+        new DeviceFocus(preferredId).Next(list ?? Peers, peer => peer.Id, peer => peer.Name);
+
+    [Fact]
+    public void NextDeviceFollowsNameThenId()
+    {
+        Assert.Equal(new Peer("b", "Pixel"), Next("a"));
+        Assert.Equal(new Peer("c", "Pixel"), Next("b"));
+    }
+
+    [Fact]
+    public void NextDeviceWrapsRound() => Assert.Equal(new Peer("a", "Galaxy"), Next("c"));
+
+    [Fact]
+    public void NextFromUnknownIsTheFirst() => Assert.Equal(new Peer("a", "Galaxy"), Next("gone"));
+
+    [Fact]
+    public void NextOfNothingIsNothing() => Assert.Null(Next("a", []));
 }

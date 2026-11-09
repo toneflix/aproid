@@ -12,4 +12,15 @@ public sealed class DeviceFocus(string? preferredId)
         return all.FirstOrDefault(d => id(d) == preferredId)
             ?? all.OrderBy(name, StringComparer.Ordinal).ThenBy(id, StringComparer.Ordinal).FirstOrDefault();
     }
+
+    /// The device after the preferred one, by name then id, wrapping round to the first.
+    public T? Next<T>(IEnumerable<T> devices, Func<T, string> id, Func<T, string> name) where T : class
+    {
+        var ordered = devices.OrderBy(name, StringComparer.Ordinal).ThenBy(id, StringComparer.Ordinal).ToList();
+        if (ordered.Count == 0) return null;
+
+        var index = ordered.FindIndex(d => id(d) == preferredId);
+
+        return ordered[(index + 1) % ordered.Count];
+    }
 }
