@@ -47,6 +47,9 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private string? waitingNumber;
     private DateTimeOffset waitingSince;
     private readonly PhoneHotspot hotspot;
+    private readonly Updater updater;
+    private readonly PhoneFolder folder = new(AppPaths.PhonePhotos, AppPaths.PhonePhotosRecord);
+    private Device? folderPhone;
     private NearbyFinder? nearby;
     private DateTimeOffset lastNearbySearch = DateTimeOffset.MinValue;
     private bool phoneNearby;
@@ -79,7 +82,19 @@ public sealed class AppModel : Observable, IDeviceDelegate
             ui.TryEnqueue(() => HandleCall(state, deviceId, deviceName));
         };
         photos.OnPage = (page, deviceId) => ui.TryEnqueue(() => Photos.Ingest(page, deviceId));
-        photos.OnPreview = (id, file, deviceId) => ui.TryEnqueue(() => Photos.IngestPreview(id, file, deviceId));
+        photos.OnPreview = (id, file, deviceId) =>
+        {
+            if (deviceId == folderPhone?.Id) folder.Delivered(id, file);
+            ui.TryEnqueue(() => Photos.IngestPreview(id, file, deviceId));
+        };
+        folder.Request = id => folderPhone is Device phone && phone.Send(Core.Photos.DownloadPacket(id, preview: true));
+        Photos.Arrived += arrived =>
+        {
+            if (!ShowsPhotosInExplorer) return;
+
+            Task.Run(() => folder.Add(arrived));
+            FillPhoneFolder();
+        };
         Messages.Send = packet => Primary is Device phone && phone.Send(packet);
         Messages.PropertyChanged += (_, args) =>
         {
@@ -102,6 +117,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         Mirror.Send = (id, packet) => connected[id]?.Send(packet) == true;
         plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen]);
 
+        updater = new Updater(toasts) { OnInstalling = () => ui.TryEnqueue(() => UpdateInstalling?.Invoke()) };
         hotspot = new PhoneHotspot(() => settings.PhoneHotspots, settings.RememberHotspot);
 
         share.Restore();
@@ -248,6 +264,41 @@ public sealed class AppModel : Observable, IDeviceDelegate
         if (NextPhone is DeviceState next) Select(next.Id);
     }
 
+    /// Whether the keyboard shortcut opens the panel. The app turns the shortcut itself on and off.
+    public bool OpensWithHotkey
+    {
+        get => settings.OpensWithHotkey;
+        set
+        {
+            settings.OpensWithHotkey = value;
+            Raise();
+        }
+    }
+
+    /// Whether the phone's recent photos show as a folder in Explorer.
+    public bool ShowsPhotosInExplorer
+    {
+        get => settings.ShowsPhotosInExplorer;
+        set
+        {
+            settings.ShowsPhotosInExplorer = value;
+            Raise();
+
+            if (!value)
+            {
+                Task.Run(folder.Remove);
+                return;
+            }
+
+            SyncStores(Primary);
+            var loaded = Photos.Loaded.ToList();
+            Task.Run(() => folder.Add(loaded));
+            FillPhoneFolder();
+        }
+    }
+
+    public string PhonePhotosFolder => folder.Root;
+
     public bool StartsWithWindows
     {
         get => Shell.Startup.IsEnabled;
@@ -351,6 +402,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
                 lan.Start();
 
                 ui.TryEnqueue(() => Started(lan));
+                updater.Start();
             }
             catch (Exception e)
             {
@@ -359,10 +411,18 @@ public sealed class AppModel : Observable, IDeviceDelegate
         });
     }
 
+    /// The installer for a new version is running; quit so it can replace the app.
+    public event Action? UpdateInstalling;
+
+    public string VersionText => Updater.CurrentText;
+
+    public void CheckForUpdates() => _ = updater.CheckAsync(manual: true);
+
     public void Stop()
     {
         timer?.Stop();
         link?.Stop();
+        folder.Disconnect();
         foreach (var device in connected.All) device.Link.Close("Aproid quit");
         toasts.Unregister();
     }
@@ -600,6 +660,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
             foreach (var device in connected.All) device.Tick();
             SendWaiting();
             SearchNearbyIfLost();
+            FillPhoneFolder();
             Raise(nameof(ClipboardSubtitle));
         };
         timer.Start();
@@ -764,6 +825,13 @@ public sealed class AppModel : Observable, IDeviceDelegate
     /// Texts and photos come from the primary phone.
     private void SyncStores(Device? phone)
     {
+        folderPhone = phone;
+        if (phone is not null && ShowsPhotosInExplorer)
+        {
+            folder.Use(phone.Id);
+            folder.Connect();
+        }
+
         if (phone is not null)
         {
             Photos.Attach(phone.Id);
@@ -775,6 +843,12 @@ public sealed class AppModel : Observable, IDeviceDelegate
             Photos.Detach(id);
             Messages.Detach(id);
         }
+    }
+
+    /// Keeps loading pages until the phone folder has its most recent photos.
+    private void FillPhoneFolder()
+    {
+        if (ShowsPhotosInExplorer && folder.IsConnected && Photos.HasPhone && Photos.HasMore && Photos.Count < PhoneFolder.Limit) Photos.LoadMore();
     }
 
     private static DeviceCertificate LoadCertificate(string deviceId)

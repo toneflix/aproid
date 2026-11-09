@@ -24,6 +24,11 @@ internal static class AppPaths
 
     public static string Certificate => Path.Combine(Data, "device.pfx");
 
+    /// The phone's photos in Explorer: %USERPROFILE%\Phone Photos.
+    public static string PhonePhotos => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Phone Photos");
+
+    public static string PhonePhotosRecord => Path.Combine(Data, "phone-photos.json");
+
     public static string AppIcon => Path.Combine(AppContext.BaseDirectory, "Assets", "Aproid.png");
 
     public static string WindowIcon => Path.Combine(AppContext.BaseDirectory, "Assets", "Aproid.ico");
