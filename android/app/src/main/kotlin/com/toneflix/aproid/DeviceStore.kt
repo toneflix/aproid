@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
+import java.io.IOException
+import java.io.InputStream
 import java.util.concurrent.Executors
 
 /** What the UI shows for one connected device. */
@@ -130,17 +132,22 @@ object DeviceStore {
 
     /** Sends [packet] with [payload] attached. Falls back to the bare packet if no payload port is free. */
     fun sendWithPayload(device: Device, packet: NetworkPacket, payload: ByteArray, onDone: (Throwable?) -> Unit = {}) {
-        sender.execute {
-            val offered = runCatching {
-                device.sendWithPayload(packet, payload.size.toLong(), open = { payload.inputStream() }, onDone = onDone)
-            }.getOrDefault(false)
+        offer(device, packet, payload.size.toLong(), open = { payload.inputStream() }, onDone = { error ->
+            if (error is PayloadNotOffered) runCatching { device.send(packet) }
+            onDone(error)
+        })
+    }
 
-            if (!offered) {
-                runCatching { device.send(packet) }
-                onDone(java.io.IOException("payload not offered"))
-            }
+    /** Offers a payload of [size] bytes (or a live stream) off the main thread; [onDone] gets [PayloadNotOffered] if it never went out. */
+    fun offer(device: Device, packet: NetworkPacket, size: Long, open: () -> InputStream, onDone: (Throwable?) -> Unit = {}) {
+        sender.execute {
+            val offered = runCatching { device.sendWithPayload(packet, size, open, onDone) }.getOrDefault(false)
+
+            if (!offered) onDone(PayloadNotOffered())
         }
     }
+
+    class PayloadNotOffered : IOException("payload not offered")
 
     fun pairedDevices(): List<Device> = synchronized(this) { devices.values.filter { it.isPaired } }
 
