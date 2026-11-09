@@ -12,7 +12,7 @@ struct PhotosWindow: View {
     var body: some View {
         content
             .frame(minWidth: 640, minHeight: 460)
-            .background(Theme.panel)
+            .glassBackdrop()
             .navigationTitle("Photos")
             .navigationSubtitle(subtitle)
             .toolbar {
