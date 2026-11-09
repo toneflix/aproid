@@ -51,8 +51,14 @@ final class AppModel: ObservableObject {
     @Published var mirrorsNotifications: Bool {
         didSet {
             notifications.isEnabled = mirrorsNotifications
+        switcherStyle = UserDefaults.standard.string(forKey: "switcherStyle").flatMap(PhoneSwitcherStyle.init(rawValue:)) ?? .carousel
             UserDefaults.standard.set(mirrorsNotifications, forKey: "mirrorsNotifications")
         }
+    }
+
+    /// How the panel switches between several paired phones.
+    @Published var switcherStyle: PhoneSwitcherStyle {
+        didSet { UserDefaults.standard.set(switcherStyle.rawValue, forKey: "switcherStyle") }
     }
 
     /// Sends what is shared from the Share menu.
@@ -171,6 +177,17 @@ final class AppModel: ObservableObject {
         share.restore()
         start()
         clipboard.startWatching()
+    }
+
+    /// The paired phone after the one shown, wrapping round to the first.
+    var nextPhone: DeviceState? {
+        DeviceFocus(preferredId: primaryId).next(devices.filter { $0.pairState == .paired }, id: \.id, name: \.name)
+    }
+
+    func showNextPhone() {
+        guard let next = nextPhone, next.id != primaryId else { return }
+
+        selectedPhone = next.id
     }
 
     func requestPair(_ id: String) { connected[id]?.requestPair() }
