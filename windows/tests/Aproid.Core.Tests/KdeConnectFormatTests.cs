@@ -98,4 +98,48 @@ public class KdeConnectFormatTests
             PacketType.ClipboardFile, PacketType.CallRequest, PacketType.Heartbeat,
         }, Capabilities.Mvp.ToHashSet());
     }
+
+    [Fact]
+    public void ReadsKdeTelephony()
+    {
+        var ringing = Call.StateOf(Parse("""{"id":1,"type":"kdeconnect.telephony","body":{"event":"ringing","phoneNumber":"+2348000000000","contactName":"Ann","phoneThumbnail":"aGk="}}"""))!;
+        var ended = Call.StateOf(Parse("""{"id":2,"type":"kdeconnect.telephony","body":{"event":"ringing","phoneNumber":"+2348000000000","isCancel":true}}"""))!;
+
+        Assert.Equal(CallEvent.Ringing, ringing.Event);
+        Assert.Equal("Ann", ringing.ContactName);
+        Assert.True(ended.Ended);
+        Assert.Equal(["event", "phoneNumber", "contactName"], Keys(Call.Event(CallEvent.Talking, "1", "Bo")));
+    }
+
+    [Fact]
+    public void ReadsKdeSms()
+    {
+        var message = Sms.Messages(Parse("""{"id":1,"type":"kdeconnect.sms.messages","body":{"version":2,"messages":[{"_id":"41","thread_id":"7","body":"hi","addresses":[{"address":"+2348000000000"}],"date":"1700000000000","type":"1","read":"0","event":1,"sub_id":1}]}}"""))![0];
+
+        Assert.Equal(41, message.Id);
+        Assert.Equal(7, message.ThreadId);
+        Assert.True(message.IsIncoming);
+        Assert.False(message.IsRead);
+
+        // KDE's desktop sends version 2 with an address list; older apps sent one phoneNumber.
+        var v2 = Sms.SendRequestOf(Parse("""{"id":1,"type":"kdeconnect.sms.request","body":{"version":2,"addresses":[{"address":"555"}],"messageBody":"yo","subID":-1}}"""))!;
+        var v1 = Sms.SendRequestOf(Parse("""{"id":1,"type":"kdeconnect.sms.request","body":{"sendSms":true,"phoneNumber":"555","messageBody":"yo"}}"""))!;
+        Assert.Equal(["555"], v2.Addresses);
+        Assert.Equal(["555"], v1.Addresses);
+
+        var asked = Sms.ConversationRequestOf(Parse("""{"id":1,"type":"kdeconnect.sms.request_conversation","body":{"threadID":7,"rangeStartTimestamp":1700000000000,"numberToRequest":20}}"""))!;
+        Assert.Equal(7, asked.ThreadId);
+    }
+
+    [Fact]
+    public void ReadsKdeMedia()
+    {
+        var player = MediaPlayer.FromPacket(Parse("""{"id":1,"type":"kdeconnect.mpris","body":{"player":"Spotify","title":"Song","artist":"Band","album":"LP","isPlaying":true,"pos":1000,"length":200000,"volume":70,"canPlay":true,"canPause":true,"canGoNext":true,"canGoPrevious":true,"canSeek":true}}"""))!;
+        var request = MediaRequest.FromPacket(Parse("""{"id":1,"type":"kdeconnect.mpris.request","body":{"player":"Spotify","action":"PlayPause"}}"""))!;
+
+        Assert.Equal("Song", player.Title);
+        Assert.Equal(200_000, player.Length);
+        Assert.Equal(MediaAction.PlayPause, request.Action);
+        Assert.Contains("SetPosition", Keys(MediaRequest.Seek("Spotify", 5000).ToPacket()));
+    }
 }

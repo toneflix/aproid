@@ -22,4 +22,10 @@ On first launch Windows Firewall asks whether Aproid may use the network. Allow 
 
 ## What works
 
-Pairing with the verification code, phone notifications with replies, shared clipboard (text, pictures and files), sending and receiving files with resume, links and text, battery level and ringing the phone. Phone notifications need Windows notifications turned on for Aproid.
+Pairing with the verification code, phone notifications with replies, shared clipboard (text, pictures and files), sending and receiving files with resume, links and text, battery level, and ringing the phone with its location on a map.
+
+Texts in the Messages window, calls with a banner to answer, mute and hang up, media controls for what the phone plays, the phone's photos in the Photos window, and several paired phones with a card carousel.
+
+Right-click files in Explorer and pick "Send to phone" (on Windows 11 it's under "Show more options"). To call `tel:` links from your phone, pick Aproid for TEL in Settings > Apps > Default apps.
+
+Phone notifications need Windows notifications turned on for Aproid.

@@ -13,7 +13,8 @@
             <SolidColorBrush x:Key="AproidOkTintBrush" Color="#E3F5EC" />
             <SolidColorBrush x:Key="AproidWarnBrush" Color="#9A5B00" />
             <SolidColorBrush x:Key="AproidPanelBrush" Color="#F8F6F1" />
-            <SolidColorBrush x:Key="AproidCardBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="AproidCardBrush" Color="#D9FFFFFF" />
+            <SolidColorBrush x:Key="AproidGlassBrush" Color="#66F8F6F1" />
             <SolidColorBrush x:Key="AproidThumbBrush" Color="#EFEFF3" />
             <SolidColorBrush x:Key="AproidTrackBrush" Color="#E6E6EB" />
             <SolidColorBrush x:Key="AproidDeviceBrush" Color="#1C1C20" />
@@ -38,7 +39,8 @@
             <SolidColorBrush x:Key="AproidOkTintBrush" Color="#244FD39A" />
             <SolidColorBrush x:Key="AproidWarnBrush" Color="#FFC46B" />
             <SolidColorBrush x:Key="AproidPanelBrush" Color="#1E1D1A" />
-            <SolidColorBrush x:Key="AproidCardBrush" Color="#2A2925" />
+            <SolidColorBrush x:Key="AproidCardBrush" Color="#D92A2925" />
+            <SolidColorBrush x:Key="AproidGlassBrush" Color="#661E1D1A" />
             <SolidColorBrush x:Key="AproidThumbBrush" Color="#34343A" />
             <SolidColorBrush x:Key="AproidTrackBrush" Color="#1AFFFFFF" />
             <SolidColorBrush x:Key="AproidDeviceBrush" Color="#3A3A40" />

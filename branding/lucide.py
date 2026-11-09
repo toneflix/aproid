@@ -31,9 +31,12 @@ ANDROID = [
 ]
 
 WINDOWS = [
-    "battery-charging", "bell", "bell-off", "bell-ring", "check", "chevron-down", "circle-check", "clipboard",
-    "download", "file", "file-archive", "file-text", "file-up", "film", "folder-open", "image", "link", "lock",
-    "audio-lines", "settings", "smartphone", "triangle-alert", "unplug", "volume-2", "wifi", "x", "zap",
+    "arrow-up", "audio-lines", "battery-charging", "bell", "bell-off", "bell-ring", "check", "chevron-down",
+    "chevron-left", "chevron-right", "circle-check", "circle-x", "clipboard", "download", "external-link", "file",
+    "file-archive", "file-text", "file-up", "film", "folder-open", "image", "images", "link", "lock", "map-pin",
+    "message-square", "messages-square", "mic", "mic-off", "music", "pause", "phone", "phone-off", "play",
+    "rotate-cw", "search", "settings", "skip-back", "skip-forward", "smartphone", "square-pen", "triangle-alert",
+    "unplug", "video", "volume-2", "wifi", "x", "zap",
 ]
 
 # Drawn solid as well as stroked, like the filled media controls people expect.
