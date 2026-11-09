@@ -42,6 +42,8 @@ A packet that carries a file adds `payloadSize` and `payloadTransferInfo: {"port
 
 **Heartbeat (`aproid.heartbeat`).** Every 5 seconds each side sends `{"pong": false}` and the other answers at once with `{"pong": true}`. A link that receives nothing for 30 seconds is closed, so discovery can reconnect. A sleeping phone wakes to answer even when its own timer is paused. Only peers that list the packet in their capabilities take part.
 
+**Several devices at once.** Each side keeps one link per device id, so a Mac stays connected to every paired phone and a phone to every paired Mac at the same time. Broadcast features (notifications, clipboard, battery, calls, media) reach all of them. Features about one device (the main screen, Messages, Photos, call audio, the Share menu) follow `DeviceFocus`: the device the user picked, or else the first paired one by name. Call audio stays with the phone it is linked to over Bluetooth while that phone is connected.
+
 **Pairing.** A sends `kdeconnect.pair` with `pair: true` and `timestamp` (Unix seconds). B shows a prompt and a short verification code derived from both certificates and the timestamp, so the user can check the same code shows on both screens. B answers `pair: true` to accept or `pair: false` to reject. Either side sends `pair: false` later to unpair. Requests time out after 30 seconds. `PairingStateMachine` implements this on both sides.
 
 ## What is done and what is next
