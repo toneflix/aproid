@@ -10,34 +10,34 @@ struct QuickActions: View {
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-            ActionTile(symbol: "speaker.wave.3.fill", title: "Ring phone", subtitle: "Full volume") {
+            ActionTile(icon: .volume2, title: "Ring phone", subtitle: "Full volume") {
                 model.ring(device.id)
             }
-            ActionTile(symbol: "doc.badge.arrow.up", title: "Send file", subtitle: "To Downloads") {
+            ActionTile(icon: .fileUp, title: "Send file", subtitle: "To Downloads") {
                 model.chooseFiles(for: device.id)
             }
-            ActionTile(symbol: "doc.on.clipboard", title: "Clipboard", subtitle: clipboardSubtitle) {
+            ActionTile(icon: .clipboard, title: "Clipboard", subtitle: clipboardSubtitle) {
                 model.sendClipboard(to: device.id)
             }
             ActionTile(
-                symbol: model.mirrorsNotifications ? "bell.badge" : "bell.slash",
+                icon: model.mirrorsNotifications ? .bellRing : .bellOff,
                 title: "Notifications",
                 subtitle: notificationsSubtitle,
                 isOn: model.mirrorsNotifications
             ) {
                 model.mirrorsNotifications.toggle()
             }
-            ActionTile(symbol: "message.fill", title: "Messages", subtitle: messagesSubtitle) {
+            ActionTile(icon: .messageSquare, title: "Messages", subtitle: messagesSubtitle) {
                 showMessages()
             }
-            ActionTile(symbol: "phone.fill", title: "Call", subtitle: "From your phone") {
+            ActionTile(icon: .phone, title: "Call", subtitle: "From your phone") {
                 showMessages()
                 messages.showsDialer = true
             }
-            ActionTile(symbol: "rectangle.on.rectangle", title: "Mirror", subtitle: "See & use your phone") {
+            ActionTile(icon: .cast, title: "Mirror", subtitle: "See & use your phone") {
                 model.mirror(device.id)
             }
-            ActionTile(symbol: "photo.on.rectangle", title: "Photos", subtitle: "Browse & download") {
+            ActionTile(icon: .images, title: "Photos", subtitle: "Browse & download") {
                 NSApplication.shared.activate(ignoringOtherApps: true)
                 openWindow(id: AproidApp.photosWindow)
             }
@@ -66,7 +66,7 @@ struct QuickActions: View {
 
 /// One square action: an icon chip with a title and a hint.
 struct ActionTile: View {
-    let symbol: String
+    let icon: Lucide
     let title: String
     let subtitle: String
     var isOn = true
@@ -81,8 +81,7 @@ struct ActionTile: View {
                     .fill(isOn ? Theme.tint : Theme.thumb)
                     .frame(width: 34, height: 34)
                     .overlay(
-                        Image(systemName: symbol)
-                            .font(.system(size: 14, weight: .semibold))
+                        Image(lucide: icon, size: 14, weight: .semibold)
                             .foregroundStyle(isOn ? Theme.accent : Color.secondary)
                     )
 

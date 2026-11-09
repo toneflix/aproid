@@ -53,7 +53,7 @@ struct DeviceHero: View {
             } label: {
                 HStack(spacing: 4) {
                     title
-                    Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold)).foregroundStyle(.secondary)
+                    Image(lucide: .chevronDown, size: 10, weight: .bold).foregroundStyle(.secondary)
                 }
             }
             .menuStyle(.borderlessButton)

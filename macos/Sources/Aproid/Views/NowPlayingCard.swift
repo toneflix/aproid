@@ -28,11 +28,11 @@ struct NowPlayingCard: View {
                 Spacer(minLength: 0)
 
                 HStack(spacing: 2) {
-                    ControlButton(symbol: "backward.fill", enabled: player.canGoPrevious) { model.media(deviceId, player.name, .previous) }
-                    ControlButton(symbol: player.isPlaying ? "pause.fill" : "play.fill", size: 17, enabled: player.canPlay || player.canPause) {
+                    ControlButton(icon: .skipBack, enabled: player.canGoPrevious) { model.media(deviceId, player.name, .previous) }
+                    ControlButton(icon: player.isPlaying ? .pause : .play, size: 17, enabled: player.canPlay || player.canPause) {
                         model.media(deviceId, player.name, .playPause)
                     }
-                    ControlButton(symbol: "forward.fill", enabled: player.canGoNext) { model.media(deviceId, player.name, .next) }
+                    ControlButton(icon: .skipForward, enabled: player.canGoNext) { model.media(deviceId, player.name, .next) }
                 }
             }
 
@@ -59,7 +59,7 @@ private struct Artwork: View {
             if let url, let image = NSImage(contentsOf: url) {
                 Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
             } else {
-                Theme.tint.overlay(Image(systemName: "music.note").foregroundStyle(Theme.accent))
+                Theme.tint.overlay(Image(lucide: .music, size: 18).foregroundStyle(Theme.accent))
             }
         }
         .frame(width: 44, height: 44)
@@ -68,7 +68,7 @@ private struct Artwork: View {
 }
 
 private struct ControlButton: View {
-    let symbol: String
+    let icon: Lucide
     var size: CGFloat = 13
     let enabled: Bool
     let action: () -> Void
@@ -77,8 +77,7 @@ private struct ControlButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: size, weight: .semibold))
+            Image(lucide: icon, size: size, weight: .semibold)
                 .frame(width: 30, height: 30)
                 .background(Circle().fill(hovering ? Theme.tint : Color.clear))
                 .contentShape(Circle())

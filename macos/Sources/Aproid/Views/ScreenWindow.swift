@@ -25,8 +25,7 @@ struct ScreenWindow: View {
 
     private var status: some View {
         VStack(spacing: 12) {
-            Image(systemName: mirror.phase == .ended ? "iphone.slash" : "iphone.radiowaves.left.and.right")
-                .font(.system(size: 40, weight: .light))
+            Image(lucide: mirror.phase == .ended ? .unplug : .cast, size: 40, weight: .light)
                 .foregroundStyle(Theme.accent)
 
             Text(statusTitle).font(.system(size: 15, weight: .semibold))
@@ -65,10 +64,10 @@ struct ScreenWindow: View {
 
     private var controls: some View {
         HStack(spacing: 34) {
-            control("chevron.backward", help: "Back (Esc or right-click)") { mirror.input(.key(ScreenInput.back)) }
-            control("circle", help: "Home") { mirror.input(.key(ScreenInput.home)) }
-            control("square.on.square", help: "Recent apps") { mirror.input(.key(ScreenInput.recents)) }
-            control("bell", help: "Notifications") { mirror.input(.key(ScreenInput.notifications)) }
+            control(.chevronLeft, help: "Back (Esc or right-click)") { mirror.input(.key(ScreenInput.back)) }
+            control(.circle, help: "Home") { mirror.input(.key(ScreenInput.home)) }
+            control(.copy, help: "Recent apps") { mirror.input(.key(ScreenInput.recents)) }
+            control(.bell, help: "Notifications") { mirror.input(.key(ScreenInput.notifications)) }
         }
         .frame(maxWidth: .infinity)
         .frame(height: 40)
@@ -76,10 +75,9 @@ struct ScreenWindow: View {
         .disabled(mirror.phase != .live)
     }
 
-    private func control(_ symbol: String, help: String, action: @escaping () -> Void) -> some View {
+    private func control(_ icon: Lucide, help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 14, weight: .semibold))
+            Image(lucide: icon, size: 14, weight: .semibold)
                 .frame(width: 34, height: 28)
                 .contentShape(Rectangle())
         }

@@ -27,13 +27,13 @@ struct FindCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Label(deviceName, systemImage: "location.fill")
+                Label(deviceName, lucide: .mapPin, size: 13)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.accent)
                     .lineLimit(1)
                 Spacer()
                 Button(action: close) {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                    Image(lucide: .circleX).foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
                 .help("Hide the map")

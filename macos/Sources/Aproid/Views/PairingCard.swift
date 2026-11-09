@@ -46,7 +46,7 @@ struct PairingCard: View {
                 }
             }
 
-            Label("End-to-end encrypted on your local network", systemImage: "lock.fill")
+            Label("End-to-end encrypted on your local network", lucide: .lock, size: 11)
                 .font(.system(size: 10.5))
                 .foregroundStyle(.secondary)
         }
