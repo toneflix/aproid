@@ -74,6 +74,17 @@ public sealed class PhotosStore : Observable
 
     public bool IsEmpty => ordered.Count == 0;
 
+    /// How many photos are loaded, newest first.
+    public int Count => ordered.Count;
+
+    /// The phone has older photos than those loaded.
+    public bool HasMore => more;
+
+    public IEnumerable<PhonePhoto> Loaded => ordered.Select(item => item.Photo);
+
+    /// Photos that just loaded, newest first.
+    public event Action<IReadOnlyList<PhonePhoto>>? Arrived;
+
     public string EmptyText => !HasPhone ? "Connect your phone to see its photos" : IsLoading ? "Loading your photos…" : "No photos on your phone";
 
     public PhotoItem? Viewed => viewing is long id ? byId.GetValueOrDefault(id) : null;
@@ -145,6 +156,8 @@ public sealed class PhotosStore : Observable
         more = page.More && fresh.Count > 0;
         IsLoading = false;
         RaiseStatus();
+
+        if (fresh.Count > 0) Arrived?.Invoke(fresh);
     }
 
     /// Opens a photo in the viewer and fetches it in full, with the next one so stepping through is quick.
