@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Aproid" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+
+    <!-- Shown by the system while the app starts, then swapped for Theme.Aproid. -->
+    <style name="Theme.Aproid.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/toneflix_gold</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Aproid</item>
+    </style>
+</resources>

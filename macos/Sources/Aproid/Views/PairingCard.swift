@@ -46,7 +46,7 @@ struct PairingCard: View {
                 }
             }
 
-            Label("End-to-end encrypted on your local network", systemImage: "lock.fill")
+            Label("End-to-end encrypted on your local network", lucide: .lock, size: 11)
                 .font(.system(size: 10.5))
                 .foregroundStyle(.secondary)
         }
@@ -104,7 +104,7 @@ struct PillStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(prominent ? Color.white : Color.primary)
+            .foregroundStyle(prominent ? Theme.onAccent : Color.primary)
             .frame(maxWidth: .infinity)
             .frame(height: 38)
             .background(

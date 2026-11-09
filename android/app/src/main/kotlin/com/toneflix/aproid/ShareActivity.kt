@@ -1,5 +1,6 @@
 package com.toneflix.aproid
 
+import androidx.annotation.DrawableRes
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -25,12 +26,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -47,9 +42,9 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -228,7 +223,7 @@ private fun Summary(outgoing: Outgoing) {
     val context = LocalContext.current
     val (icon, title, subtitle) = when (outgoing) {
         is Outgoing.Files -> Triple(
-            if (outgoing.allImages) Icons.Outlined.Image else Icons.Outlined.Description,
+            if (outgoing.allImages) R.drawable.lucide_image else R.drawable.lucide_file_text,
             when {
                 outgoing.items.size == 1 -> outgoing.items.first().name
                 outgoing.allImages -> pluralStringResource(R.plurals.share_photos, outgoing.items.size, outgoing.items.size)
@@ -236,7 +231,7 @@ private fun Summary(outgoing: Outgoing) {
             },
             Formatter.formatShortFileSize(context, outgoing.totalSize),
         )
-        is Outgoing.Text -> Triple(Icons.Outlined.Link, outgoing.text.lineSequence().first(), stringResource(R.string.share_text_summary))
+        is Outgoing.Text -> Triple(R.drawable.lucide_link, outgoing.text.lineSequence().first(), stringResource(R.string.share_text_summary))
     }
 
     Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -244,7 +239,7 @@ private fun Summary(outgoing: Outgoing) {
             Modifier.size(52.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Column(Modifier.weight(1f)) {
             Text(title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -275,8 +270,8 @@ private fun MacRow(mac: DeviceState, progress: SendProgress?, outgoing: Outgoing
                 Text(mac.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 when {
                     progress == null -> Unit
-                    progress.failed -> StatusIcon(Icons.Outlined.ErrorOutline, MaterialTheme.colorScheme.error)
-                    progress.done -> StatusIcon(Icons.Outlined.CheckCircle, MaterialTheme.colorScheme.primary)
+                    progress.failed -> StatusIcon(R.drawable.lucide_circle_alert, MaterialTheme.colorScheme.error)
+                    progress.done -> StatusIcon(R.drawable.lucide_circle_check, MaterialTheme.colorScheme.primary)
                     else -> Text("${(progress.fraction * 100).toInt()}%", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
             }
@@ -296,8 +291,8 @@ private fun MacRow(mac: DeviceState, progress: SendProgress?, outgoing: Outgoing
 }
 
 @Composable
-private fun StatusIcon(icon: ImageVector, tint: androidx.compose.ui.graphics.Color) {
-    Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+private fun StatusIcon(@DrawableRes icon: Int, tint: androidx.compose.ui.graphics.Color) {
+    Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
 }
 
 /** "2 of 3 · 41 MB/s · about 1 second left" */

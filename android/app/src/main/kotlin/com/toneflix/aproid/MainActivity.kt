@@ -9,11 +9,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.toneflix.aproid.ui.AproidTheme
 import com.toneflix.aproid.ui.HomeScreen
+import com.toneflix.aproid.ui.SplashOverlay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
@@ -27,7 +31,12 @@ class MainActivity : ComponentActivity() {
         val me = DeviceStore.identity(this)
 
         setContent {
-            AproidTheme { HomeScreen(phoneName = me.deviceName) }
+            AproidTheme {
+                Box {
+                    HomeScreen(phoneName = me.deviceName)
+                    SplashOverlay()
+                }
+            }
         }
     }
 

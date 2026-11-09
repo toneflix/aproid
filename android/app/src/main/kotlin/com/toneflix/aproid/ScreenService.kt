@@ -207,7 +207,7 @@ class ScreenService : Service() {
         )
 
         return Notification.Builder(this, ScreenPlugin.CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_menu_slideshow)
+            .setSmallIcon(R.drawable.lucide_cast)
             .setContentTitle(getString(R.string.screen_mirroring, macName))
             .setContentText(getString(R.string.screen_mirroring_hint))
             .setContentIntent(MainActivity.pendingIntent(this))

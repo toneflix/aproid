@@ -76,7 +76,7 @@ object FindMyPhonePlugin : Plugin {
         return Notification.Builder(context, CHANNEL_ID)
             .setContentTitle(context.getString(R.string.find_title))
             .setContentText(context.getString(R.string.find_text, from))
-            .setSmallIcon(android.R.drawable.ic_lock_silent_mode_off)
+            .setSmallIcon(R.drawable.lucide_bell_ring)
             .setContentIntent(stop)
             .setDeleteIntent(stop)
             .addAction(Notification.Action.Builder(null, context.getString(R.string.find_stop), stop).build())

@@ -29,7 +29,7 @@ object Hotspot {
     fun ask(context: Context) {
         val tap = PendingIntent.getActivity(context, NOTIFICATION_ID, settingsIntent(context), PendingIntent.FLAG_IMMUTABLE)
         val notification = Notification.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_upload_done)
+            .setSmallIcon(R.drawable.lucide_wifi)
             .setContentTitle(context.getString(R.string.hotspot_ask_title))
             .setContentText(context.getString(R.string.hotspot_ask_text))
             .setContentIntent(tap)

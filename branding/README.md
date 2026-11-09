@@ -14,3 +14,12 @@ It needs Pillow and Node with Playwright. It writes:
 - `macos/Sources/Aproid/AproidMark.swift`: the mark as a SwiftUI shape, used in the menu bar, the panel header and the Share sheet.
 - `android/app/src/main/res/drawable/ic_launcher_*.xml`: the adaptive launcher icon layers, including the themed (monochrome) one.
 - `android/app/src/main/res/drawable/ic_aproid_logo.xml` and `ic_stat_aproid.xml`: the in-app logo and the notification icon.
+
+## Icons
+
+Both apps use [Lucide](https://lucide.dev) icons (ISC, see `LUCIDE-LICENSE.txt`). `python3 branding/lucide.py` fetches them with npm and writes:
+
+- `macos/Sources/Aproid/Lucide.swift`: the Mac icons as paths, drawn with `Image(lucide:size:weight:)`.
+- `android/app/src/main/res/drawable/lucide_*.xml`: the Android icons as vector drawables.
+
+To add an icon, put its Lucide name in the `MAC` or `ANDROID` list in that script and run it again.

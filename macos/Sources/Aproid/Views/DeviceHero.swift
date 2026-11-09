@@ -1,7 +1,7 @@
 import SwiftUI
 import AproidKit
 
-/// The paired phone at the top of the panel: picture, name, connection and battery.
+/// The paired phone at the top of the panel, on the Toneflix gold: picture, name, connection and battery.
 struct DeviceHero: View {
     let device: DeviceState
     @ObservedObject var model: AppModel
@@ -33,7 +33,9 @@ struct DeviceHero: View {
 
             BatteryRing(charge: device.battery?.charge, isCharging: device.battery?.isCharging ?? false)
         }
-        .card(padding: 16)
+        .padding(16)
+        .environment(\.colorScheme, .light)
+        .background(Theme.gold, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
     }
 
     /// With several phones paired, the name is a menu to switch between them.
@@ -51,7 +53,7 @@ struct DeviceHero: View {
             } label: {
                 HStack(spacing: 4) {
                     title
-                    Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold)).foregroundStyle(.secondary)
+                    Image(lucide: .chevronDown, size: 10, weight: .bold).foregroundStyle(.secondary)
                 }
             }
             .menuStyle(.borderlessButton)
