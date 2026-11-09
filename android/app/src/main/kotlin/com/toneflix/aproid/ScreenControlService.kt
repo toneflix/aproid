@@ -19,6 +19,9 @@ import com.toneflix.aproid.protocol.ScreenInput
  * Android only allows this through an accessibility service the user turns on.
  */
 class ScreenControlService : AccessibilityService() {
+    /** Whether the user turned the service on, and whether Android is actually running it. */
+    enum class Status { OFF, STOPPED, ON }
+
     override fun onServiceConnected() {
         instance = this
     }
@@ -26,6 +29,11 @@ class ScreenControlService : AccessibilityService() {
     override fun onUnbind(intent: Intent?): Boolean {
         instance = null
         return super.onUnbind(intent)
+    }
+
+    override fun onDestroy() {
+        instance = null
+        super.onDestroy()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
@@ -115,7 +123,17 @@ class ScreenControlService : AccessibilityService() {
             android.os.Handler(android.os.Looper.getMainLooper()).post { service.play(input) }
         }
 
-        fun isEnabled(context: Context): Boolean {
+        /**
+         * Android stops the service when the app is updated or killed and, on many phones, keeps it switched on
+         * but "Not working" until the user turns it off and on again. That shows here as [Status.STOPPED].
+         */
+        fun status(context: Context): Status = when {
+            instance != null -> Status.ON
+            isEnabled(context) -> Status.STOPPED
+            else -> Status.OFF
+        }
+
+        private fun isEnabled(context: Context): Boolean {
             val enabled = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
             val me = ComponentName(context, ScreenControlService::class.java).flattenToString()
             return enabled.split(':').any { it.equals(me, ignoreCase = true) }

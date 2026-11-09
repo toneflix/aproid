@@ -55,6 +55,8 @@
     <string name="screen_control_description">Lets your Mac tap, swipe and type on this phone while you mirror its screen. Aproid only acts on what you do in the mirror window.</string>
     <string name="setup_control">Control your phone from the Mac</string>
     <string name="setup_control_hint">Turn on "Aproid Mac control" so clicks in the mirror window reach your phone</string>
+    <string name="setup_control_stopped">Mac control stopped working</string>
+    <string name="setup_control_stopped_hint">Android stopped it when Aproid was closed or updated. Turn "Aproid Mac control" off and on again</string>
     <string name="home_mirror">Mirror</string>
     <string name="setup_nearby">Connect without shared Wi-Fi</string>
     <string name="setup_nearby_hint">Lets your Mac find your phone over Bluetooth and join its hotspot</string>
