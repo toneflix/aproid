@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// The call banner: who is calling, with Answer and Decline, or the running call with Hang up.
+/// The call banner: who is calling, with Answer and Decline, or the running call with mute, audio route and Hang up.
 struct CallCard: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var audio: HandsFreeAudio
 
     var body: some View {
         Group {
@@ -12,7 +13,7 @@ struct CallCard: View {
                 Color.clear
             }
         }
-        .frame(width: 360, height: 112)
+        .frame(width: 380, height: 112)
     }
 
     private func content(_ call: ActiveCall) -> some View {
@@ -34,8 +35,28 @@ struct CallCard: View {
             switch call.phase {
             case .ringing:
                 RoundButton(symbol: "phone.down.fill", color: .red, help: "Decline") { model.declineCall() }
-                RoundButton(symbol: "phone.fill", color: .green, help: "Answer on your phone") { model.answerCall() }
+                RoundButton(symbol: "phone.fill", color: .green, help: audio.isReady ? "Answer on this Mac" : "Answer on your phone") {
+                    model.answerCall()
+                }
             case .dialing, .talking:
+                RoundButton(
+                    symbol: call.isMuted ? "mic.slash.fill" : "mic.fill",
+                    color: call.isMuted ? .primary : Theme.thumb,
+                    foreground: call.isMuted ? Theme.card : .primary,
+                    help: call.isMuted ? "Unmute" : "Mute"
+                ) {
+                    model.toggleMute()
+                }
+                if audio.isReady {
+                    RoundButton(
+                        symbol: audio.audioOnMac ? "iphone" : "laptopcomputer",
+                        color: Theme.thumb,
+                        foreground: .primary,
+                        help: audio.audioOnMac ? "Move the audio to your phone" : "Move the audio to this Mac"
+                    ) {
+                        model.switchCallAudio()
+                    }
+                }
                 RoundButton(symbol: "phone.down.fill", color: .red, help: "Hang up") { model.hangUp() }
             }
         }
@@ -49,15 +70,23 @@ struct CallCard: View {
     @ViewBuilder private func status(_ call: ActiveCall) -> some View {
         switch call.phase {
         case .ringing:
-            Text(call.name == nil ? "Incoming call · \(call.deviceName)" : "\(call.number) · \(call.deviceName)")
+            Text(call.name == nil ? "Incoming call · \(answersOn)" : "\(call.number) · \(answersOn)")
         case .dialing:
             Text("Calling from \(call.deviceName)…")
         case .talking(let since):
-            // The audio stays on the phone: macOS doesn't let apps carry phone call audio.
             TimelineView(.periodic(from: since, by: 1)) { context in
-                Text("\(Self.duration(context.date.timeIntervalSince(since))) · Audio on your phone")
+                HStack(spacing: 4) {
+                    Text(Self.duration(context.date.timeIntervalSince(since)))
+                    Text("·")
+                    Image(systemName: audio.audioOnMac ? "laptopcomputer" : "iphone")
+                    Text(audio.audioOnMac ? "On this Mac" : "On your phone")
+                }
             }
         }
+    }
+
+    private var answersOn: String {
+        audio.isReady ? "Answers on this Mac" : (model.call?.deviceName ?? "Your phone")
     }
 
     private static func duration(_ seconds: TimeInterval) -> String {
@@ -69,6 +98,7 @@ struct CallCard: View {
 private struct RoundButton: View {
     let symbol: String
     let color: Color
+    var foreground: Color = .white
     let help: String
     let action: () -> Void
 
@@ -76,7 +106,7 @@ private struct RoundButton: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(foreground)
                 .frame(width: 40, height: 40)
                 .background(Circle().fill(color))
         }
