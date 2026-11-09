@@ -51,7 +51,6 @@ final class AppModel: ObservableObject {
     @Published var mirrorsNotifications: Bool {
         didSet {
             notifications.isEnabled = mirrorsNotifications
-        switcherStyle = UserDefaults.standard.string(forKey: "switcherStyle").flatMap(PhoneSwitcherStyle.init(rawValue:)) ?? .carousel
             UserDefaults.standard.set(mirrorsNotifications, forKey: "mirrorsNotifications")
         }
     }
@@ -129,6 +128,7 @@ final class AppModel: ObservableObject {
         notifications = NotificationPlugin(devices: connected)
         plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
+        switcherStyle = UserDefaults.standard.string(forKey: "switcherStyle").flatMap(PhoneSwitcherStyle.init(rawValue:)) ?? .carousel
         notifications.isEnabled = mirrorsNotifications
 
         battery.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
