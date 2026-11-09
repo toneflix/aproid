@@ -1,12 +1,11 @@
 import CoreBluetooth
 import CoreLocation
-import CoreWLAN
 import Foundation
 import OSLog
 import AproidKit
 
 /// Finds a paired phone over Bluetooth when Wi-Fi discovery fails, and asks it where it is.
-/// With `.hotspot` it asks the phone to start a local hotspot, then joins it.
+/// With `.hotspot` it also asks the phone to put its hotspot switch in front of the user.
 final class NearbyFinder: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, @unchecked Sendable {
     /// Called on a background queue with the phone's sealed-and-opened answer.
     var onAnswer: ((Nearby.Answer) -> Void)?
@@ -28,7 +27,7 @@ final class NearbyFinder: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     private let requestId = CBUUID(string: Nearby.request)
     private let answerId = CBUUID(string: Nearby.answer)
 
-    /// Location is only needed to see Wi-Fi names when joining the phone's hotspot.
+    /// Location is only needed to read the Wi-Fi name when learning the phone's hotspot.
     private lazy var location = CLLocationManager()
 
     init(ownId: String) {
@@ -147,18 +146,5 @@ final class NearbyFinder: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
 
         finish()
         onAnswer?(opened)
-    }
-
-    // MARK: Hotspot
-
-    /// Joins the phone's hotspot. Blocks for a few seconds, so call it off the main thread.
-    static func join(ssid: String, password: String?) throws {
-        guard let wifi = CWWiFiClient.shared().interface() else { throw ProtocolError("this Mac has no Wi-Fi") }
-
-        // Wi-Fi names are hidden from apps without location access, so look for it by name.
-        guard let network = try wifi.scanForNetworks(withName: ssid).first else {
-            throw ProtocolError("couldn't see the phone's hotspot \(ssid)")
-        }
-        try wifi.associate(to: network, password: password)
     }
 }

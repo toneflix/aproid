@@ -50,6 +50,7 @@ import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -95,6 +96,7 @@ import com.toneflix.aproid.NotificationPlugin
 import com.toneflix.aproid.R
 import com.toneflix.aproid.Recent
 import com.toneflix.aproid.RecentItem
+import com.toneflix.aproid.TransferText
 import com.toneflix.aproid.ShareActivity
 import com.toneflix.aproid.openIntent
 import com.toneflix.aproid.protocol.PairState
@@ -544,11 +546,32 @@ private fun RecentRow(item: RecentItem, onOpen: () -> Unit) {
                 modifier = Modifier.size(20.dp),
             )
         }
+        val reading = item.progress
         Column(Modifier.weight(1f)) {
             Text(item.title, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(item.detail, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (reading != null) {
+                LinearProgressIndicator(
+                    progress = { reading.fraction.toFloat() },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).height(4.dp),
+                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                )
+            }
+            Text(
+                if (reading != null) TransferText.describe(LocalContext.current, reading) else item.detail,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
-        if (item.inProgress) {
+        if (reading != null) {
+            Text(
+                "${(reading.fraction * 100).toInt()}%",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        } else if (item.inProgress) {
             CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
         } else {
             Text(

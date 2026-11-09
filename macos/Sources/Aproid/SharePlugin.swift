@@ -2,7 +2,8 @@ import AppKit
 import AproidKit
 
 /// Moves files, links and text between the Mac and the phone. Files go to Downloads, links open in the
-/// browser, and text lands on the clipboard. A file that stops halfway resumes when the phone reconnects.
+/// browser, and text lands on the clipboard. A file that stops halfway resumes when the phone reconnects,
+/// even after Aproid restarts.
 final class SharePlugin: Plugin {
     let incoming: Set<String> = [PacketType.shareRequest, PacketType.shareResume]
 
@@ -12,39 +13,36 @@ final class SharePlugin: Plugin {
     /// Called when a file has arrived, to tell the user.
     var onFileReceived: ((URL, Device) -> Void)?
 
-    /// A file we offered, kept for a while so the phone can ask for the rest.
-    private struct Outgoing {
-        let url: URL
-        let deviceId: String
-        let activity: Activity
-        let expires: Date
-    }
-
-    /// A file that stopped arriving, waiting for the phone to come back.
-    private struct Incoming {
-        let url: URL
-        let deviceId: String
-        let activity: Activity
-        let total: Int64
-    }
-
-    private static let keepOffers: TimeInterval = 30 * 60
-
     private let folder: URL
+    private let store: TransferStore
     private let files = FileManager.default
     private let lock = NSLock()
-    private var outgoing: [String: Outgoing] = [:]
-    private var paused: [String: Incoming] = [:]
 
-    init(folder: URL) {
+    /// The Recent entry of each unfinished transfer, so a resume updates the same line.
+    private var activities: [String: Activity] = [:]
+
+    init(folder: URL, store: TransferStore = TransferStore()) {
         self.folder = folder
+        self.store = store
+    }
+
+    /// Lists the transfers left unfinished last time, and deletes the ones that waited too long.
+    func restore() {
+        for partial in store.removeExpired() {
+            try? files.removeItem(atPath: partial.path)
+        }
+
+        for (id, file) in store.partial {
+            report(id, Activity(.failed, title: (file.path as NSString).lastPathComponent, detail: "Paused · resumes when \(file.deviceName) reconnects"))
+        }
+        for (id, file) in store.offered {
+            report(id, Activity(.failed, title: (file.path as NSString).lastPathComponent, detail: "Stopped · resumes when \(file.deviceName) reconnects"))
+        }
     }
 
     func onPaired(_ device: Device) {
-        let waiting = lock.withLock { paused.filter { $0.value.deviceId == device.id } }
-
-        for (id, file) in waiting {
-            let have = (try? files.attributesOfItem(atPath: file.url.path)[.size] as? NSNumber)?.int64Value ?? 0
+        for (id, file) in store.partial where file.deviceId == device.id {
+            let have = (try? files.attributesOfItem(atPath: file.path)[.size] as? NSNumber)?.int64Value ?? 0
             device.send(Share.resumePacket(transferId: id, offset: have))
         }
     }
@@ -69,27 +67,25 @@ final class SharePlugin: Plugin {
     /// Offers a file to the phone. Call off the main thread.
     func send(_ url: URL, to device: Device) {
         let id = UUID().uuidString
-        let activity = Activity(.sending, title: url.lastPathComponent, detail: "Sending to \(device.name)")
-        onActivity?(activity)
+        let activity = report(id, Activity(.sending, title: url.lastPathComponent, detail: "Sending to \(device.name)"))
 
-        lock.withLock {
-            outgoing = outgoing.filter { $0.value.expires > Date() }
-            outgoing[id] = Outgoing(url: url, deviceId: device.id, activity: activity, expires: Date().addingTimeInterval(Self.keepOffers))
-        }
+        _ = store.removeExpired()
+        store.setOffered(id, .init(path: url.path, deviceId: device.id, deviceName: device.name, expires: Date().addingTimeInterval(TransferStore.keep)))
 
         offer(url, id: id, from: 0, to: device, activity: activity)
     }
 
     private func resume(_ id: String, from offset: Int64, to device: Device) {
-        guard let file = lock.withLock({ outgoing[id] }), file.deviceId == device.id else { return }
+        guard let file = store.offered[id], file.deviceId == device.id else { return }
 
-        var activity = file.activity
+        let url = URL(fileURLWithPath: file.path)
+        var activity = lock.withLock { activities[id] } ?? Activity(.sending, title: url.lastPathComponent, detail: "")
         activity.kind = .sending
         activity.detail = "Resuming to \(device.name)"
-        onActivity?(activity)
+        report(id, activity)
 
         DispatchQueue.global(qos: .userInitiated).async { [self] in
-            offer(file.url, id: id, from: offset, to: device, activity: activity)
+            offer(url, id: id, from: offset, to: device, activity: activity)
         }
     }
 
@@ -97,10 +93,11 @@ final class SharePlugin: Plugin {
         let finish: (Error?) -> Void = { [weak self] error in
             var done = activity
             done.date = Date()
+            done.progress = nil
             done.kind = error == nil ? .sent : .failed
             done.detail = error == nil ? "Sent to \(device.name)" : "Stopped · resumes when \(device.name) reconnects"
-            if error == nil { self?.lock.withLock { _ = self?.outgoing.removeValue(forKey: id) } }
-            self?.onActivity?(done)
+            if error == nil { self?.store.setOffered(id, nil) }
+            self?.report(id, done, finished: error == nil)
         }
 
         guard device.isPaired,
@@ -115,6 +112,7 @@ final class SharePlugin: Plugin {
         let start = min(max(offset, 0), size)
         let modified = (attributes[.modificationDate] as? Date).map { Int64($0.timeIntervalSince1970 * 1000) }
         let packet = Share.filePacket(name: url.lastPathComponent, size: size, lastModifiedMillis: modified, transferId: id, offset: start)
+        let progress = TransferProgress(total: size, alreadyDone: start)
 
         do {
             try source.seek(toOffset: UInt64(start))
@@ -124,8 +122,16 @@ final class SharePlugin: Plugin {
             return
         }
 
+        let onProgress: (Int64) -> Void = { [weak self] bytes in
+            guard let reading = progress.advance(bytes) else { return }
+
+            var moving = activity
+            moving.progress = reading
+            self?.report(id, moving)
+        }
+
         // On failure it calls the completion itself.
-        device.sendWithPayload(packet, size: size - start, source: source) { error in
+        device.sendWithPayload(packet, size: size - start, source: source, onProgress: onProgress) { error in
             try? source.close()
             finish(error)
         }
@@ -134,21 +140,28 @@ final class SharePlugin: Plugin {
     // MARK: Receiving
 
     private func receive(_ packet: NetworkPacket, name: String, size: Int64, transferId: String?, offset: Int64, from device: Device) {
-        let resumed = transferId.flatMap { id in lock.withLock { paused.removeValue(forKey: id) } }
-        let total = resumed?.total ?? offset + size
+        let partial = transferId.flatMap { store.partial[$0] }.flatMap { $0.deviceId == device.id ? $0 : nil }
+        let total = partial?.total ?? offset + size
 
-        let target = resumed.flatMap { openForAppend($0.url, at: offset) } ?? (offset == 0 ? reserveFile(Share.safeName(name)) : nil)
+        let target = partial.flatMap { openForAppend(URL(fileURLWithPath: $0.path), at: offset) }
+            ?? (offset == 0 ? reserveFile(Share.safeName(name)) : nil)
         guard let target else {
             onActivity?(Activity(.failed, title: name, detail: "Could not save to Downloads"))
             return
         }
 
         let (url, sink) = target
-        var activity = resumed?.activity ?? Activity(.receiving, title: url.lastPathComponent, detail: "")
+        let key = transferId ?? UUID().uuidString
+        var activity = lock.withLock { activities[key] } ?? Activity(.receiving, title: url.lastPathComponent, detail: "")
         activity.kind = .receiving
-        activity.detail = "\(resumed == nil ? "Receiving" : "Resuming") \(Bytes.text(total)) from \(device.name)"
-        let started = activity
-        onActivity?(started)
+        activity.detail = "\(partial == nil ? "Receiving" : "Resuming") from \(device.name)"
+        let started = report(key, activity)
+
+        // Recorded before any bytes arrive, so a quit or crash midway can still resume.
+        if let transferId {
+            let expires = Date().addingTimeInterval(TransferStore.keep)
+            store.setPartial(transferId, .init(path: url.path, deviceId: device.id, deviceName: device.name, total: total, expires: expires))
+        }
 
         let finish: (Error?) -> Void = { [weak self] error in
             try? sink.close()
@@ -156,14 +169,14 @@ final class SharePlugin: Plugin {
 
             var done = started
             done.date = Date()
+            done.progress = nil
 
             if error == nil {
                 done.kind = .received(url)
                 done.detail = "Received · \(Bytes.text(total))"
+                if let transferId { store.setPartial(transferId, nil) }
                 onFileReceived?(url, device)
-            } else if let transferId {
-                // Keep what arrived; the rest comes when the phone reconnects.
-                lock.withLock { self.paused[transferId] = Incoming(url: url, deviceId: device.id, activity: done, total: total) }
+            } else if transferId != nil {
                 done.kind = .failed
                 done.detail = "Paused · resumes when \(device.name) reconnects"
             } else {
@@ -172,16 +185,36 @@ final class SharePlugin: Plugin {
                 done.detail = "Transfer from \(device.name) stopped"
             }
 
-            onActivity?(done)
+            report(key, done, finished: error == nil || transferId == nil)
+        }
+
+        let progress = TransferProgress(total: total, alreadyDone: offset)
+        let onProgress: (Int64) -> Void = { [weak self] bytes in
+            guard let reading = progress.advance(bytes) else { return }
+
+            var moving = started
+            moving.progress = reading
+            self?.report(key, moving)
         }
 
         do {
-            try device.receivePayload(packet, into: sink).whenComplete { result in
+            try device.receivePayload(packet, into: sink, onProgress: onProgress).whenComplete { result in
                 if case .failure(let error) = result { finish(error) } else { finish(nil) }
             }
         } catch {
             finish(error)
         }
+    }
+
+    /// Shows `activity` in Recent and remembers it under `id` until the transfer is `finished`.
+    @discardableResult
+    private func report(_ id: String, _ activity: Activity, finished: Bool = false) -> Activity {
+        lock.withLock {
+            if finished { activities[id] = nil } else { activities[id] = activity }
+        }
+        onActivity?(activity)
+
+        return activity
     }
 
     /// Opens a partly received file to add the rest, if it is as long as the sender thinks.

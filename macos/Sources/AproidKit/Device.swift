@@ -80,18 +80,25 @@ public final class Device {
     }
 
     /// Sends `packet` with a payload that the peer downloads from us, such as a file.
+    /// `onProgress` gets each piece's byte count as it goes out.
     /// Returns false when not paired or the payload could not be offered. Call off the event loops.
     @discardableResult
     public func sendWithPayload(
         _ packet: NetworkPacket,
         size: Int64,
         source: FileHandle,
+        onProgress: ((Int64) -> Void)? = nil,
         completion: @escaping (Error?) -> Void = { _ in }
     ) -> Bool {
         guard isPaired, let payloads = lock.withLock({ payloads }) else { return false }
 
         do {
-            let port = try payloads.offer(peerCertificateDER: link.certificateDER, source: source, completion: completion)
+            let port = try payloads.offer(
+                peerCertificateDER: link.certificateDER,
+                source: source,
+                onProgress: onProgress,
+                completion: completion
+            )
             var announced = packet
             announced.payloadSize = size
             announced.payloadTransferInfo = ["port": .int(Int64(port))]
@@ -104,12 +111,23 @@ public final class Device {
         }
     }
 
-    /// Downloads the payload of a packet from this device into `sink`.
-    public func receivePayload(_ packet: NetworkPacket, into sink: FileHandle) throws -> EventLoopFuture<Void> {
+    /// Downloads the payload of a packet from this device into `sink`. `onProgress` gets each piece's byte count.
+    public func receivePayload(
+        _ packet: NetworkPacket,
+        into sink: FileHandle,
+        onProgress: ((Int64) -> Void)? = nil
+    ) throws -> EventLoopFuture<Void> {
         guard let size = packet.payloadSize, let port = packet.payloadPort else { throw ProtocolError("packet has no payload") }
         guard let payloads = lock.withLock({ payloads }) else { throw ProtocolError("payloads unavailable") }
 
-        return payloads.receive(host: link.host, port: port, size: size, peerCertificateDER: link.certificateDER, into: sink)
+        return payloads.receive(
+            host: link.host,
+            port: port,
+            size: size,
+            peerCertificateDER: link.certificateDER,
+            into: sink,
+            onProgress: onProgress
+        )
     }
 
     /// Reads the live stream a packet announces, such as the mirrored screen, until the device closes it.

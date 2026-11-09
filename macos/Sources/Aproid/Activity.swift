@@ -1,3 +1,4 @@
+import AproidKit
 import Foundation
 import UniformTypeIdentifiers
 
@@ -18,6 +19,9 @@ struct Activity: Identifiable, Equatable {
     let title: String
     var detail: String
     var date: Date
+
+    /// How far a file has got while it moves.
+    var progress: TransferProgress.Snapshot?
 
     init(_ kind: Kind, title: String, detail: String, date: Date = Date()) {
         self.kind = kind
@@ -54,5 +58,29 @@ struct Activity: Identifiable, Equatable {
 enum Bytes {
     static func text(_ count: Int64) -> String {
         ByteCountFormatter.string(fromByteCount: count, countStyle: .file)
+    }
+
+    /// "120 MB of 1.2 GB · 41 MB/s · 28 s left"
+    static func progress(_ reading: TransferProgress.Snapshot) -> String {
+        var parts = ["\(text(reading.done)) of \(text(reading.total))"]
+
+        if let speed = reading.bytesPerSecond { parts.append("\(text(speed))/s") }
+        if let left = reading.secondsLeft { parts.append(timeLeft(left)) }
+
+        return parts.joined(separator: " · ")
+    }
+
+    private static let minutes: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = .abbreviated
+        formatter.maximumUnitCount = 2
+        return formatter
+    }()
+
+    private static func timeLeft(_ seconds: Int64) -> String {
+        guard seconds >= 60, let text = minutes.string(from: TimeInterval(seconds)) else { return "\(max(seconds, 1)) s left" }
+
+        return "\(text) left"
     }
 }

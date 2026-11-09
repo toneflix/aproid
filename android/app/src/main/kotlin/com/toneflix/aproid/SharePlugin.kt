@@ -16,24 +16,25 @@ import com.toneflix.aproid.protocol.NetworkPacket
 import com.toneflix.aproid.protocol.PacketType
 import com.toneflix.aproid.protocol.Plugin
 import com.toneflix.aproid.protocol.Share
+import com.toneflix.aproid.protocol.TransferProgress
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Receives what the Mac shares: files go to Downloads, links wait in a notification
  * (Android doesn't let a background app open the browser), and text goes on the clipboard.
+ * A file that stops halfway resumes when the Mac reconnects, even after the app restarts.
  */
 object SharePlugin : Plugin {
     const val CHANNEL_ID = "transfers"
 
     override val incoming = setOf(PacketType.SHARE_REQUEST, PacketType.SHARE_RESUME)
 
-    /** A file that stopped arriving, waiting for the Mac to come back. */
-    private class Paused(val target: DownloadTarget, val deviceId: String, val item: RecentItem, val total: Long, val received: Long)
-
-    private val paused = java.util.concurrent.ConcurrentHashMap<String, Paused>()
-
     private var context: Context? = null
+    private var partials: PartialDownloads? = null
+
+    /** The Recent entry of each unfinished file, so a resume updates the same line. */
+    private val items = java.util.concurrent.ConcurrentHashMap<String, RecentItem>()
     private val main = Handler(Looper.getMainLooper())
 
     /** Several at once: each offer from the Mac expires if nobody downloads it within a minute. */
@@ -41,12 +42,21 @@ object SharePlugin : Plugin {
     private val notificationIds = AtomicInteger(1000)
 
     fun start(context: Context) {
-        this.context = context.applicationContext
+        if (this.context != null) return
+
+        val app = context.applicationContext
+        val partials = PartialDownloads(app).also { this.partials = it }
+        this.context = app
+
+        partials.removeExpired()
+        partials.all().forEach { (id, entry) ->
+            items[id] = Recent.add(RecentItem.Kind.FAILED, entry.title, app.getString(R.string.share_paused, entry.deviceName))
+        }
     }
 
     override fun onPaired(device: Device) {
-        paused.filterValues { it.deviceId == device.id }.forEach { (id, file) ->
-            DeviceStore.send(device, Share.resume(id, file.received))
+        partials?.all()?.filterValues { it.deviceId == device.id }?.forEach { (id, entry) ->
+            entry.target.length()?.let { DeviceStore.send(device, Share.resume(id, it)) }
         }
     }
 
@@ -67,52 +77,66 @@ object SharePlugin : Plugin {
     }
 
     private fun receive(context: Context, device: Device, packet: NetworkPacket, file: Share.File) {
-        val resumed = file.transferId?.let { paused.remove(it) }?.takeIf { it.received == file.offset }
-        val total = resumed?.total ?: (file.offset + file.size)
-        val size = Formatter.formatShortFileSize(context, total)
-        val detail = context.getString(R.string.share_receiving, size, device.name)
-        val started = resumed?.item?.copy(kind = RecentItem.Kind.RECEIVING, detail = detail)?.also(Recent::put)
+        val partials = partials ?: return
+        val id = file.transferId
+        val saved = id?.let { partials[it] }?.takeIf { it.deviceId == device.id && it.target.length() == file.offset }
+        val total = saved?.total ?: (file.offset + file.size)
+        val detail = context.getString(R.string.share_receiving, Formatter.formatShortFileSize(context, total), device.name)
+        val started = id?.let { items[it] }?.copy(kind = RecentItem.Kind.RECEIVING, detail = detail)?.also(Recent::put)
             ?: Recent.add(RecentItem.Kind.RECEIVING, file.safeName, detail)
 
-        val target = resumed?.target ?: if (file.offset == 0L) DownloadTarget.create(context, file.safeName) else null
+        val target = saved?.target ?: if (file.offset == 0L) DownloadTarget.create(context, file.safeName) else null
         if (target == null) {
             Recent.put(started.copy(kind = RecentItem.Kind.FAILED, detail = context.getString(R.string.share_save_failed)))
             return
         }
 
-        var received = file.offset
+        // Recorded before any bytes arrive, so a crash midway can still resume.
+        if (id != null) {
+            items[id] = started
+            val expires = System.currentTimeMillis() + PartialDownloads.KEEP_MS
+            partials.put(id, PartialDownloads.Entry(target, device.id, device.name, started.title, total, expires))
+        }
+
+        val progress = TransferProgress(total, file.offset)
         val result = runCatching {
-            target.open(append = resumed != null).use { sink ->
-                device.receivePayload(packet, CountingSink(sink) { received += it })
+            target.open(append = saved != null).use { sink ->
+                device.receivePayload(packet, CountingSink(sink) { bytes -> progress.advance(bytes)?.let { Recent.put(started.copy(progress = it)) } })
             }
             target.publish()
         }
 
         if (result.isFailure) {
-            val id = file.transferId
-            if (id != null && received > 0) {
+            if (id != null && (target.length() ?: 0) > 0) {
                 // Keep what arrived; the rest comes when the Mac reconnects.
-                paused[id] = Paused(target, device.id, started, total, received)
-                Recent.put(started.copy(kind = RecentItem.Kind.FAILED, detail = context.getString(R.string.share_paused, device.name)))
+                Recent.put(started.copy(kind = RecentItem.Kind.FAILED, detail = context.getString(R.string.share_paused, device.name), progress = null))
             } else {
+                id?.let(::forget)
                 target.discard()
-                Recent.put(started.copy(kind = RecentItem.Kind.FAILED, detail = context.getString(R.string.share_stopped, device.name)))
+                Recent.put(started.copy(kind = RecentItem.Kind.FAILED, detail = context.getString(R.string.share_stopped, device.name), progress = null))
             }
             return
         }
 
+        id?.let(::forget)
         val done = started.copy(
             kind = RecentItem.Kind.RECEIVED,
             detail = context.getString(R.string.share_received, device.name),
             time = System.currentTimeMillis(),
             uri = target.uri,
             mimeType = target.mimeType,
+            progress = null,
         )
         Recent.put(done)
         notify(context, file.safeName, context.getString(R.string.share_received_note, device.name), done.openIntent())
     }
 
-    /** Counts the bytes written, so a stopped file knows where to resume. */
+    private fun forget(id: String) {
+        items.remove(id)
+        partials?.remove(id)
+    }
+
+    /** Reports the bytes written. */
     private class CountingSink(sink: java.io.OutputStream, private val onWrite: (Long) -> Unit) : java.io.FilterOutputStream(sink) {
         override fun write(b: Int) {
             out.write(b)

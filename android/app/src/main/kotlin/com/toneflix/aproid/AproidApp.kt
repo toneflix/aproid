@@ -32,6 +32,13 @@ class AproidApp : Application() {
             NotificationManager.IMPORTANCE_HIGH,
         ).apply { setSound(null, null) }
 
-        getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(channel, find, transfers, screen))
+        // Pops up, since the Mac is waiting for the user to turn the hotspot on.
+        val hotspot = NotificationChannel(
+            Hotspot.CHANNEL_ID,
+            getString(R.string.channel_hotspot),
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply { setSound(null, null) }
+
+        getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(channel, find, transfers, screen, hotspot))
     }
 }

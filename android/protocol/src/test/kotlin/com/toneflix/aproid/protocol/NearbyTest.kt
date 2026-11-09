@@ -9,7 +9,7 @@ import java.util.Base64
 
 class NearbyTest {
     private val mac = DeviceCertificate.generate(DeviceIdentity.newDeviceId())
-    private val answer = Nearby.Answer("a1b2c3d4e5f60718293a4b5c6d7e8f90", listOf("192.168.43.1"), 1716, "Aproid-1234", "secret-pass")
+    private val answer = Nearby.Answer("a1b2c3d4e5f60718293a4b5c6d7e8f90", listOf("192.168.43.1"), 1716)
 
     @Test fun answerOpensOnlyWithTheRightKey() {
         val sealed = Nearby.seal(answer, mac.certificate.publicKey)
@@ -56,11 +56,10 @@ class NearbyTest {
             "4kbKSDjptkQx4DEJC7n/tcCg2Q=="
 
         const val FIXTURE_ANSWER =
-            "AQBzwcH0nh3bd39Erirem3QV5A5IzcBgwJR3w4lrmtOnwNeIHPQjU0ifmByzf1nlDU5dCR31W9U/TM7X0rTFxVMSnqWxEq6aJD9H" +
-            "lDfsVm5OICKHynDIi7q7Lzh3xQ8/kFau2gDm33JnTj9S/CFjoicPhFno6/EzSAdd4T8ZV8X8/MyKSpSijiBprJjHnp+WZAabjT9U" +
-            "Y1CBG42DBkMHDgt8DKYDuDfCxPyGski6p0kcG60ybf3BFO3syxN/AGRNAdvbqECqcuJ0v7IREGSj7CLb1qpQ6Nsw1i0c357mIUS1" +
-            "LnDp2HC9tRcMKK9YNZa6HcjaAv/DPeJpw38uBlFZs/IhVtXjAye1ztyNEITN6JTV9GjeMKMt+L8veO0bQNQX7UwFQtsD05FeG+zw" +
-            "IgfKnsRp3geSDWzO1jtZXxQqwII/koQptnZUVk0vQhjNrlStasIJDjCr/KxdC6In43dwT3z9RsvHriaOSTv7hH44acvzLrP2UkfX" +
-            "9P4WXpoBVmLCV39XB6FVCNk="
+            "AQArbPlsvq+u5pCnKp3xbqn08vUTiyMKdHiHyc76dkfAf2YxNzrLsrKAAf1FZ8EtKMNvA/H7Qq7owg+AcWvGse9OFhR+iQGrCgFJ" +
+            "MlOsz3LcjK8CNU4hneY/hqHcqyX+AknfOyUQiR2f520ed7r7sinSEffv39m10v5/WHnjzWLBT499Ri2PRThK2SMVUT5419DTMVTM" +
+            "saOwREUDWTL3CwMq+FSBDcEN4x85UzK9hMBtMjtZepAZ6Czu4wk+AFTG3JYv6S5OpuIZDrlzggtxTLYm34Igf64vsuEDzAbvwS/V" +
+            "TSDSL82P65Qk/seQ5s76QUdLL3ZN1rVQejK7fBaD7qa6h8RxWNBotWuq5mUsDL5SF1zffkGcJid4U/5MHinleHVEQ61HjVvS2JKf" +
+            "S6eQ3sfIYwdYHtOCzdnwaDz1Nm/LFi+z6+Lpnt8S6OkqUs/eieaXfphAV8o+4eMw5xZ3jd8pjyw="
     }
 }

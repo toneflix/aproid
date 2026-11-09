@@ -32,10 +32,12 @@ public final class PayloadTransfer {
     }
 
     /// Opens a port and streams `source` to the first peer that connects with `peerCertificateDER`.
+    /// `onProgress` gets each piece's byte count once it is written.
     /// Returns the port to put in the packet. Blocks briefly, so call it off the event loops.
     public func offer(
         peerCertificateDER: [UInt8],
         source: FileHandle,
+        onProgress: ((Int64) -> Void)? = nil,
         completion: @escaping (Error?) -> Void = { _ in }
     ) throws -> UInt16 {
         let done = Once(completion)
@@ -49,7 +51,13 @@ public final class PayloadTransfer {
                     .childChannelInitializer { child in
                         let box = PeerCertificateBox()
                         let tls = NIOSSLServerHandler(context: serverContext, customVerificationCallback: box.verify)
-                        let upload = UploadHandler(box: box, expected: peerCertificateDER, source: source, done: done)
+                        let upload = UploadHandler(
+                            box: box,
+                            expected: peerCertificateDER,
+                            source: source,
+                            onProgress: onProgress,
+                            done: done
+                        )
 
                         return child.pipeline.addHandlers([tls, upload])
                     }
@@ -72,15 +80,18 @@ public final class PayloadTransfer {
     }
 
     /// Downloads `size` bytes that the peer offered at `host`:`port` into `sink`.
+    /// `onProgress` gets each piece's byte count once it is written.
     public func receive(
         host: String,
         port: UInt16,
         size: Int64,
         peerCertificateDER: [UInt8],
-        into sink: FileHandle
+        into sink: FileHandle,
+        onProgress: ((Int64) -> Void)? = nil
     ) -> EventLoopFuture<Void> {
         download(host: host, port: port, size: size, peerCertificateDER: peerCertificateDER) { data in
             try sink.write(contentsOf: data)
+            onProgress?(Int64(data.count))
         } finish: {
             try? sink.synchronize()
         }
@@ -164,12 +175,14 @@ private final class UploadHandler: ChannelInboundHandler {
     private let box: PeerCertificateBox
     private let expected: [UInt8]
     private let source: FileHandle
+    private let onProgress: ((Int64) -> Void)?
     private let done: Once
 
-    init(box: PeerCertificateBox, expected: [UInt8], source: FileHandle, done: Once) {
+    init(box: PeerCertificateBox, expected: [UInt8], source: FileHandle, onProgress: ((Int64) -> Void)?, done: Once) {
         self.box = box
         self.expected = expected
         self.source = source
+        self.onProgress = onProgress
         self.done = done
     }
 
@@ -217,6 +230,7 @@ private final class UploadHandler: ChannelInboundHandler {
         context.writeAndFlush(wrapOutboundOut(buffer)).whenComplete { result in
             switch result {
             case .success:
+                self.onProgress?(Int64(data.count))
                 // Hop through the event loop so a large file doesn't grow the stack.
                 context.eventLoop.execute { self.sendNext(context) }
             case .failure(let error):
