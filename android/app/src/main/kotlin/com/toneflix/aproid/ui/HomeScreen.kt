@@ -221,7 +221,7 @@ private fun ConnectedHero(mac: DeviceState) {
         LaptopArt(180.dp, Modifier.align(Alignment.CenterHorizontally).padding(vertical = 4.dp)) {
             // The Aproid menu, open on the Mac's screen.
             Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.TopEnd) {
-                Box(Modifier.size(54.dp, 22.dp).background(Color.White, RoundedCornerShape(6.dp)))
+                Box(Modifier.size(54.dp, 22.dp).background(Toneflix.cyan, RoundedCornerShape(6.dp)))
             }
         }
 
@@ -236,7 +236,7 @@ private fun ConnectedHero(mac: DeviceState) {
 private fun Pill(content: @Composable () -> Unit) {
     Row(
         Modifier
-            .background(Color.White.copy(alpha = 0.16f), CircleShape)
+            .background(Aproid.colors.onHero.copy(alpha = 0.1f), CircleShape)
             .padding(start = 10.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -324,7 +324,7 @@ private fun Tile(icon: ImageVector, label: String, modifier: Modifier, onClick: 
     }
 }
 
-/** Amber cards for the permissions Aproid still needs. Each disappears once granted. */
+/** Cyan cards for the permissions Aproid still needs. Each disappears once granted. */
 @Composable
 private fun SetupCards() {
     val context = LocalContext.current

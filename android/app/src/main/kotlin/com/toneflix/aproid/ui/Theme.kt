@@ -11,13 +11,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+
+/** The Toneflix brand colors: the cyan of the logo and the gold of its backgrounds. */
+object Toneflix {
+    val cyan = Color(0xFF00AFFF)
+    val cyanLight = Color(0xFF00EAFF)
+    val gold = Color(0xFFF6C101)
+    val goldDeep = Color(0xFFBB8C01)
+
+    val goldGradient = Brush.linearGradient(listOf(gold, goldDeep))
+    val goldGlow = Brush.radialGradient(listOf(gold, goldDeep))
+}
 
 /** Colors Material doesn't have a slot for. */
 @Immutable
 data class AproidColors(
-    val hero: Color,
+    val hero: Brush,
     val onHero: Color,
     val ok: Color,
     val deviceBody: Color,
@@ -30,61 +42,69 @@ data class AproidColors(
 )
 
 private val Light = lightColorScheme(
-    primary = Color(0xFF3346E0),
+    primary = Color(0xFF0086C9),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFECEEFF),
-    onPrimaryContainer = Color(0xFF2233B8),
-    background = Color(0xFFF7F7FB),
-    onBackground = Color(0xFF16161A),
+    primaryContainer = Color(0xFFD9F3FF),
+    onPrimaryContainer = Color(0xFF004C70),
+    secondary = Color(0xFF8A6700),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFFFEBA8),
+    onSecondaryContainer = Color(0xFF2A1E00),
+    background = Color(0xFFFFFBF2),
+    onBackground = Color(0xFF1B1A16),
     surface = Color.White,
-    onSurface = Color(0xFF16161A),
-    surfaceVariant = Color(0xFFEAEAF0),
-    onSurfaceVariant = Color(0xFF5A5A64),
-    surfaceContainerLow = Color(0xFFF4F4F8),
-    outline = Color(0xFFC8C8D2),
-    outlineVariant = Color(0xFFD4D4DC),
+    onSurface = Color(0xFF1B1A16),
+    surfaceVariant = Color(0xFFF1ECE0),
+    onSurfaceVariant = Color(0xFF5E5A50),
+    surfaceContainerLow = Color(0xFFF8F4EA),
+    outline = Color(0xFFCFC8B8),
+    outlineVariant = Color(0xFFE2DCCD),
 )
 
 private val Dark = darkColorScheme(
-    primary = Color(0xFF8D9BFF),
-    onPrimary = Color(0xFF0E1340),
-    primaryContainer = Color(0xFF283066),
-    onPrimaryContainer = Color(0xFFDDE1FF),
-    background = Color(0xFF121216),
-    onBackground = Color(0xFFF4F4F6),
-    surface = Color(0xFF1E1E23),
-    onSurface = Color(0xFFF4F4F6),
-    surfaceVariant = Color(0xFF2C2C33),
-    onSurfaceVariant = Color(0xFFA3A3AD),
-    surfaceContainerLow = Color(0xFF26262C),
-    outline = Color(0xFF4A4A54),
-    outlineVariant = Color(0xFF3A3A42),
+    primary = Color(0xFF3CC8FF),
+    onPrimary = Color(0xFF002A3D),
+    primaryContainer = Color(0xFF003B55),
+    onPrimaryContainer = Color(0xFFC4EDFF),
+    secondary = Color(0xFFF6C101),
+    onSecondary = Color(0xFF2A1E00),
+    secondaryContainer = Color(0xFF4A3800),
+    onSecondaryContainer = Color(0xFFFFE08A),
+    background = Color(0xFF13120F),
+    onBackground = Color(0xFFF3F0E8),
+    surface = Color(0xFF1E1C18),
+    onSurface = Color(0xFFF3F0E8),
+    surfaceVariant = Color(0xFF2E2B24),
+    onSurfaceVariant = Color(0xFFB1AB9C),
+    surfaceContainerLow = Color(0xFF26231E),
+    outline = Color(0xFF4D493F),
+    outlineVariant = Color(0xFF3B3830),
 )
 
 private val LightExtra = AproidColors(
-    hero = Color(0xFF3346E0),
-    onHero = Color.White,
-    ok = Color(0xFF7CF0BE),
-    deviceBody = Color(0xFF0E1340),
-    deviceScreen = Color(0xFFECEEFF),
-    deviceBase = Color(0xFFC9CFFF),
-    setup = Color(0xFFFFF4E5),
-    setupChip = Color(0xFFFFE2B8),
-    onSetup = Color(0xFF5C3A00),
-    onSetupVariant = Color(0xFF7A5200),
+    hero = Toneflix.goldGradient,
+    onHero = Color(0xFF2A1E00),
+    ok = Color(0xFF0B7A4B),
+    deviceBody = Color(0xFF0B1428),
+    deviceScreen = Color(0xFFD9F3FF),
+    deviceBase = Color(0xFF26355A),
+    setup = Color(0xFFE3F6FF),
+    setupChip = Color(0xFFC2EBFF),
+    onSetup = Color(0xFF00466A),
+    onSetupVariant = Color(0xFF2A6585),
 )
 
 private val DarkExtra = AproidColors(
-    hero = Color(0xFF2B3BC7),
-    onHero = Color.White,
-    ok = Color(0xFF7CF0BE),
-    deviceBody = Color(0xFF0B0F33),
-    deviceScreen = Color(0xFFC9CFFF),
-    deviceBase = Color(0xFF8D9BFF),
-    setup = Color(0xFF3A2A10),
-    setupChip = Color(0xFF5C4115),
-    onSetup = Color(0xFFFFE2B8),
-    onSetupVariant = Color(0xFFE8C48C),
+    hero = Toneflix.goldGradient,
+    onHero = Color(0xFF2A1E00),
+    ok = Color(0xFF0B7A4B),
+    deviceBody = Color(0xFF0B1428),
+    deviceScreen = Color(0xFFC4EDFF),
+    deviceBase = Color(0xFF3A4B75),
+    setup = Color(0xFF0F2C3B),
+    setupChip = Color(0xFF164259),
+    onSetup = Color(0xFFC4EDFF),
+    onSetupVariant = Color(0xFF93C9E3),
 )
 
 val LocalAproidColors = staticCompositionLocalOf { LightExtra }
