@@ -13,21 +13,23 @@ swift build -c "$CONFIG"
 BIN="$(swift build -c "$CONFIG" --show-bin-path)/Aproid"
 
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS" "$SHARE/Contents/MacOS"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$SHARE/Contents/MacOS" "$SHARE/Contents/Resources"
 cp Bundle/Info.plist "$APP/Contents/Info.plist"
+cp Bundle/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp "$BIN" "$APP/Contents/MacOS/Aproid"
 
 # SwiftPM can't build app extensions, so the Share extension is compiled directly.
 OPTIMIZE="-Onone"
 [ "$CONFIG" = "release" ] && OPTIMIZE="-O"
 cp Share/Info.plist "$SHARE/Contents/Info.plist"
+cp Bundle/AppIcon.icns "$SHARE/Contents/Resources/AppIcon.icns"
 xcrun swiftc $OPTIMIZE \
     -parse-as-library \
     -application-extension \
     -module-name AproidShare \
     -target "$(uname -m)-apple-macos13.0" \
     -Xlinker -e -Xlinker _NSExtensionMain \
-    Share/*.swift Sources/Aproid/ShareRequest.swift \
+    Share/*.swift Sources/Aproid/ShareRequest.swift Sources/Aproid/AproidMark.swift \
     -o "$SHARE/Contents/MacOS/AproidShare"
 
 # Ad-hoc signatures so macOS accepts them locally. The extension must be signed first and sandboxed.
