@@ -14,9 +14,15 @@ struct MenuPanel: View {
                 Banner(icon: .triangleAlert, text: error)
             }
 
+            let phones = model.devices.filter { $0.pairState == .paired }
+            if phones.count > 1 {
+                PhoneSwitcher(phones: phones, focusedId: focused?.id, model: model)
+                    .transition(.opacity)
+            }
+
             main
 
-            let others = model.devices.filter { $0.id != focused?.id }
+            let others = model.devices.filter { $0.pairState != .paired && $0.id != focused?.id }
             if !others.isEmpty {
                 NearbyList(devices: others, model: model)
             }

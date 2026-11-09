@@ -16,6 +16,8 @@ enum Theme {
     static let track = dynamic(light: 0xE6E6EB, dark: 0xFFFFFF, darkAlpha: 0.10)
     static let device = dynamic(light: 0x1C1C20, dark: 0x3A3A40)
     static let screen = dynamic(light: 0xE3F6FF, dark: 0x3CC8FF, darkAlpha: 0.22)
+    /// Outlines the phone the panel is showing.
+    static let goldEdge = dynamic(light: 0xD9A401, dark: 0xF6C101)
 
     /// The Toneflix gold behind the paired phone.
     static let gold = LinearGradient(

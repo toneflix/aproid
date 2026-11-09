@@ -24,6 +24,9 @@ struct MessagesWindow: View {
         }
         .frame(minWidth: 760, minHeight: 500)
         .toolbar {
+            ToolbarItem(placement: .navigation) {
+                PhonePicker(model: model)
+            }
             ToolbarItemGroup {
                 Button { store.showsDialer = true } label: { Label("Call", lucide: .phone) }
                     .help("Call a number from your phone")

@@ -29,7 +29,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var notificationsToday = 0
     @Published private(set) var call: ActiveCall?
 
-    /// The paired phone the panel, Messages, calls and the Share menu use.
+    /// The paired phone the panel, Messages, Photos, call audio and the Share menu use. Every paired phone stays connected.
     @Published private(set) var primaryId: String?
 
     /// The phone the user picked when several are paired. Kept across launches.
@@ -136,7 +136,7 @@ final class AppModel: ObservableObject {
         }
         callAudioPlugin.onStatus = { [weak self] status, deviceId in Task { @MainActor in self?.callAudio.received(status, from: deviceId) } }
         callAudio.send = { [weak self] packet in
-            guard let id = self?.primaryId, let device = self?.connected[id] else { return false }
+            guard let id = self?.callAudio.phoneId, let device = self?.connected[id] else { return false }
             return device.send(packet)
         }
         nearby.onNearby = { [weak self] found in Task { @MainActor in self?.nearbyChanged(found) } }
@@ -211,7 +211,7 @@ final class AppModel: ObservableObject {
     /// Answers over Bluetooth when call audio is set up, so the call is heard here. Otherwise the phone answers.
     func answerCall() {
         guard let call else { return }
-        if callAudio.answer() { return }
+        if callAudio.carries(call.deviceId), callAudio.answer() { return }
 
         connected[call.deviceId]?.send(Call.answer())
     }
@@ -221,7 +221,7 @@ final class AppModel: ObservableObject {
         guard var call else { return }
 
         call.isMuted.toggle()
-        if callAudio.audioOnMac {
+        if callAudio.audioOnMac && callAudio.carries(call.deviceId) {
             callAudio.setMuted(call.isMuted)
         } else {
             connected[call.deviceId]?.send(Call.mute(call.isMuted))
@@ -518,7 +518,7 @@ final class AppModel: ObservableObject {
 
     fileprivate func publish() {
         primaryId = primaryPhone?.id
-        callAudio.attach(primaryId)
+        callAudio.attach(callAudioPhoneId)
         syncMessages()
 
         devices = connected.all
@@ -542,9 +542,14 @@ final class AppModel: ObservableObject {
     }
 
     private var primaryPhone: Device? {
-        if let id = selectedPhone, let device = connected[id], device.isPaired { return device }
+        DeviceFocus(preferredId: selectedPhone).pick(connected.all.filter(\.isPaired), id: \.id, name: \.name)
+    }
 
-        return connected.all.filter(\.isPaired).min { $0.name < $1.name }
+    /// Call audio stays with its phone while that phone is connected, so switching phones keeps the Bluetooth link.
+    private var callAudioPhoneId: String? {
+        if let id = callAudio.phoneId, connected[id]?.isPaired == true { return id }
+
+        return primaryId
     }
 
     /// Texts and photos come from the primary phone.
