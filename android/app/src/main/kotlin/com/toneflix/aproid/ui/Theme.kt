@@ -2,11 +2,13 @@ package com.toneflix.aproid.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
@@ -96,7 +98,7 @@ object Aproid {
 fun AproidTheme(content: @Composable () -> Unit) {
     val dark = isSystemInDarkTheme()
 
-    androidx.compose.runtime.CompositionLocalProvider(LocalAproidColors provides if (dark) DarkExtra else LightExtra) {
+    CompositionLocalProvider(LocalAproidColors provides if (dark) DarkExtra else LightExtra) {
         MaterialTheme(
             colorScheme = if (dark) Dark else Light,
             shapes = Shapes(
@@ -104,7 +106,8 @@ fun AproidTheme(content: @Composable () -> Unit) {
                 medium = RoundedCornerShape(22.dp),
                 large = RoundedCornerShape(28.dp),
             ),
-            content = content,
-        )
+        ) {
+            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground, content = content)
+        }
     }
 }
