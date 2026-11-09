@@ -1,6 +1,8 @@
+using System.Security.Cryptography.X509Certificates;
 using System.Collections.ObjectModel;
 using Aproid.Core;
 using Aproid.Plugins;
+using Aproid.Shell;
 using Microsoft.UI.Dispatching;
 using Microsoft.Windows.AppNotifications.Builder;
 
@@ -27,6 +29,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private readonly CallPlugin calls = new();
     private readonly LocationPlugin locations = new();
     private readonly PhotosPlugin photos = new();
+    private readonly ScreenPlugin screen = new();
     private LanLink? link;
     private DispatcherQueueTimer? timer;
     private DateOnly notificationsDay = DateOnly.FromDateTime(DateTime.Now);
@@ -43,6 +46,11 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private readonly List<string> waitingFiles = [];
     private string? waitingNumber;
     private DateTimeOffset waitingSince;
+    private readonly PhoneHotspot hotspot;
+    private NearbyFinder? nearby;
+    private DateTimeOffset lastNearbySearch = DateTimeOffset.MinValue;
+    private bool phoneNearby;
+    private string? hotspotStatus;
 
     public AppModel(DispatcherQueue ui)
     {
@@ -78,7 +86,23 @@ public sealed class AppModel : Observable, IDeviceDelegate
             if (args.PropertyName == nameof(MessagesStore.UnreadCount)) Raise(nameof(MessagesSubtitle));
         };
         Photos.Send = packet => Primary is Device phone && phone.Send(packet);
-        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos]);
+        screen.OnStarted = (device, info) =>
+        {
+            // Reset now, on the network thread, so the stream's first frames aren't lost.
+            Video.Reset();
+            var (id, name) = (device.Id, device.Name);
+            ui.TryEnqueue(() =>
+            {
+                Mirror.Started(id, name, info.Width, info.Height);
+                ScreenStarted?.Invoke(Video.CreateSource((uint)Math.Max(info.Width, 0), (uint)Math.Max(info.Height, 0)));
+            });
+        };
+        screen.OnFrame = frame => Video.Push(frame);
+        screen.OnEnded = id => ui.TryEnqueue(() => Mirror.Ended(id));
+        Mirror.Send = (id, packet) => connected[id]?.Send(packet) == true;
+        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen]);
+
+        hotspot = new PhoneHotspot(() => settings.PhoneHotspots, settings.RememberHotspot);
 
         share.Restore();
     }
@@ -88,6 +112,10 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public MessagesStore Messages { get; } = new();
 
     public PhotosStore Photos { get; } = new();
+
+    public ScreenMirror Mirror { get; } = new();
+
+    internal ScreenVideo Video { get; } = new();
 
     /// The call the call card shows.
     public ActiveCall? Call
@@ -138,6 +166,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
             Raise(nameof(NextPhone));
             Raise(nameof(ShowsCarousel));
             Raise(nameof(ShowsSearching));
+            Raise(nameof(ShowsHotspot));
             Raise(nameof(ShowsPairing));
             Raise(nameof(ShowsPhone));
             Raise(nameof(Found));
@@ -233,6 +262,46 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     public bool ShowsSearching => Focused is null;
 
+    /// A paired phone is in Bluetooth range but not on this network.
+    public bool PhoneNearby
+    {
+        get => phoneNearby;
+        private set
+        {
+            if (Set(ref phoneNearby, value)) Raise(nameof(ShowsHotspot));
+        }
+    }
+
+    /// What joining the phone's hotspot is doing, or why it failed.
+    public string? HotspotStatus
+    {
+        get => hotspotStatus;
+        private set
+        {
+            if (!Set(ref hotspotStatus, value)) return;
+
+            Raise(nameof(ShowsHotspot));
+            Raise(nameof(IsJoiningHotspot));
+            Raise(nameof(CanJoinHotspot));
+            Raise(nameof(HotspotText));
+        }
+    }
+
+    public bool ShowsHotspot => Focused is null && (PhoneNearby || HotspotStatus is not null);
+
+    public bool IsJoiningHotspot => HotspotStatus is not null;
+
+    public bool CanJoinHotspot => HotspotStatus is null;
+
+    public string HotspotText => HotspotStatus ?? (PhoneHotspotName is null
+        ? "It isn't on this Wi-Fi. Use its hotspot to get online and connect; this PC leaves its current network."
+        : "It isn't on this Wi-Fi. Your phone shows a switch to turn its hotspot on, and this PC joins it.");
+
+    /// The name of the phone's hotspot, once this PC has been on it.
+    public string? PhoneHotspotName => HotspotPhoneId is string id ? hotspot.Name(id) : null;
+
+    public string HotspotButton => PhoneHotspotName is string ssid ? $"Use {ssid}" : "Use phone's hotspot";
+
     public bool ShowsPairing => Focused is { IsPaired: false };
 
     public bool ShowsPhone => Focused is { IsPaired: true };
@@ -267,6 +336,11 @@ public sealed class AppModel : Observable, IDeviceDelegate
             {
                 // Creating the certificate on first launch is slow, so keep it off the UI thread.
                 var certificate = LoadCertificate(me.DeviceId);
+                nearby = new NearbyFinder(me.DeviceId, certificate.Certificate.GetRSAPrivateKey()!)
+                {
+                    OnNearby = found => ui.TryEnqueue(() => PhoneNearby = found && connected.Paired.Count == 0),
+                    OnAnswer = answer => ui.TryEnqueue(() => Reach(answer)),
+                };
                 var lan = new LanLink(() => me, certificate, trustStore, deviceLink =>
                 {
                     // Created right away on the network thread so no early packet is missed.
@@ -525,6 +599,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
             Task.Run(() => lan.BroadcastIdentity());
             foreach (var device in connected.All) device.Tick();
             SendWaiting();
+            SearchNearbyIfLost();
             Raise(nameof(ClipboardSubtitle));
         };
         timer.Start();
@@ -541,9 +616,104 @@ public sealed class AppModel : Observable, IDeviceDelegate
         }
 
         if (connected.Insert(device) is Device old && old != device) old.Link.Close("replaced by a newer link");
-        if (device.IsPaired) plugins.OnPaired(device);
+        if (device.IsPaired)
+        {
+            plugins.OnPaired(device);
+            PhoneNearby = false;
+            HotspotStatus = null;
+            hotspot.Cancel();
+            LearnHotspot(device);
+        }
 
         Publish();
+    }
+
+    /// Looks for a paired phone over Bluetooth when none is on this network.
+    private void SearchNearbyIfLost()
+    {
+        var lost = connected.Paired.Count == 0 && trustStore.TrustedIds.Count > 0;
+        if (!lost || DateTimeOffset.Now - lastNearbySearch < TimeSpan.FromSeconds(45)) return;
+
+        lastNearbySearch = DateTimeOffset.Now;
+        nearby?.Search(Nearby.Want.Connect);
+    }
+
+    private string? HotspotPhoneId => new[] { settings.SelectedPhone }
+        .Concat(trustStore.TrustedIds)
+        .FirstOrDefault(id => id is not null && hotspot.Name(id) is not null);
+
+    /// Asks the phone to turn its hotspot on, then joins it when it shows up. This PC leaves its current Wi-Fi.
+    public void JoinPhoneHotspot()
+    {
+        lastNearbySearch = DateTimeOffset.Now;
+        nearby?.Search(Nearby.Want.Hotspot);
+
+        if (HotspotPhoneId is not string id)
+        {
+            HotspotStatus = "Turn on the hotspot on your phone, then pick it in the Wi-Fi menu. Aproid remembers it for next time.";
+            return;
+        }
+
+        HotspotStatus = "Asking your phone to turn on its hotspot…";
+        hotspot.Join(id, status => ui.TryEnqueue(() => HotspotChanged(status)));
+    }
+
+    public void CancelHotspot()
+    {
+        hotspot.Cancel();
+        HotspotStatus = null;
+    }
+
+    private void HotspotChanged(PhoneHotspot.Status? status)
+    {
+        if (HotspotStatus is null) return;
+
+        HotspotStatus = status switch
+        {
+            PhoneHotspot.Status.Waiting waiting => $"Waiting for {waiting.Ssid}. Tap the notification on your phone to turn it on.",
+            PhoneHotspot.Status.Joining joining => $"Joining {joining.Ssid}…",
+            PhoneHotspot.Status.Failed failed => failed.Reason,
+            _ => "Joined. Connecting to your phone…",
+        };
+    }
+
+    /// Remembers the phone's hotspot when this PC is on it.
+    private void LearnHotspot(Device device)
+    {
+        var (id, host) = (device.Id, device.Link.Host);
+
+        Task.Run(() =>
+        {
+            hotspot.Learn(id, host);
+            ui.TryEnqueue(() =>
+            {
+                Raise(nameof(PhoneHotspotName));
+                Raise(nameof(HotspotButton));
+                Raise(nameof(HotspotText));
+            });
+        });
+    }
+
+    /// Connects to the addresses the phone gave over Bluetooth.
+    private void Reach(Nearby.Answer answer)
+    {
+        if (link is not LanLink lan) return;
+
+        var peer = new DeviceIdentity { DeviceId = answer.DeviceId, DeviceName = "Phone", DeviceType = DeviceType.Phone, TcpPort = answer.Port };
+        foreach (var address in answer.Addresses)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await lan.ConnectAsync(peer, address);
+                }
+                catch (Exception e)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Could not reach {address}: {e.Message}");
+                }
+            });
+        }
     }
 
     private void Remove(Device device)
@@ -551,6 +721,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         if (!connected.Remove(device)) return;
 
         media.Forget(device.Id);
+        Mirror.Ended(device.Id);
         if (Call?.DeviceId == device.Id) EndCall();
 
         Publish();
@@ -660,4 +831,18 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public void ShowPhotos() => PhotosRequested?.Invoke();
 
     public void ShowDialer() => DialerRequested?.Invoke();
+
+    /// Asks the phone to share its screen and opens the window that shows it.
+    public void StartMirroring(string id)
+    {
+        if (connected[id] is not { IsPaired: true } device) return;
+
+        Mirror.Begin(id, device.Name);
+        MirrorRequested?.Invoke();
+    }
+
+    public event Action? MirrorRequested;
+
+    /// A phone started streaming its screen, whether asked here or on the phone. Carries the decoder's source.
+    public event Action<Windows.Media.Core.MediaStreamSource>? ScreenStarted;
 }

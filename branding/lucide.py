@@ -31,7 +31,7 @@ ANDROID = [
 ]
 
 WINDOWS = [
-    "arrow-up", "audio-lines", "battery-charging", "bell", "bell-off", "bell-ring", "check", "chevron-down",
+    "arrow-up", "audio-lines", "battery-charging", "cast", "circle", "copy", "bell", "bell-off", "bell-ring", "check", "chevron-down",
     "chevron-left", "chevron-right", "circle-check", "circle-x", "clipboard", "download", "external-link", "file",
     "file-archive", "file-text", "file-up", "film", "folder-open", "image", "images", "link", "lock", "map-pin",
     "message-square", "messages-square", "mic", "mic-off", "music", "pause", "phone", "phone-off", "play",

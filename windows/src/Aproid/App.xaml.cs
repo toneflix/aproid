@@ -16,6 +16,7 @@ public partial class App : Application
     private CallWindow? call;
     private MessagesWindow? messages;
     private PhotosWindow? photos;
+    private ScreenWindow? screen;
 
     public App()
     {
@@ -40,6 +41,13 @@ public partial class App : Application
         call = new CallWindow(model);
         model.MessagesRequested += number => (messages ??= new MessagesWindow(model)).Present(number);
         model.DialerRequested += () => (messages ??= new MessagesWindow(model)).Present(dial: true);
+        model.MirrorRequested += () => (screen ??= new ScreenWindow(model.Mirror)).Present();
+        model.ScreenStarted += source =>
+        {
+            screen ??= new ScreenWindow(model.Mirror);
+            screen.Play(source);
+            screen.Present();
+        };
         model.PhotosRequested += () => (photos ??= new PhotosWindow(model.Photos)).Present();
 
         // A second launch, such as from the Start menu, Explorer's "Send to phone" or a tel: link, comes here.
@@ -104,6 +112,7 @@ public partial class App : Application
         call?.Close();
         messages?.Close();
         photos?.Close();
+        screen?.Close();
         Exit();
     }
 }
