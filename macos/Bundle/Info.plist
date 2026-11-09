@@ -40,7 +40,7 @@
         </dict>
     </array>
     <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>Aproid finds your phone over Bluetooth when it isn't on the same Wi-Fi.</string>
+    <string>Aproid finds your phone over Bluetooth when it isn't on the same Wi-Fi, and carries call audio to this Mac.</string>
     <key>NSLocationUsageDescription</key>
     <string>macOS needs location access for Aproid to see your phone's hotspot name.</string>
     <key>NSLocationWhenInUseUsageDescription</key>

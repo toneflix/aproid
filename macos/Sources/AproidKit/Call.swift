@@ -13,6 +13,8 @@ public enum Call {
         case answer
         case decline
         case hangUp
+        case mute
+        case unmute
         case dial
     }
 
@@ -77,6 +79,8 @@ public enum Call {
     public static func decline() -> NetworkPacket { packet(Request(.decline)) }
 
     public static func hangUp() -> NetworkPacket { packet(Request(.hangUp)) }
+
+    public static func mute(_ muted: Bool) -> NetworkPacket { packet(Request(muted ? .mute : .unmute)) }
 
     public static func dial(_ number: String) -> NetworkPacket { packet(Request(.dial, number: number)) }
 

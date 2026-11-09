@@ -55,6 +55,7 @@ class LinkService : Service() {
         scope.cancel()
         BatteryPlugin.stop(this)
         SmsPlugin.stop(this)
+        CallAudioPlugin.stop(this)
         beacon?.stop()
         beacon = null
         scheduler?.shutdownNow()
@@ -74,6 +75,7 @@ class LinkService : Service() {
         SharePlugin.start(this)
         SmsPlugin.start(this)
         CallPlugin.start(this)
+        CallAudioPlugin.start(this)
         LocationPlugin.start(this)
         PhotosPlugin.start(this)
         ScreenPlugin.start(this)

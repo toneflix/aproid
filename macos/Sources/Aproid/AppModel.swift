@@ -77,6 +77,9 @@ final class AppModel: ObservableObject {
     private let locations = LocationPlugin()
     private let photosPlugin = PhotosPlugin()
     private let calls = CallPlugin()
+    private let callAudioPlugin = CallAudioPlugin()
+    /// Carries call audio over Bluetooth, with this Mac as the phone's hands-free device.
+    let callAudio = HandsFreeAudio()
     private let callPanel = CallPanel()
     private var messagesDevice: String?
     private var photosDevice: String?
@@ -118,7 +121,7 @@ final class AppModel: ObservableObject {
         screenPlugin = ScreenPlugin(decoder: screen.decoder)
         screenWindow = ScreenWindowController(mirror: screen)
         notifications = NotificationPlugin(devices: connected)
-        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, locations, photosPlugin, screenPlugin])
+        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
         notifications.isEnabled = mirrorsNotifications
 
@@ -130,6 +133,11 @@ final class AppModel: ObservableObject {
             let deviceId = device.id
             let deviceName = device.name
             Task { @MainActor in self?.handleCall(state, deviceId: deviceId, deviceName: deviceName) }
+        }
+        callAudioPlugin.onStatus = { [weak self] status, deviceId in Task { @MainActor in self?.callAudio.received(status, from: deviceId) } }
+        callAudio.send = { [weak self] packet in
+            guard let id = self?.primaryId, let device = self?.connected[id] else { return false }
+            return device.send(packet)
         }
         nearby.onNearby = { [weak self] found in Task { @MainActor in self?.nearbyChanged(found) } }
         nearby.onAnswer = { [weak self] answer in Task { @MainActor in self?.reach(answer) } }
@@ -200,9 +208,30 @@ final class AppModel: ObservableObject {
 
     // MARK: Calls
 
+    /// Answers over Bluetooth when call audio is set up, so the call is heard here. Otherwise the phone answers.
     func answerCall() {
         guard let call else { return }
+        if callAudio.answer() { return }
+
         connected[call.deviceId]?.send(Call.answer())
+    }
+
+    /// Mutes the microphone the call is using: this Mac's when the audio is here, the phone's otherwise.
+    func toggleMute() {
+        guard var call else { return }
+
+        call.isMuted.toggle()
+        if callAudio.audioOnMac {
+            callAudio.setMuted(call.isMuted)
+        } else {
+            connected[call.deviceId]?.send(Call.mute(call.isMuted))
+        }
+        self.call = call
+    }
+
+    /// Moves the call's audio between this Mac and the phone.
+    func switchCallAudio() {
+        callAudio.moveAudio(toMac: !callAudio.audioOnMac)
     }
 
     func declineCall() {
@@ -251,6 +280,11 @@ final class AppModel: ObservableObject {
     }
 
     private func endCall() {
+        if call?.isMuted == true {
+            callAudio.setMuted(false)
+            if let call { connected[call.deviceId]?.send(Call.mute(false)) }
+        }
+
         call = nil
         callPanel.hide()
     }
@@ -484,6 +518,7 @@ final class AppModel: ObservableObject {
 
     fileprivate func publish() {
         primaryId = primaryPhone?.id
+        callAudio.attach(primaryId)
         syncMessages()
 
         devices = connected.all

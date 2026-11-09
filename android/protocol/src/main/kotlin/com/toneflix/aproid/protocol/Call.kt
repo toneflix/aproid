@@ -17,6 +17,8 @@ object Call {
         ANSWER("answer"),
         DECLINE("decline"),
         HANG_UP("hangUp"),
+        MUTE("mute"),
+        UNMUTE("unmute"),
         DIAL("dial");
 
         companion object {
@@ -57,6 +59,8 @@ object Call {
     fun decline(): NetworkPacket = request(Request(Action.DECLINE))
 
     fun hangUp(): NetworkPacket = request(Request(Action.HANG_UP))
+
+    fun mute(muted: Boolean): NetworkPacket = request(Request(if (muted) Action.MUTE else Action.UNMUTE))
 
     fun dial(number: String): NetworkPacket = request(Request(Action.DIAL, number))
 

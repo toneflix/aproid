@@ -69,8 +69,14 @@ public enum PacketType {
     /// A copied picture or file, sent as the payload. Body: {"name": ..., "mimeType": ...}.
     public static let clipboardFile = "aproid.clipboard.file"
 
-    /// Answer, decline or hang up a call, or dial a number. Body: {"action": ..., "number"?: ...}.
+    /// Answer, decline, hang up, mute or unmute a call, or dial a number. Body: {"action": ..., "number"?: ...}.
     public static let callRequest = "aproid.call.request"
+
+    /// Asks the phone about the Bluetooth link for call audio, or to pair with this Mac. Body: {"action": "status"|"pair", "address", "name"?}.
+    public static let callAudioRequest = "aproid.callaudio.request"
+
+    /// The phone's side of the call audio link. Body: {"bluetoothOn", "allowed", "paired", "connected", "name"?}.
+    public static let callAudio = "aproid.callaudio"
 
     /// Keeps the link alive and detects a dead one. Body: {"pong": bool}.
     public static let heartbeat = "aproid.heartbeat"
@@ -108,6 +114,8 @@ public enum Capabilities {
         PacketType.screen,
         PacketType.screenInput,
         PacketType.location,
+        PacketType.callAudioRequest,
+        PacketType.callAudio,
         PacketType.heartbeat,
     ]
 }

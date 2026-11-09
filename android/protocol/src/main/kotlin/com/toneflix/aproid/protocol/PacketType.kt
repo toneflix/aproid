@@ -68,8 +68,14 @@ object PacketType {
     /** A copied picture or file, sent as the payload. Body: {"name": ..., "mimeType": ...}. */
     const val CLIPBOARD_FILE = "aproid.clipboard.file"
 
-    /** Answer, decline or hang up a call, or dial a number. Body: {"action": ..., "number"?: ...}. */
+    /** Answer, decline, hang up, mute or unmute a call, or dial a number. Body: {"action": ..., "number"?: ...}. */
     const val CALL_REQUEST = "aproid.call.request"
+
+    /** Asks the phone about the Bluetooth link for call audio, or to pair with this Mac. Body: {"action": "status"|"pair", "address", "name"?}. */
+    const val CALL_AUDIO_REQUEST = "aproid.callaudio.request"
+
+    /** The phone's side of the call audio link. Body: {"bluetoothOn", "allowed", "paired", "connected", "name"?}. */
+    const val CALL_AUDIO = "aproid.callaudio"
 
     /** Keeps the link alive and detects a dead one. Body: {"pong": bool}. */
     const val HEARTBEAT = "aproid.heartbeat"
@@ -108,6 +114,8 @@ object Capabilities {
         PacketType.SCREEN,
         PacketType.SCREEN_INPUT,
         PacketType.LOCATION,
+        PacketType.CALL_AUDIO_REQUEST,
+        PacketType.CALL_AUDIO,
         PacketType.HEARTBEAT,
     )
 }
