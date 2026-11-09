@@ -125,7 +125,8 @@ sealed class ScreenInput {
 
     data class Text(val text: String) : ScreenInput()
 
-    data class Key(val key: String) : ScreenInput()
+    /** A key that is not text. With [select], a movement key extends the selection like Shift does. */
+    data class Key(val key: String, val select: Boolean = false) : ScreenInput()
 
     fun toPacket(): NetworkPacket = NetworkPacket(
         PacketType.SCREEN_INPUT,
@@ -134,7 +135,11 @@ sealed class ScreenInput {
             is LongPress -> NetworkPacket.body("action" to "longPress", "x" to x, "y" to y)
             is Swipe -> NetworkPacket.body("action" to "swipe", "x" to x, "y" to y, "toX" to toX, "toY" to toY, "duration" to durationMs)
             is Text -> NetworkPacket.body("action" to "text", "text" to text)
-            is Key -> NetworkPacket.body("action" to "key", "key" to key)
+            is Key -> if (select) {
+                NetworkPacket.body("action" to "key", "key" to key, "select" to true)
+            } else {
+                NetworkPacket.body("action" to "key", "key" to key)
+            }
         },
     )
 
@@ -145,8 +150,25 @@ sealed class ScreenInput {
         const val NOTIFICATIONS = "notifications"
         const val ENTER = "enter"
         const val DELETE = "delete"
+        const val DELETE_FORWARD = "deleteForward"
+        const val DELETE_WORD = "deleteWord"
+        const val TAB = "tab"
+        const val LEFT = "left"
+        const val RIGHT = "right"
+        const val UP = "up"
+        const val DOWN = "down"
+        const val WORD_LEFT = "wordLeft"
+        const val WORD_RIGHT = "wordRight"
+        const val LINE_START = "lineStart"
+        const val LINE_END = "lineEnd"
+        const val SELECT_ALL = "selectAll"
+        const val COPY = "copy"
+        const val CUT = "cut"
 
-        val keys = setOf(BACK, HOME, RECENTS, NOTIFICATIONS, ENTER, DELETE)
+        val keys = setOf(
+            BACK, HOME, RECENTS, NOTIFICATIONS, ENTER, DELETE, DELETE_FORWARD, DELETE_WORD, TAB,
+            LEFT, RIGHT, UP, DOWN, WORD_LEFT, WORD_RIGHT, LINE_START, LINE_END, SELECT_ALL, COPY, CUT,
+        )
 
         fun fromPacket(packet: NetworkPacket): ScreenInput? {
             if (packet.type != PacketType.SCREEN_INPUT) return null
@@ -164,7 +186,7 @@ sealed class ScreenInput {
                     (packet.long("duration") ?: 200).coerceIn(10, 5000),
                 )
                 "text" -> packet.string("text")?.takeIf { it.isNotEmpty() }?.let(::Text)
-                "key" -> packet.string("key")?.takeIf { it in keys }?.let(::Key)
+                "key" -> packet.string("key")?.takeIf { it in keys }?.let { Key(it, packet.bool("select") ?: false) }
                 else -> null
             }
         }
