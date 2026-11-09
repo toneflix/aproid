@@ -1,6 +1,6 @@
 # Architecture
 
-Two apps, one protocol.
+Three apps, one protocol. The Windows app (`windows/`) mirrors the Mac app: `Aproid.Core` is the C# port of AproidKit, and a WinUI 3 tray app takes the place of the menu bar app.
 
 ```
 Android phone                                  Mac
@@ -14,7 +14,7 @@ Android phone                                  Mac
 └──────────────────────────┘                  └──────────────────────────┘
 ```
 
-The protocol code exists twice, once in Kotlin and once in Swift, with the same names and the same tests. When you change one, change the other.
+The protocol code exists three times, in Kotlin, Swift and C#, with the same names and the same tests. When you change one, change the others.
 
 ## Why KDE Connect's protocol
 
