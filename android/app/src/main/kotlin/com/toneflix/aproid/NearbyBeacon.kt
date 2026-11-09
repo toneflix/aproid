@@ -15,10 +15,7 @@ import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.content.Context
 import android.content.pm.PackageManager
-import android.net.wifi.WifiManager
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.os.ParcelUuid
 import android.util.Log
 import com.toneflix.aproid.protocol.DeviceCertificate
@@ -32,16 +29,15 @@ import java.util.concurrent.Executors
 /**
  * Lets a paired Mac find the phone over Bluetooth when Wi-Fi discovery fails, such as on a network
  * that blocks broadcasts or when they share no network at all. The Mac asks; the phone answers with
- * its address, and on request starts a local hotspot the Mac can join. Answers are sealed to the
- * asking Mac's certificate, so nobody else nearby can read them.
+ * its address. When the Mac asks for the hotspot, the phone also offers a one-tap way to turn it on,
+ * since Android doesn't let apps switch it on themselves. Answers are sealed to the asking Mac's
+ * certificate, so nobody else nearby can read them.
  */
 @SuppressLint("MissingPermission")
 class NearbyBeacon(private val context: Context, private val port: () -> Int?) {
     private val bluetooth = context.getSystemService(BluetoothManager::class.java)
-    private val main = Handler(Looper.getMainLooper())
     private val worker = Executors.newSingleThreadExecutor()
     private var server: BluetoothGattServer? = null
-    private var hotspot: WifiManager.LocalOnlyHotspotReservation? = null
 
     /** The sealed answer waiting for each Mac to read. */
     private val answers = ConcurrentHashMap<String, ByteArray>()
@@ -95,8 +91,6 @@ class NearbyBeacon(private val context: Context, private val port: () -> Int?) {
         runCatching { bluetooth?.adapter?.bluetoothLeAdvertiser?.stopAdvertising(advertising) }
         runCatching { server?.close() }
         server = null
-        hotspot?.close()
-        hotspot = null
         answers.clear()
     }
 
@@ -157,21 +151,10 @@ class NearbyBeacon(private val context: Context, private val port: () -> Int?) {
         val port = port() ?: return
         val ownId = DeviceStore.identity(context).deviceId
 
-        fun reply(ssid: String? = null, password: String? = null) {
-            val answer = Nearby.Answer(ownId, addresses(), port, ssid, password)
-            answers[device.address] = Nearby.seal(answer, macKey)
-            notifyReady(device)
-        }
+        if (request.want == Nearby.Want.HOTSPOT && !Hotspot.isOn(context)) Hotspot.ask(context)
 
-        if (request.want == Nearby.Want.CONNECT) {
-            reply()
-            return
-        }
-
-        startHotspot { ssid, password ->
-            // The hotspot's own address shows up a moment after it starts.
-            main.postDelayed({ worker.execute { reply(ssid, password) } }, 1000)
-        }
+        answers[device.address] = Nearby.seal(Nearby.Answer(ownId, addresses(), port), macKey)
+        notifyReady(device)
     }
 
     /** Tells the Mac its answer is ready to read. */
@@ -190,56 +173,6 @@ class NearbyBeacon(private val context: Context, private val port: () -> Int?) {
         }
     }
 
-    /**
-     * Starts a hotspot only the Mac will use. Android doesn't let apps turn on the normal hotspot,
-     * but any app may start this local one. [onReady] gets nulls if the phone can't start it.
-     */
-    private fun startHotspot(onReady: (String?, String?) -> Unit) {
-        hotspot?.let {
-            val (ssid, password) = credentials(it)
-            onReady(ssid, password)
-            return
-        }
-
-        val wifi = context.applicationContext.getSystemService(WifiManager::class.java)
-        main.post {
-            runCatching {
-                wifi.startLocalOnlyHotspot(object : WifiManager.LocalOnlyHotspotCallback() {
-                    override fun onStarted(reservation: WifiManager.LocalOnlyHotspotReservation) {
-                        hotspot = reservation
-                        val (ssid, password) = credentials(reservation)
-                        onReady(ssid, password)
-                    }
-
-                    override fun onFailed(reason: Int) {
-                        Log.w(TAG, "Local hotspot failed: $reason")
-                        onReady(null, null)
-                    }
-                }, main)
-            }.onFailure {
-                Log.w(TAG, "Local hotspot not allowed", it)
-                onReady(null, null)
-            }
-        }
-    }
-
-    private fun credentials(reservation: WifiManager.LocalOnlyHotspotReservation): Pair<String?, String?> =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val config = reservation.softApConfiguration
-            val ssid = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                config.wifiSsid?.toString()?.removeSurrounding("\"")
-            } else {
-                @Suppress("DEPRECATION")
-                config.ssid
-            }
-            ssid to config.passphrase
-        } else {
-            @Suppress("DEPRECATION")
-            val config = reservation.wifiConfiguration
-            @Suppress("DEPRECATION")
-            config?.SSID?.removeSurrounding("\"") to config?.preSharedKey?.removeSurrounding("\"")
-        }
-
     /** This phone's IPv4 addresses on every network it's on, the hotspot included. */
     private fun addresses(): List<String> = runCatching {
         NetworkInterface.getNetworkInterfaces().toList()
@@ -257,11 +190,6 @@ class NearbyBeacon(private val context: Context, private val port: () -> Int?) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 add(Manifest.permission.BLUETOOTH_ADVERTISE)
                 add(Manifest.permission.BLUETOOTH_CONNECT)
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                add(Manifest.permission.NEARBY_WIFI_DEVICES)
-            } else {
-                add(Manifest.permission.ACCESS_FINE_LOCATION)
             }
         }.toTypedArray()
 

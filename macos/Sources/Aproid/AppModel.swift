@@ -88,6 +88,7 @@ final class AppModel: ObservableObject {
     private let screenWindow: ScreenWindowController
     private var screenSize: AnyCancellable?
     private let nearby: NearbyFinder
+    private let hotspot = PhoneHotspot()
     private var lastNearbySearch = Date.distantPast
     private var notificationsDay = Calendar.current.startOfDay(for: Date())
     private var link: LanLink?
@@ -159,6 +160,7 @@ final class AppModel: ObservableObject {
         notifications.onShown = { [weak self] in Task { @MainActor in self?.countNotification() } }
         share.onActivity = { [weak self] activity in Task { @MainActor in self?.record(activity) } }
         share.onFileReceived = { [weak notifications] url, device in notifications?.announce(file: url, from: device) }
+        share.restore()
         start()
         clipboard.startWatching()
     }
@@ -389,37 +391,60 @@ final class AppModel: ObservableObject {
         phoneNearby = found && !hasPhone
     }
 
-    /// Asks the phone for a hotspot and joins it. This Mac leaves its current Wi-Fi.
-    func joinPhoneHotspot() {
-        hotspotStatus = "Asking your phone to start a hotspot…"
-        lastNearbySearch = Date()
-        nearby.askForLocation()
-        nearby.search(.hotspot)
+    /// The name of the phone's hotspot, once this Mac has been on it.
+    var phoneHotspotName: String? { hotspotPhoneId.flatMap(hotspot.name(of:)) }
+
+    private var hotspotPhoneId: String? {
+        let candidates = [selectedPhone].compactMap { $0 } + trustStore.trustedIds
+        return candidates.first { hotspot.name(of: $0) != nil }
     }
 
-    /// Connects to the addresses the phone gave over Bluetooth, joining its hotspot first if it started one.
+    /// Asks the phone to turn its hotspot on, then joins it when it shows up. This Mac leaves its current Wi-Fi.
+    func joinPhoneHotspot() {
+        lastNearbySearch = Date()
+        nearby.search(.hotspot)
+
+        guard let id = hotspotPhoneId else {
+            hotspotStatus = "Turn on the hotspot on your phone, then pick it in the Wi-Fi menu. Aproid remembers it for next time."
+            return
+        }
+
+        hotspotStatus = "Asking your phone to turn on its hotspot…"
+        hotspot.join(deviceId: id) { [weak self] status in Task { @MainActor in self?.hotspotChanged(status) } }
+    }
+
+    func cancelHotspot() {
+        hotspot.cancel()
+        hotspotStatus = nil
+    }
+
+    private func hotspotChanged(_ status: PhoneHotspot.Status?) {
+        switch status {
+        case .waiting(let ssid): hotspotStatus = "Waiting for \(ssid). Tap the notification on your phone to turn it on."
+        case .joining(let ssid): hotspotStatus = "Joining \(ssid)…"
+        case .failed(let reason): hotspotStatus = reason
+        case nil: hotspotStatus = "Joined. Connecting to your phone…"
+        }
+    }
+
+    /// Remembers the phone's hotspot when this Mac is on it. Reading the Wi-Fi name needs location access.
+    private func learnHotspot(_ device: Device) {
+        let deviceId = device.id
+        let host = device.link.host
+        let hotspot = hotspot
+        let nearby = nearby
+
+        DispatchQueue.global(qos: .utility).async {
+            if !hotspot.learn(deviceId: deviceId, phoneHost: host) { nearby.askForLocation() }
+        }
+    }
+
+    /// Connects to the addresses the phone gave over Bluetooth.
     private func reach(_ answer: Nearby.Answer) {
         let peer = DeviceIdentity(deviceId: answer.deviceId, deviceName: "Phone", deviceType: .phone, tcpPort: answer.port)
         guard let link else { return }
 
-        guard let ssid = answer.ssid else {
-            if hotspotStatus != nil { hotspotStatus = "Your phone couldn't start a hotspot. Turn on its hotspot in Settings and join it." }
-            answer.addresses.forEach { _ = link.connect(to: peer, host: $0) }
-            return
-        }
-
-        hotspotStatus = "Joining \(ssid)…"
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            do {
-                try NearbyFinder.join(ssid: ssid, password: answer.password)
-                // Give the Mac a moment to get an address on the new network.
-                Thread.sleep(forTimeInterval: 2)
-                answer.addresses.forEach { _ = link.connect(to: peer, host: $0) }
-                Task { @MainActor in self?.hotspotStatus = nil }
-            } catch {
-                Task { @MainActor in self?.hotspotStatus = "Couldn't join \(ssid): \(error)" }
-            }
-        }
+        answer.addresses.forEach { _ = link.connect(to: peer, host: $0) }
     }
 
     private func failed(_ message: String) {
@@ -439,6 +464,8 @@ final class AppModel: ObservableObject {
             plugins.onPaired(device)
             phoneNearby = false
             hotspotStatus = nil
+            hotspot.cancel()
+            learnHotspot(device)
         }
 
         publish()

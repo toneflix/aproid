@@ -3,9 +3,9 @@ import _CryptoExtras
 import Foundation
 
 /// Finding the phone over Bluetooth when Wi-Fi discovery fails. The phone offers a Bluetooth LE
-/// service; a paired Mac writes a `Request`, and the phone answers with where to reach it, and
-/// optionally a hotspot to join, sealed to that Mac's certificate. Mirrors Nearby.kt. Only the
-/// phone seals answers, so this side only opens them.
+/// service; a paired Mac writes a `Request`, and the phone answers with where to reach it,
+/// sealed to that Mac's certificate. Mirrors Nearby.kt. Only the phone seals answers, so this
+/// side only opens them.
 public enum Nearby {
     public static let service = "a9d2e4b0-6f1c-4e8a-b7d3-5c0f2a1e9b40"
     public static let request = "a9d2e4b0-6f1c-4e8a-b7d3-5c0f2a1e9b41"
@@ -14,7 +14,7 @@ public enum Nearby {
     public enum Want: String, Sendable {
         /// Just tell me your address.
         case connect
-        /// We share no network: start a hotspot for me to join.
+        /// We share no network: ask the user to turn on your hotspot so I can join it.
         case hotspot
     }
 
@@ -42,20 +42,16 @@ public enum Nearby {
         }
     }
 
-    /// Where to reach the phone. `ssid` and `password` are set when it started a hotspot.
+    /// Where to reach the phone.
     public struct Answer: Equatable, Sendable {
         public var deviceId: String
         public var addresses: [String]
         public var port: UInt16
-        public var ssid: String?
-        public var password: String?
 
-        public init(deviceId: String, addresses: [String], port: UInt16, ssid: String? = nil, password: String? = nil) {
+        public init(deviceId: String, addresses: [String], port: UInt16) {
             self.deviceId = deviceId
             self.addresses = addresses
             self.port = port
-            self.ssid = ssid
-            self.password = password
         }
 
         init?(json: [String: JSONValue]) {
@@ -66,9 +62,7 @@ public enum Nearby {
             self.init(
                 deviceId: id,
                 addresses: (json["a"]?.arrayValue ?? []).compactMap(\.stringValue),
-                port: UInt16(port),
-                ssid: json["s"]?.stringValue,
-                password: json["k"]?.stringValue
+                port: UInt16(port)
             )
         }
     }

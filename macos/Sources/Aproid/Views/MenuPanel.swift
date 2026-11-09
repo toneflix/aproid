@@ -169,6 +169,12 @@ private struct SearchingCard: View {
 private struct HotspotCard: View {
     @ObservedObject var model: AppModel
 
+    private var explanation: String {
+        model.phoneHotspotName == nil
+            ? "It isn't on this Wi-Fi. Use its hotspot to get online and connect; this Mac leaves its current network."
+            : "It isn't on this Wi-Fi. Your phone shows a switch to turn its hotspot on, and this Mac joins it."
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             RoundedRectangle(cornerRadius: 9, style: .continuous)
@@ -182,14 +188,18 @@ private struct HotspotCard: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Your phone is nearby").font(.system(size: 13, weight: .semibold))
-                Text(model.hotspotStatus ?? "It isn't on this Wi-Fi. Join its hotspot to connect; this Mac will leave its current network.")
+                Text(model.hotspotStatus ?? explanation)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if model.hotspotStatus == nil {
-                    Button("Join phone's hotspot") { model.joinPhoneHotspot() }
+                    Button(model.phoneHotspotName.map { "Use \($0)" } ?? "Use phone's hotspot") { model.joinPhoneHotspot() }
                         .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                } else {
+                    Button("Cancel") { model.cancelHotspot() }
+                        .buttonStyle(.bordered)
                         .controlSize(.small)
                 }
             }

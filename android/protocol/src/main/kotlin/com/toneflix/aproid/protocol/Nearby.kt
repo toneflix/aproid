@@ -21,8 +21,8 @@ import javax.crypto.spec.SecretKeySpec
 
 /**
  * Finding the phone over Bluetooth when Wi-Fi discovery fails. The phone offers a Bluetooth LE
- * service; a paired Mac writes a [Request], and the phone answers with where to reach it, and
- * optionally a hotspot to join, sealed to that Mac's certificate so only it can read the answer.
+ * service; a paired Mac writes a [Request], and the phone answers with where to reach it,
+ * sealed to that Mac's certificate so only it can read the answer.
  */
 object Nearby {
     const val SERVICE = "a9d2e4b0-6f1c-4e8a-b7d3-5c0f2a1e9b40"
@@ -33,7 +33,7 @@ object Nearby {
         /** Just tell me your address. */
         CONNECT("connect"),
 
-        /** We share no network: start a hotspot for me to join. */
+        /** We share no network: ask the user to turn on your hotspot so I can join it. */
         HOTSPOT("hotspot"),
     }
 
@@ -53,20 +53,12 @@ object Nearby {
         }
     }
 
-    /** Where to reach the phone. [ssid] and [password] are set when it started a hotspot. */
-    data class Answer(
-        val deviceId: String,
-        val addresses: List<String>,
-        val port: Int,
-        val ssid: String? = null,
-        val password: String? = null,
-    ) {
+    /** Where to reach the phone. */
+    data class Answer(val deviceId: String, val addresses: List<String>, val port: Int) {
         fun toJson(): JsonObject = buildJsonObject {
             put("i", deviceId)
             put("a", JsonArray(addresses.map(::JsonPrimitive)))
             put("p", port)
-            ssid?.let { put("s", it) }
-            password?.let { put("k", it) }
         }
 
         companion object {
@@ -76,7 +68,7 @@ object Nearby {
                 val port = (json["p"] as? JsonPrimitive)?.intOrNull?.takeIf { it in 1..65535 } ?: return null
                 val addresses = (json["a"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonPrimitive)?.content }
 
-                return Answer(id, addresses, port, text("s"), text("k"))
+                return Answer(id, addresses, port)
             }
         }
     }
