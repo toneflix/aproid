@@ -20,6 +20,7 @@ public class KdeConnectFormatTests
         Assert.Equal("0|org.telegram|7|null|10234", notification.Id);
         Assert.Equal(1_700_000_000_000, notification.Time);
         Assert.Null(notification.ReplyId);
+        Assert.Equal(["Mark as read"], notification.ActionTitles);
         Assert.Equal("0|org.telegram|7|null|10234", PhoneNotification.CancelledId(Parse("""{"id":2,"type":"kdeconnect.notification","body":{"id":"0|org.telegram|7|null|10234","isCancel":true}}""")));
     }
 
@@ -32,6 +33,17 @@ public class KdeConnectFormatTests
         Assert.Equal(["requestReplyId", "message"], Keys(NotificationRequests.Reply("r1", "ok")));
         Assert.Equal(["cancel"], Keys(NotificationRequests.Dismiss("k")));
         Assert.Equal(["request"], Keys(NotificationRequests.RequestAll()));
+        Assert.Equal(["key", "action"], Keys(NotificationRequests.Action("k", "Archive")));
+    }
+
+    [Fact]
+    public void NotificationActionsRoundTrip()
+    {
+        var sent = new PhoneNotification("k", "Gmail", "Bo", "hi", 1, Actions: ["Archive", "Reply"]).ToPacket();
+
+        Assert.Equal(["Archive", "Reply"], PhoneNotification.FromPacket(NetworkPacket.Parse(sent.Serialize()))!.ActionTitles);
+        Assert.Equal(new NotificationAction("k", "Archive"), NotificationAction.FromPacket(NetworkPacket.Parse(NotificationRequests.Action("k", "Archive").Serialize())));
+        Assert.Null(NotificationAction.FromPacket(NetworkPacket.Parse("""{"id":1,"type":"kdeconnect.notification.action","body":{"key":"k"}}""")));
     }
 
     [Fact]

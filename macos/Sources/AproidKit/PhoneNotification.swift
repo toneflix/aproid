@@ -3,7 +3,8 @@ import Foundation
 
 /// A notification mirrored from the phone ("kdeconnect.notification").
 /// `replyId` is set when the notification can be answered with text. `iconHash` names the icon sent as
-/// the packet's payload, so the receiver can reuse one it already has. Mirrors PhoneNotification.kt.
+/// the packet's payload, so the receiver can reuse one it already has. `actions` are the titles of the
+/// notification's buttons, such as "Mark as read", pressed with `NotificationRequests.action`. Mirrors PhoneNotification.kt.
 public struct PhoneNotification: Equatable, Sendable {
     public var id: String
     public var appName: String
@@ -14,6 +15,7 @@ public struct PhoneNotification: Equatable, Sendable {
     public var replyId: String?
     public var silent: Bool
     public var iconHash: String?
+    public var actions: [String]
 
     public init(
         id: String,
@@ -24,7 +26,8 @@ public struct PhoneNotification: Equatable, Sendable {
         isClearable: Bool = true,
         replyId: String? = nil,
         silent: Bool = false,
-        iconHash: String? = nil
+        iconHash: String? = nil,
+        actions: [String] = []
     ) {
         self.id = id
         self.appName = appName
@@ -35,6 +38,7 @@ public struct PhoneNotification: Equatable, Sendable {
         self.replyId = replyId
         self.silent = silent
         self.iconHash = iconHash
+        self.actions = actions
     }
 
     /// Nil for removals and malformed packets.
@@ -57,7 +61,8 @@ public struct PhoneNotification: Equatable, Sendable {
             isClearable: packet.bool("isClearable") ?? true,
             replyId: replyId?.isEmpty == false ? replyId : nil,
             silent: packet.bool("silent") ?? false,
-            iconHash: iconHash?.isEmpty == false ? iconHash : nil
+            iconHash: iconHash?.isEmpty == false ? iconHash : nil,
+            actions: packet.stringList("actions").filter { !$0.isEmpty }
         )
     }
 
@@ -74,6 +79,7 @@ public struct PhoneNotification: Equatable, Sendable {
         ]
         if let replyId { body["requestReplyId"] = .string(replyId) }
         if let iconHash { body["payloadHash"] = .string(iconHash) }
+        if !actions.isEmpty { body["actions"] = .array(actions.map { .string($0) }) }
 
         return NetworkPacket(type: PacketType.notification, body: body)
     }
@@ -110,5 +116,30 @@ public enum NotificationRequests {
             type: PacketType.notificationReply,
             body: ["requestReplyId": .string(replyId), "message": .string(message)]
         )
+    }
+
+    /// Presses the button titled `action` on the notification `id`.
+    public static func action(id: String, action: String) -> NetworkPacket {
+        NetworkPacket(type: PacketType.notificationAction, body: ["key": .string(id), "action": .string(action)])
+    }
+}
+
+/// A button the Mac pressed on a phone notification. Mirrors NotificationAction in PhoneNotification.kt.
+public struct NotificationAction: Equatable, Sendable {
+    public var id: String
+    public var action: String
+
+    public init(id: String, action: String) {
+        self.id = id
+        self.action = action
+    }
+
+    public init?(packet: NetworkPacket) {
+        guard packet.type == PacketType.notificationAction,
+              let id = packet.string("key"), !id.isEmpty,
+              let action = packet.string("action"), !action.isEmpty
+        else { return nil }
+
+        self.init(id: id, action: action)
     }
 }
