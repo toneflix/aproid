@@ -24,6 +24,7 @@ internal sealed class Settings
         public bool MirrorsNotifications { get; set; } = true;
         public string? SelectedPhone { get; set; }
         public PhoneSwitcherStyle SwitcherStyle { get; set; } = PhoneSwitcherStyle.Carousel;
+        public Dictionary<string, string> PhoneHotspots { get; set; } = new();
     }
 
     public Settings(string path)
@@ -83,6 +84,15 @@ internal sealed class Settings
             values.SwitcherStyle = value;
             Save();
         }
+    }
+
+    /// The hotspot name of each phone, by device id.
+    public IReadOnlyDictionary<string, string> PhoneHotspots => values.PhoneHotspots;
+
+    public void RememberHotspot(string deviceId, string ssid)
+    {
+        values.PhoneHotspots[deviceId] = ssid;
+        Save();
     }
 
     private void Save()
