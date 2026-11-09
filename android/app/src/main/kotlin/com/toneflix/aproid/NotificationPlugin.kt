@@ -18,6 +18,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.toneflix.aproid.protocol.Device
 import com.toneflix.aproid.protocol.NetworkPacket
+import com.toneflix.aproid.protocol.NotificationAction
 import com.toneflix.aproid.protocol.PacketType
 import com.toneflix.aproid.protocol.PhoneNotification
 import com.toneflix.aproid.protocol.Plugin
@@ -25,11 +26,11 @@ import java.io.ByteArrayOutputStream
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-/** Sends phone notifications to paired Macs and carries out their replies and dismissals. */
+/** Sends phone notifications to paired Macs and carries out their replies, button presses and dismissals. */
 object NotificationPlugin : Plugin {
     private const val TAG = "AproidNotifications"
 
-    override val incoming = setOf(PacketType.NOTIFICATION_REQUEST, PacketType.NOTIFICATION_REPLY)
+    override val incoming = setOf(PacketType.NOTIFICATION_REQUEST, PacketType.NOTIFICATION_REPLY, PacketType.NOTIFICATION_ACTION)
 
     private class Replyable(val key: String, val action: Notification.Action)
 
@@ -84,8 +85,30 @@ object NotificationPlugin : Plugin {
         when (packet.type) {
             PacketType.NOTIFICATION_REQUEST -> handleRequest(service, device, packet)
             PacketType.NOTIFICATION_REPLY -> reply(service, packet)
+            PacketType.NOTIFICATION_ACTION -> press(service, packet)
         }
     }
+
+    /** Presses the notification button the Mac picked, as tapping it on the phone would. */
+    private fun press(service: NotificationMirrorService, packet: NetworkPacket) {
+        val pressed = NotificationAction.fromPacket(packet) ?: return
+        val sbn = service.activeNotifications.orEmpty().firstOrNull { it.key == pressed.id } ?: return
+        val action = buttons(sbn.notification).firstOrNull { it.title?.toString() == pressed.action } ?: return
+
+        try {
+            send(service, action.actionIntent, Intent())
+        } catch (e: Exception) {
+            Log.w(TAG, "Pressing ${pressed.action} on ${sbn.key} failed", e)
+        }
+    }
+
+    /** The buttons the Mac can press: every action except text replies, which go through [reply]. */
+    private fun buttons(notification: Notification): List<Notification.Action> =
+        notification.actions.orEmpty().filter { action ->
+            action.actionIntent != null &&
+                !action.title.isNullOrBlank() &&
+                action.remoteInputs.orEmpty().none { it.allowFreeFormInput }
+        }
 
     private fun handleRequest(service: NotificationMirrorService, device: Device, packet: NetworkPacket) {
         packet.string("cancel")?.let { service.cancelNotification(it) }
@@ -207,6 +230,7 @@ object NotificationPlugin : Plugin {
             isClearable = sbn.isClearable,
             replyId = replyIdFor(sbn),
             silent = silent,
+            actions = buttons(notification).map { it.title.toString() }.distinct(),
         )
     }
 
