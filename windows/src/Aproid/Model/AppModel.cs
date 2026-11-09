@@ -87,7 +87,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
             if (deviceId == folderPhone?.Id) folder.Delivered(id, file);
             ui.TryEnqueue(() => Photos.IngestPreview(id, file, deviceId));
         };
-        folder.Request = id => folderPhone is Device phone && phone.Send(Photos.DownloadPacket(id, preview: true));
+        folder.Request = id => folderPhone is Device phone && phone.Send(Core.Photos.DownloadPacket(id, preview: true));
         Photos.Arrived += arrived =>
         {
             if (!ShowsPhotosInExplorer) return;
