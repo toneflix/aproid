@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
 import android.telecom.TelecomManager
@@ -18,7 +19,7 @@ import com.toneflix.aproid.protocol.NetworkPacket
 import com.toneflix.aproid.protocol.PacketType
 import com.toneflix.aproid.protocol.Plugin
 
-/** Tells the Mac about calls, and answers, declines, hangs up or dials when the Mac asks. */
+/** Tells the Mac about calls, and answers, declines, hangs up, mutes or dials when the Mac asks. */
 object CallPlugin : Plugin {
     private const val TAG = "AproidCalls"
 
@@ -56,6 +57,7 @@ object CallPlugin : Plugin {
             when (request.action) {
                 Call.Action.ANSWER -> answer(context, telecom)
                 Call.Action.DECLINE, Call.Action.HANG_UP -> hangUp(context, telecom)
+                Call.Action.MUTE, Call.Action.UNMUTE -> mute(context, request.action == Call.Action.MUTE)
                 Call.Action.DIAL -> request.number?.let { dial(context, telecom, it) }
             }
         }.onFailure { Log.w(TAG, "Call ${request.action} failed", it) }
@@ -74,6 +76,11 @@ object CallPlugin : Plugin {
 
         @Suppress("DEPRECATION")
         telecom.endCall()
+    }
+
+    /** Mutes the phone's microphone. Some phones only let the dialer do this, so it may have no effect. */
+    private fun mute(context: Context, muted: Boolean) {
+        context.getSystemService(AudioManager::class.java).isMicrophoneMute = muted
     }
 
     @SuppressLint("MissingPermission")
