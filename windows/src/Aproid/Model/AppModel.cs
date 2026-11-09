@@ -250,6 +250,17 @@ public sealed class AppModel : Observable, IDeviceDelegate
         if (NextPhone is DeviceState next) Select(next.Id);
     }
 
+    /// Whether the keyboard shortcut opens the panel. The app turns the shortcut itself on and off.
+    public bool OpensWithHotkey
+    {
+        get => settings.OpensWithHotkey;
+        set
+        {
+            settings.OpensWithHotkey = value;
+            Raise();
+        }
+    }
+
     public bool StartsWithWindows
     {
         get => Shell.Startup.IsEnabled;

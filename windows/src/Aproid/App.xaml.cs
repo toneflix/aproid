@@ -36,6 +36,12 @@ public partial class App : Application
         tray.Clicked += () => panel.Toggle(tray.Bounds);
         tray.MenuRequested += ShowTrayMenu;
         tray.ClipboardChanged += model.ClipboardChanged;
+        tray.HotkeyPressed += () => panel.Toggle(tray.Bounds);
+        tray.UseHotkey(model.OpensWithHotkey);
+        model.PropertyChanged += (_, change) =>
+        {
+            if (change.PropertyName == nameof(AppModel.OpensWithHotkey)) tray.UseHotkey(model.OpensWithHotkey);
+        };
         model.PairRequested += () => panel.ShowNear(tray.Bounds);
         panel.QuitRequested += Quit;
         model.UpdateInstalling += Quit;
@@ -61,6 +67,7 @@ public partial class App : Application
         };
 
         Integration.Register();
+        JumpList.Register();
         model.Start();
 
         var first = LaunchArguments.Parse(Environment.GetCommandLineArgs().Skip(1));
@@ -77,10 +84,42 @@ public partial class App : Application
             return;
         }
 
+        if (launch.Jump is JumpTask jump)
+        {
+            Open(jump);
+            return;
+        }
+
         model!.Handover(launch.Files, launch.Number);
 
         // The panel shows the files going across.
         if (launch.Files.Count > 0) panel!.ShowNear(tray!.Bounds);
+    }
+
+    /// A jump list task. Phone tasks fall back to the panel when no phone is connected.
+    private void Open(JumpTask jump)
+    {
+        var phone = model!.Focused is { IsPaired: true } focused ? focused.Id : null;
+
+        switch (jump)
+        {
+            case JumpTask.Messages:
+                model.ShowMessages();
+                break;
+            case JumpTask.Photos:
+                model.ShowPhotos();
+                break;
+            case JumpTask.Mirror when phone is not null:
+                model.StartMirroring(phone);
+                break;
+            case JumpTask.Ring when phone is not null:
+                model.Ring(phone);
+                panel!.ShowNear(tray!.Bounds);
+                break;
+            default:
+                panel!.ShowNear(tray!.Bounds);
+                break;
+        }
     }
 
     private void ShowTrayMenu()

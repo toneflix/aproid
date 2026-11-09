@@ -470,6 +470,10 @@ public sealed partial class PanelWindow : Window
         startup.Click += (_, _) => Model.StartsWithWindows = startup.IsChecked;
         SettingsMenu.Items.Add(startup);
 
+        var hotkey = new ToggleMenuFlyoutItem { Text = $"Open with {TrayIcon.HotkeyName}", IsChecked = Model.OpensWithHotkey };
+        hotkey.Click += (_, _) => Model.OpensWithHotkey = hotkey.IsChecked;
+        SettingsMenu.Items.Add(hotkey);
+
         var switcher = new MenuFlyoutSubItem { Text = "Switch phones with" };
         foreach (var (style, label) in new[] { (PhoneSwitcherStyle.Carousel, "Card carousel"), (PhoneSwitcherStyle.Menu, "Menu on the phone name") })
         {
