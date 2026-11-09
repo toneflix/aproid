@@ -17,7 +17,9 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -98,9 +100,11 @@ fun withDevice(id: String, action: (com.toneflix.aproid.protocol.Device) -> Unit
 @Composable
 fun HomeScreen(phoneName: String) {
     val devices by DeviceStore.states.collectAsStateWithLifecycle()
+    val focusId by DeviceStore.focusId.collectAsStateWithLifecycle()
     val recent by Recent.items.collectAsStateWithLifecycle()
-    val mac = devices.firstOrNull { it.pairState == PairState.PAIRED }
-    val others = devices.filter { it.id != mac?.id }
+    val macs = devices.filter { it.pairState == PairState.PAIRED }
+    val mac = DeviceStore.focused(devices, focusId)
+    val others = devices.filter { it.pairState != PairState.PAIRED }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
@@ -114,11 +118,13 @@ fun HomeScreen(phoneName: String) {
                 .animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Header(mac)
+            Header(macs)
+
+            if (macs.size > 1) MacSwitcher(macs, mac?.id)
 
             if (mac != null) {
-                ConnectedHero(mac)
-                QuickTiles(mac)
+                ConnectedHero(mac, sharedWithOthers = macs.size > 1)
+                QuickTiles(mac, macCount = macs.size)
             } else {
                 SearchingHero(hasNearby = others.isNotEmpty())
             }
@@ -142,7 +148,7 @@ fun HomeScreen(phoneName: String) {
 }
 
 @Composable
-private fun Header(mac: DeviceState?) {
+private fun Header(macs: List<DeviceState>) {
     val context = LocalContext.current
     var menu by remember { mutableStateOf(false) }
 
@@ -162,7 +168,7 @@ private fun Header(mac: DeviceState?) {
                         context.startActivity(NotificationPlugin.accessSettingsIntent())
                     },
                 )
-                if (mac != null) {
+                macs.forEach { mac ->
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.home_unpair, mac.name)) },
                         onClick = {
@@ -183,8 +189,62 @@ private fun Header(mac: DeviceState?) {
     }
 }
 
+/** The paired Macs, all connected at once. Tapping one shows it in the hero and points the tiles at it. */
 @Composable
-private fun ConnectedHero(mac: DeviceState) {
+private fun MacSwitcher(macs: List<DeviceState>, focusedId: String?) {
+    val context = LocalContext.current
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SectionTitle(stringResource(R.string.home_your_macs), Modifier.weight(1f))
+            Text(
+                stringResource(R.string.home_macs_connected, macs.size),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Aproid.colors.ok,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
+        }
+
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            macs.forEach { mac ->
+                MacChip(mac, isFocused = mac.id == focusedId) { DeviceStore.focus(context, mac.id) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MacChip(mac: DeviceState, isFocused: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(18.dp)
+    val colors = MaterialTheme.colorScheme
+
+    Row(
+        Modifier
+            .background(if (isFocused) colors.primaryContainer else colors.surface, shape)
+            .then(if (isFocused) Modifier.border(2.dp, colors.primary, shape) else Modifier)
+            .clickable(onClick = onClick)
+            .padding(start = 12.dp, end = 16.dp, top = 10.dp, bottom = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(contentAlignment = Alignment.BottomEnd) {
+            LaptopArt(36.dp)
+            Box(Modifier.size(10.dp).background(colors.surface, CircleShape).padding(2.dp).background(Aproid.colors.ok, CircleShape))
+        }
+        Column {
+            Text(mac.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                stringResource(if (isFocused) R.string.home_mac_shown else R.string.home_mac_live),
+                fontSize = 12.sp,
+                color = if (isFocused) colors.onPrimaryContainer else colors.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ConnectedHero(mac: DeviceState, sharedWithOthers: Boolean) {
     val colors = Aproid.colors
 
     Column(
@@ -212,7 +272,7 @@ private fun ConnectedHero(mac: DeviceState) {
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(mac.name, color = colors.onHero, fontSize = 24.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp)
-            Text(stringResource(R.string.home_flowing), color = colors.onHero.copy(alpha = 0.82f), fontSize = 14.sp)
+            Text(stringResource(if (sharedWithOthers) R.string.home_flowing_many else R.string.home_flowing), color = colors.onHero.copy(alpha = 0.82f), fontSize = 14.sp)
         }
     }
 }
@@ -266,7 +326,7 @@ private fun SearchingHero(hasNearby: Boolean) {
 }
 
 @Composable
-private fun QuickTiles(mac: DeviceState) {
+private fun QuickTiles(mac: DeviceState, macCount: Int) {
     val context = LocalContext.current
     var linkDialog by remember { mutableStateOf(false) }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
@@ -276,8 +336,11 @@ private fun QuickTiles(mac: DeviceState) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Tile(R.drawable.lucide_file_up, stringResource(R.string.home_send_files), Modifier.weight(1f)) { pick.launch("*/*") }
         Tile(R.drawable.lucide_clipboard, stringResource(R.string.home_clipboard), Modifier.weight(1f)) {
-            val sent = ClipboardPlugin.send(context)
-            val message = if (sent) R.string.clipboard_sent else R.string.clipboard_empty
+            val message = when {
+                !ClipboardPlugin.send(context) -> context.getString(R.string.clipboard_empty)
+                macCount > 1 -> context.getString(R.string.clipboard_sent_many, macCount)
+                else -> context.getString(R.string.clipboard_sent)
+            }
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
         Tile(R.drawable.lucide_link, stringResource(R.string.home_open_link), Modifier.weight(1f)) { linkDialog = true }

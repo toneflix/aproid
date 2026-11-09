@@ -6,6 +6,7 @@ import android.util.Log
 import android.util.Base64
 import com.toneflix.aproid.protocol.Device
 import com.toneflix.aproid.protocol.DeviceCertificate
+import com.toneflix.aproid.protocol.DeviceFocus
 import com.toneflix.aproid.protocol.DeviceIdentity
 import com.toneflix.aproid.protocol.DeviceLink
 import com.toneflix.aproid.protocol.DeviceType
@@ -37,6 +38,7 @@ object DeviceStore {
     private const val PREFS = "aproid"
     private const val TRUST_PREFS = "aproid_trusted"
     private const val KEY_ID = "device_id"
+    private const val KEY_FOCUS = "focused_device"
 
     private val devices = linkedMapOf<String, Device>()
 
@@ -52,6 +54,11 @@ object DeviceStore {
 
     /** A device waiting for the user to accept or reject pairing. */
     val pairRequest: StateFlow<DeviceState?> = _pairRequest.asStateFlow()
+
+    private val _focusId = MutableStateFlow<String?>(null)
+
+    /** The Mac the user picked to show when several are paired. Every paired Mac stays connected. */
+    val focusId: StateFlow<String?> = _focusId.asStateFlow()
 
     val listener = object : Device.Listener {
         override fun onPairRequest(device: Device, code: String) {
@@ -86,6 +93,19 @@ object DeviceStore {
             deviceType = DeviceType.PHONE,
         )
     }
+
+    fun restoreFocus(context: Context) {
+        _focusId.value = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_FOCUS, null)
+    }
+
+    fun focus(context: Context, id: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_FOCUS, id).apply()
+        _focusId.value = id
+    }
+
+    /** The paired Mac the home screen and its actions are about. */
+    fun focused(states: List<DeviceState>, focusId: String?): DeviceState? =
+        DeviceFocus(focusId).pick(states.filter { it.pairState == PairState.PAIRED }, { it.id }, { it.name })
 
     /** Loads the certificate from app storage, creating it on first launch. */
     fun certificate(context: Context): DeviceCertificate {
