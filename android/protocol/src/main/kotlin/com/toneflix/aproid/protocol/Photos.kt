@@ -52,13 +52,19 @@ data class PhonePhoto(
     }
 }
 
-/** Browsing the phone's gallery from the Mac. Full photos come back as normal shared files. */
+/** Browsing the phone's gallery from the Mac. Full photos come back as normal shared files, or as [PacketType.PHOTOS_FILE] to view. */
 object Photos {
     const val PAGE = 40
 
     data class Request(val before: Long?, val count: Int)
 
     data class Page(val photos: List<PhonePhoto>, val more: Boolean)
+
+    /** A request for one photo in full; [preview] asks for it to view instead of to keep. */
+    data class Download(val id: Long, val preview: Boolean)
+
+    /** A full photo or video sent to view. */
+    data class File(val id: Long, val name: String, val mimeType: String)
 
     fun request(before: Long? = null, count: Int = PAGE): NetworkPacket =
         NetworkPacket(PacketType.PHOTOS_REQUEST, NetworkPacket.body("before" to before, "count" to count))
@@ -84,8 +90,25 @@ object Photos {
         return Page(photos, (packet.body["more"] as? JsonPrimitive)?.booleanOrNull ?: false)
     }
 
-    fun download(id: Long): NetworkPacket = NetworkPacket(PacketType.PHOTOS_DOWNLOAD, NetworkPacket.body("id" to id))
+    fun download(id: Long, preview: Boolean = false): NetworkPacket =
+        NetworkPacket(PacketType.PHOTOS_DOWNLOAD, NetworkPacket.body("id" to id, "preview" to preview.takeIf { it }))
 
-    fun downloadId(packet: NetworkPacket): Long? =
-        if (packet.type == PacketType.PHOTOS_DOWNLOAD) packet.long("id") else null
+    fun download(packet: NetworkPacket): Download? {
+        if (packet.type != PacketType.PHOTOS_DOWNLOAD) return null
+
+        val id = packet.long("id") ?: return null
+        return Download(id, packet.bool("preview") ?: false)
+    }
+
+    fun filePacket(file: File): NetworkPacket = NetworkPacket(
+        PacketType.PHOTOS_FILE,
+        NetworkPacket.body("id" to file.id, "name" to file.name, "mimeType" to file.mimeType),
+    )
+
+    fun file(packet: NetworkPacket): File? {
+        if (packet.type != PacketType.PHOTOS_FILE) return null
+
+        val id = packet.long("id") ?: return null
+        return File(id, packet.string("name").orEmpty(), packet.string("mimeType") ?: "image/jpeg")
+    }
 }

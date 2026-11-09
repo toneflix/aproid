@@ -144,6 +144,9 @@ final class AppModel: ObservableObject {
         screenPlugin.onEnded = { [weak self] deviceId in Task { @MainActor in self?.screen.ended(deviceId: deviceId) } }
         screenSize = screen.$videoSize.sink { [weak self] size in Task { @MainActor in self?.screenWindow.fit(size) } }
         photosPlugin.onPage = { [weak self] page, deviceId in Task { @MainActor in self?.photos.ingest(page, from: deviceId) } }
+        photosPlugin.onPreview = { [weak self] id, url, deviceId in
+            Task { @MainActor in self?.photos.ingestPreview(id, url: url, from: deviceId) }
+        }
         photos.send = { [weak self] packet in
             guard let id = self?.primaryId, let device = self?.connected[id] else { return false }
             return device.send(packet)

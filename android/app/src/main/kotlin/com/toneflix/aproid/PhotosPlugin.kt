@@ -15,6 +15,7 @@ import com.toneflix.aproid.protocol.PacketType
 import com.toneflix.aproid.protocol.PhonePhoto
 import com.toneflix.aproid.protocol.Photos
 import com.toneflix.aproid.protocol.Plugin
+import java.io.FileNotFoundException
 import java.util.concurrent.Executors
 
 /** Lets the Mac browse the phone's gallery, newest first, and download photos and videos in full. */
@@ -51,8 +52,8 @@ object PhotosPlugin : Plugin {
             worker.execute { DeviceStore.send(device, page(context, request)) }
         }
 
-        Photos.downloadId(packet)?.let { id ->
-            worker.execute { download(context, device, id) }
+        Photos.download(packet)?.let { request ->
+            worker.execute { download(context, device, request) }
         }
     }
 
@@ -126,20 +127,40 @@ object PhotosPlugin : Plugin {
         bitmap?.let { Contacts.encode(it, THUMBNAIL_SIZE) }
     }.getOrNull()
 
-    /** Sends the full photo or video as a normal shared file, so it lands in the Mac's Downloads. */
-    private fun download(context: Context, device: Device, id: Long) {
-        val isVideo = context.contentResolver.query(
-            ContentUris.withAppendedId(gallery, id),
-            arrayOf(MediaStore.Files.FileColumns.MEDIA_TYPE),
-            null,
-            null,
-            null,
-        )?.use { cursor ->
-            if (!cursor.moveToFirst()) return
-            cursor.getInt(0) == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO
-        } ?: return
+    /** Sends the full photo or video: to view on the Mac, or as a normal shared file that lands in its Downloads. */
+    private fun download(context: Context, device: Device, request: Photos.Download) {
+        val columns = arrayOf(
+            MediaStore.Files.FileColumns.MEDIA_TYPE,
+            MediaStore.Files.FileColumns.DISPLAY_NAME,
+            MediaStore.Files.FileColumns.MIME_TYPE,
+            MediaStore.Files.FileColumns.SIZE,
+        )
+        val item = context.contentResolver.query(ContentUris.withAppendedId(gallery, request.id), columns, null, null, null)
+            ?.use { cursor ->
+                if (!cursor.moveToFirst()) return
+                val isVideo = cursor.getInt(0) == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO
 
-        val items = ShareSender.describe(context, listOf(itemUri(id, isVideo)))
+                GalleryItem(
+                    uri = itemUri(request.id, isVideo),
+                    file = Photos.File(
+                        id = request.id,
+                        name = cursor.getString(1) ?: "photo-${request.id}",
+                        mimeType = cursor.getString(2) ?: if (isVideo) "video/mp4" else "image/jpeg",
+                    ),
+                    size = cursor.getLong(3),
+                )
+            } ?: return
+
+        if (request.preview) {
+            DeviceStore.offer(device, Photos.filePacket(item.file), item.size, open = {
+                context.contentResolver.openInputStream(item.uri) ?: throw FileNotFoundException(item.uri.toString())
+            })
+            return
+        }
+
+        val items = ShareSender.describe(context, listOf(item.uri))
         if (items.isNotEmpty()) ShareSender.sendFiles(context, device.id, items)
     }
+
+    private class GalleryItem(val uri: Uri, val file: Photos.File, val size: Long)
 }
