@@ -104,7 +104,7 @@ struct PillStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(prominent ? Color.white : Color.primary)
+            .foregroundStyle(prominent ? Theme.onAccent : Color.primary)
             .frame(maxWidth: .infinity)
             .frame(height: 38)
             .background(

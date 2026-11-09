@@ -231,7 +231,7 @@ private struct ConversationView: View {
             Button(action: send) {
                 Image(systemName: "arrow.up")
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onAccent)
                     .frame(width: 32, height: 32)
                     .background(Circle().fill(canSend ? Theme.accent : Color.secondary.opacity(0.4)))
             }
@@ -274,7 +274,7 @@ private struct Bubble: View {
                     Text(message.body)
                         .font(.system(size: 13))
                         .textSelection(.enabled)
-                        .foregroundStyle(message.isIncoming ? Color.primary : Color.white)
+                        .foregroundStyle(message.isIncoming ? Color.primary : Theme.onAccent)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(
@@ -299,7 +299,7 @@ private struct PendingBubble: View {
             VStack(alignment: .trailing, spacing: 2) {
                 Text(text.body)
                     .font(.system(size: 13))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onAccent)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(RoundedRectangle(cornerRadius: 17, style: .continuous).fill(Theme.accent.opacity(0.6)))

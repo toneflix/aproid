@@ -173,13 +173,13 @@ private struct PhotoTile: View {
                 if isDownloading {
                     Image(systemName: "arrow.down.circle.fill")
                         .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, Theme.accent)
+                        .foregroundStyle(Theme.onAccent, Theme.accent)
                         .font(.system(size: 18))
                         .padding(6)
                 } else if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, Theme.accent)
+                        .foregroundStyle(Theme.onAccent, Theme.accent)
                         .font(.system(size: 18))
                         .padding(6)
                 }
