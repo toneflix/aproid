@@ -367,6 +367,10 @@ public sealed partial class PanelWindow : Window
         Model.ShowPhotos();
     }
 
+    private void JoinHotspot_Click(object sender, RoutedEventArgs e) => Model.JoinPhoneHotspot();
+
+    private void CancelHotspot_Click(object sender, RoutedEventArgs e) => Model.CancelHotspot();
+
     private void StopFinding_Click(object sender, RoutedEventArgs e) => Model.StopFinding();
 
     private void OpenMap_Click(object sender, RoutedEventArgs e)

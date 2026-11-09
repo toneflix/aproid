@@ -64,6 +64,21 @@
                     </StackPanel>
                 </Border>
 
+                <!-- A paired phone is in Bluetooth range but not on this network -->
+                <Border Style="{StaticResource AproidCard}" Padding="18" Visibility="{x:Bind Model.ShowsHotspot, Mode=OneWay}">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="32" Height="32" CornerRadius="16" Background="{ThemeResource AproidTintBrush}">
+                                <views:LucideIcon Icon="Wifi" Size="15" Foreground="{ThemeResource AproidAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="Your phone is nearby" Style="{StaticResource AproidTitle}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="{x:Bind Model.HotspotText, Mode=OneWay}" Style="{StaticResource AproidBody}" TextWrapping="Wrap" />
+                        <Button Content="{x:Bind Model.HotspotButton, Mode=OneWay}" Style="{StaticResource AproidPillAccentButton}" HorizontalAlignment="Stretch" Click="JoinHotspot_Click" Visibility="{x:Bind Model.CanJoinHotspot, Mode=OneWay}" />
+                        <Button Content="Cancel" Style="{StaticResource AproidPillButton}" HorizontalAlignment="Stretch" Click="CancelHotspot_Click" Visibility="{x:Bind Model.IsJoiningHotspot, Mode=OneWay}" />
+                    </StackPanel>
+                </Border>
+
                 <!-- Pairing -->
                 <Border Style="{StaticResource AproidCard}" Padding="20" Visibility="{x:Bind Model.ShowsPairing, Mode=OneWay}">
                     <StackPanel Spacing="18">

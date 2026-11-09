@@ -26,6 +26,8 @@ Pairing with the verification code, phone notifications with replies, shared cli
 
 Texts in the Messages window, calls with a banner to answer, mute and hang up, media controls for what the phone plays, the phone's photos in the Photos window, and several paired phones with a card carousel.
 
+Mirror and control the phone's screen from the panel's Mirror tile. When the phone is off your Wi-Fi but in Bluetooth range, Aproid finds it over Bluetooth and can ask it to turn on its hotspot and join it. Windows only shares the Wi-Fi name with apps when location is allowed for apps, so turn that on if Aproid doesn't remember the hotspot.
+
 Right-click files in Explorer and pick "Send to phone" (on Windows 11 it's under "Show more options"). To call `tel:` links from your phone, pick Aproid for TEL in Settings > Apps > Default apps.
 
 Phone notifications need Windows notifications turned on for Aproid.
