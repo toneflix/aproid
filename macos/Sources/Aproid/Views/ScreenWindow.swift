@@ -64,7 +64,7 @@ struct ScreenWindow: View {
 
     private var controls: some View {
         HStack(spacing: 34) {
-            control(.chevronLeft, help: "Back (Esc or right-click)") { mirror.input(.key(ScreenInput.back)) }
+            control(.chevronLeft, help: "Back (Esc or right-click). Type, select and edit text with your keyboard.") { mirror.input(.key(ScreenInput.back)) }
             control(.circle, help: "Home") { mirror.input(.key(ScreenInput.home)) }
             control(.copy, help: "Recent apps") { mirror.input(.key(ScreenInput.recents)) }
             control(.bell, help: "Notifications") { mirror.input(.key(ScreenInput.notifications)) }
@@ -215,22 +215,85 @@ final class ScreenSurfaceView: NSView {
         onInput?(.swipe(x: 0.5, y: 0.5, toX: clamp(0.5 + dx), toY: clamp(0.5 + dy), durationMs: 250))
     }
 
+    // MARK: Keyboard
+
+    /// Keys go through the Mac's own key bindings, so typing, dead keys, arrows and Option or Command
+    /// movement behave as they do in any Mac text field, and reach the phone as text or edit keys.
     override func keyDown(with event: NSEvent) {
-        switch event.keyCode {
-        case 51, 117:
-            onInput?(.key(ScreenInput.delete))
-        case 36, 76:
-            onInput?(.key(ScreenInput.enter))
-        case 53:
-            onInput?(.key(ScreenInput.back))
-        default:
-            guard !event.modifierFlags.contains(.command), let text = event.characters, !text.isEmpty,
-                  text.unicodeScalars.allSatisfy({ !CharacterSet.controlCharacters.contains($0) })
-            else {
-                super.keyDown(with: event)
-                return
-            }
-            onInput?(.text(text))
-        }
+        interpretKeyEvents([event])
     }
+
+    override func insertText(_ insertString: Any) {
+        let text = (insertString as? NSAttributedString)?.string ?? (insertString as? String) ?? ""
+        guard !text.isEmpty else { return }
+
+        onInput?(.text(text))
+    }
+
+    override func doCommand(by selector: Selector) {
+        guard let key = Self.commands[NSStringFromSelector(selector)] else {
+            super.doCommand(by: selector)
+            return
+        }
+
+        onInput?(.key(key.name, select: key.select))
+    }
+
+    /// Command shortcuts that edit the phone's text instead of this app's menus.
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        guard window?.isKeyWindow == true,
+              event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+              let character = event.charactersIgnoringModifiers?.lowercased()
+        else { return super.performKeyEquivalent(with: event) }
+
+        switch character {
+        case "a": onInput?(.key(ScreenInput.selectAll))
+        case "c": onInput?(.key(ScreenInput.copy))
+        case "x": onInput?(.key(ScreenInput.cut))
+        case "v": paste()
+        default: return super.performKeyEquivalent(with: event)
+        }
+
+        return true
+    }
+
+    /// Types what is on this Mac's clipboard into the phone.
+    private func paste() {
+        guard let text = NSPasteboard.general.string(forType: .string), !text.isEmpty else { return }
+
+        onInput?(.text(text))
+    }
+
+    /// Key binding selectors and the phone key each one sends.
+    private static let commands: [String: (name: String, select: Bool)] = [
+        "deleteBackward:": (ScreenInput.delete, false),
+        "deleteForward:": (ScreenInput.deleteForward, false),
+        "deleteWordBackward:": (ScreenInput.deleteWord, false),
+        "insertNewline:": (ScreenInput.enter, false),
+        "insertLineBreak:": (ScreenInput.enter, false),
+        "insertTab:": (ScreenInput.tab, false),
+        "insertBacktab:": (ScreenInput.tab, true),
+        "cancelOperation:": (ScreenInput.back, false),
+        "moveLeft:": (ScreenInput.left, false),
+        "moveRight:": (ScreenInput.right, false),
+        "moveUp:": (ScreenInput.up, false),
+        "moveDown:": (ScreenInput.down, false),
+        "moveWordLeft:": (ScreenInput.wordLeft, false),
+        "moveWordRight:": (ScreenInput.wordRight, false),
+        "moveToBeginningOfLine:": (ScreenInput.lineStart, false),
+        "moveToLeftEndOfLine:": (ScreenInput.lineStart, false),
+        "moveToEndOfLine:": (ScreenInput.lineEnd, false),
+        "moveToRightEndOfLine:": (ScreenInput.lineEnd, false),
+        "moveLeftAndModifySelection:": (ScreenInput.left, true),
+        "moveRightAndModifySelection:": (ScreenInput.right, true),
+        "moveUpAndModifySelection:": (ScreenInput.up, true),
+        "moveDownAndModifySelection:": (ScreenInput.down, true),
+        "moveWordLeftAndModifySelection:": (ScreenInput.wordLeft, true),
+        "moveWordRightAndModifySelection:": (ScreenInput.wordRight, true),
+        "moveToBeginningOfLineAndModifySelection:": (ScreenInput.lineStart, true),
+        "moveToLeftEndOfLineAndModifySelection:": (ScreenInput.lineStart, true),
+        "moveToEndOfLineAndModifySelection:": (ScreenInput.lineEnd, true),
+        "moveToRightEndOfLineAndModifySelection:": (ScreenInput.lineEnd, true),
+        "selectAll:": (ScreenInput.selectAll, false),
+    ]
 }
