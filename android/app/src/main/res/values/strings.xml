@@ -10,6 +10,7 @@
     <string name="find_stop">Found it</string>
     <string name="clipboard_send">Send clipboard</string>
     <string name="clipboard_sent">Clipboard sent to your Mac</string>
+    <string name="clipboard_sent_many">Clipboard sent to %1$d Macs</string>
     <string name="clipboard_empty">Nothing to send: the clipboard is empty</string>
     <string name="channel_transfers">Files and links</string>
     <string name="share_label">Send to Mac</string>
@@ -35,6 +36,11 @@
     <string name="home_clipboard">Clipboard</string>
     <string name="home_open_link">Open link</string>
     <string name="home_nearby">Nearby</string>
+    <string name="home_your_macs">Your Macs</string>
+    <string name="home_macs_connected">%1$d connected</string>
+    <string name="home_mac_shown">Shown</string>
+    <string name="home_mac_live">Connected</string>
+    <string name="home_flowing_many">Notifications and clipboard go to all your Macs</string>
     <string name="home_recent">Recent</string>
     <string name="home_clear">Clear</string>
 
@@ -81,6 +87,7 @@
     <string name="link_title">Open a link on %1$s</string>
 
     <string name="share_send_to">Send to</string>
+    <string name="share_send_all">Send to all</string>
     <string name="share_looking">Looking for your Mac…</string>
     <string name="share_tap_to_send">Tap to send</string>
     <string name="share_hide">Hide</string>
