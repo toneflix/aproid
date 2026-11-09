@@ -7,7 +7,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.SystemClock
 import android.text.format.Formatter
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -58,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.toneflix.aproid.protocol.PairState
+import com.toneflix.aproid.protocol.TransferProgress
 import com.toneflix.aproid.ui.AproidTheme
 import com.toneflix.aproid.ui.LaptopArt
 import kotlinx.coroutines.delay
@@ -130,8 +130,13 @@ sealed interface Outgoing {
 }
 
 /** How far a send to one Mac has got. */
-data class SendProgress(val sent: Long, val total: Long, val startedAt: Long, val done: Boolean = false, val failed: Boolean = false) {
-    val fraction: Float get() = if (total <= 0) 1f else (sent.toFloat() / total).coerceIn(0f, 1f)
+data class SendProgress(val reading: TransferProgress.Snapshot, val done: Boolean = false, val failed: Boolean = false) {
+    val fraction: Float get() = reading.fraction.toFloat()
+
+    companion object {
+        fun finished(total: Long, failed: Boolean = false) =
+            SendProgress(TransferProgress.Snapshot(total, total, null, null), done = true, failed = failed)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -149,7 +154,7 @@ private fun ShareSheet(outgoing: Outgoing, onClose: () -> Unit) {
                 is Outgoing.Files -> startSending(context, mac, outgoing, progress)
                 is Outgoing.Text -> {
                     ShareSender.sendText(context, mac.id, outgoing.text)
-                    progress[mac.id] = SendProgress(1, 1, SystemClock.elapsedRealtime(), done = true)
+                    progress[mac.id] = SendProgress.finished(1)
                 }
             }
         }
@@ -206,26 +211,15 @@ private fun ShareSheet(outgoing: Outgoing, onClose: () -> Unit) {
 
 private fun startSending(context: Context, mac: DeviceState, files: Outgoing.Files, progress: MutableMap<String, SendProgress>) {
     val main = Handler(Looper.getMainLooper())
-    val started = SystemClock.elapsedRealtime()
-    var lastUpdate = 0L
 
-    progress[mac.id] = SendProgress(0, files.totalSize, started)
+    progress[mac.id] = SendProgress(TransferProgress.Snapshot(0, files.totalSize, null, null))
 
     ShareSender.sendFiles(
         context,
         mac.id,
         files.items,
-        onProgress = { sent ->
-            // Redrawing on every chunk would be wasteful; ten times a second reads smoothly.
-            val now = SystemClock.elapsedRealtime()
-            if (now - lastUpdate >= 100) {
-                lastUpdate = now
-                main.post { progress[mac.id] = SendProgress(sent, files.totalSize, started) }
-            }
-        },
-        onDone = { error ->
-            main.post { progress[mac.id] = SendProgress(files.totalSize, files.totalSize, started, done = true, failed = error != null) }
-        },
+        onProgress = { reading -> main.post { progress[mac.id] = SendProgress(reading) } },
+        onDone = { error -> main.post { progress[mac.id] = SendProgress.finished(files.totalSize, failed = error != null) } },
     )
 }
 
@@ -314,18 +308,11 @@ private fun progressDetail(progress: SendProgress, files: Outgoing.Files): Strin
 
     if (files.items.size > 1) {
         var total = 0L
-        val current = files.items.indexOfFirst { total += it.size; progress.sent < total }.let { if (it < 0) files.items.size else it + 1 }
+        val current = files.items.indexOfFirst { total += it.size; progress.reading.done < total }.let { if (it < 0) files.items.size else it + 1 }
         parts += stringResource(R.string.share_n_of_m, current, files.items.size)
     }
 
-    val seconds = (SystemClock.elapsedRealtime() - progress.startedAt) / 1000.0
-    if (seconds >= 1 && progress.sent > 0) {
-        val speed = progress.sent / seconds
-        parts += stringResource(R.string.share_speed, Formatter.formatShortFileSize(context, speed.toLong()))
-
-        val left = ((progress.total - progress.sent) / speed).toInt().coerceAtLeast(1)
-        parts += pluralStringResource(R.plurals.share_seconds_left, left, left)
-    }
+    parts += TransferText.speedAndTimeLeft(context, progress.reading)
 
     return parts.joinToString(" · ").ifEmpty { stringResource(R.string.share_starting) }
 }

@@ -1,4 +1,5 @@
 import AppKit
+import AproidKit
 import SwiftUI
 
 /// The last few files, links and texts that went between the phone and this Mac.
@@ -52,9 +53,20 @@ private struct RecentRow: View {
                     .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Text(item.isInProgress ? item.detail : "\(item.detail) · \(RelativeTime.text(item.date, now: now))")
+
+                if let reading = item.progress {
+                    ProgressView(value: reading.fraction)
+                        .progressViewStyle(.linear)
+                        .tint(Theme.accent)
+                        .controlSize(.small)
+                        .padding(.vertical, 3)
+                        .animation(.linear(duration: 0.1), value: reading.fraction)
+                }
+
+                Text(subtitle)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+                    .monospacedDigit()
                     .lineLimit(1)
             }
 
@@ -66,10 +78,23 @@ private struct RecentRow: View {
         .padding(.vertical, 7)
     }
 
+    private var subtitle: String {
+        if let reading = item.progress { return Bytes.progress(reading) }
+
+        return item.isInProgress ? item.detail : "\(item.detail) · \(RelativeTime.text(item.date, now: now))"
+    }
+
     @ViewBuilder private var trailing: some View {
         switch item.kind {
         case .receiving, .sending:
-            ProgressView().controlSize(.small)
+            if let reading = item.progress {
+                Text("\(Int(reading.fraction * 100))%")
+                    .font(.system(size: 12, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.accent)
+            } else {
+                ProgressView().controlSize(.small)
+            }
         case .received(let url):
             LinkButton(title: "Show") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
         case .link(let url):

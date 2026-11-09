@@ -84,6 +84,7 @@
     <string name="share_starting">Starting…</string>
     <string name="share_n_of_m">%1$d of %2$d</string>
     <string name="share_speed">%1$s/s</string>
+    <string name="share_progress">%1$s of %2$s</string>
     <string name="share_text_summary">Text</string>
     <string name="share_sent_toast">Sent to your Mac</string>
     <string name="share_send_failed_toast">Some files didn\'t send</string>
@@ -113,5 +114,9 @@
     <plurals name="share_seconds_left">
         <item quantity="one">about %d second left</item>
         <item quantity="other">about %d seconds left</item>
+    </plurals>
+    <plurals name="share_minutes_left">
+        <item quantity="one">about %d minute left</item>
+        <item quantity="other">about %d minutes left</item>
     </plurals>
 </resources>

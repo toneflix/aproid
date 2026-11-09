@@ -159,6 +159,7 @@ final class AppModel: ObservableObject {
         notifications.onShown = { [weak self] in Task { @MainActor in self?.countNotification() } }
         share.onActivity = { [weak self] activity in Task { @MainActor in self?.record(activity) } }
         share.onFileReceived = { [weak notifications] url, device in notifications?.announce(file: url, from: device) }
+        share.restore()
         start()
         clipboard.startWatching()
     }

@@ -4,13 +4,13 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import com.toneflix.aproid.protocol.Share
+import com.toneflix.aproid.protocol.TransferProgress
 import java.io.FileNotFoundException
 import java.io.FilterInputStream
 import java.io.InputStream
 import java.net.ProtocolException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicLong
 
 /** Sends files, links and text from this phone to a paired Mac. */
 object ShareSender {
@@ -23,7 +23,7 @@ object ShareSender {
     private class Offered(val item: Item, val deviceId: String, val recent: RecentItem, val expires: Long)
 
     private val offered = java.util.concurrent.ConcurrentHashMap<String, Offered>()
-    private const val KEEP_OFFERS_MS = 30 * 60 * 1000L
+    private const val KEEP_OFFERS_MS = 24 * 60 * 60 * 1000L
 
     /** Looks up each file's name and size. */
     fun describe(context: Context, uris: List<Uri>): List<Item> = uris.mapNotNull { uri ->
@@ -39,18 +39,18 @@ object ShareSender {
     }
 
     /**
-     * Sends [items] one after another. [onProgress] gets the bytes sent so far across all files,
-     * and [onDone] is called once at the end with the first error, if any.
+     * Sends [items] one after another. [onProgress] gets readings across all files, about ten
+     * times a second, and [onDone] is called once at the end with the first error, if any.
      */
     fun sendFiles(
         context: Context,
         deviceId: String,
         items: List<Item>,
-        onProgress: (Long) -> Unit = {},
+        onProgress: (TransferProgress.Snapshot) -> Unit = {},
         onDone: (Throwable?) -> Unit = {},
     ) {
         val app = context.applicationContext
-        val sent = AtomicLong()
+        val progress = TransferProgress(items.sumOf { it.size })
 
         queue.execute {
             var failure: Throwable? = null
@@ -67,7 +67,7 @@ object ShareSender {
                 offered.values.removeAll { it.expires < System.currentTimeMillis() }
                 offered[id] = Offered(item, device.id, started, System.currentTimeMillis() + KEEP_OFFERS_MS)
 
-                val error = offer(app, device, item, id, 0, started) { onProgress(sent.addAndGet(it)) }
+                val error = offer(app, device, item, id, 0, started) { bytes -> progress.advance(bytes)?.let(onProgress) }
                 if (error != null && failure == null) failure = error
             }
 
@@ -100,13 +100,18 @@ object ShareSender {
         val start = offset.coerceIn(0, item.size)
         val finished = CountDownLatch(1)
         var error: Throwable? = null
+        val progress = TransferProgress(item.size, start)
+        val onBytes: (Long) -> Unit = { bytes ->
+            onRead(bytes)
+            progress.advance(bytes)?.let { Recent.put(recent.copy(progress = it)) }
+        }
 
         val packet = Share.file(item.name, item.size, transferId = id, offset = start)
         val wasOffered = runCatching {
             device.sendWithPayload(packet, item.size - start, open = {
                 val input = app.contentResolver.openInputStream(item.uri) ?: throw FileNotFoundException(item.name)
                 input.skipFully(start)
-                CountingStream(input, onRead)
+                CountingStream(input, onBytes)
             }) {
                 error = it
                 finished.countDown()
@@ -122,6 +127,7 @@ object ShareSender {
                 kind = if (ok) RecentItem.Kind.SENT else RecentItem.Kind.FAILED,
                 detail = app.getString(if (ok) R.string.share_sent else R.string.share_paused, device.name),
                 time = System.currentTimeMillis(),
+                progress = null,
             ),
         )
 

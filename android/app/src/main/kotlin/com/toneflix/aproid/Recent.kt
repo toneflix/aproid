@@ -1,6 +1,7 @@
 package com.toneflix.aproid
 
 import android.net.Uri
+import com.toneflix.aproid.protocol.TransferProgress
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,6 +17,8 @@ data class RecentItem(
     val time: Long = System.currentTimeMillis(),
     val uri: Uri? = null,
     val mimeType: String? = null,
+    /** How far a file has got while it moves. */
+    val progress: TransferProgress.Snapshot? = null,
 ) {
     enum class Kind { RECEIVING, RECEIVED, SENDING, SENT, LINK, TEXT, FAILED }
 

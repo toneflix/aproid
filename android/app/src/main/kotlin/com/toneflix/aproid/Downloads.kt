@@ -9,6 +9,7 @@ import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import java.io.File
 import java.io.OutputStream
+import org.json.JSONObject
 
 /** A file being written to the phone's Downloads folder. Call [publish] when complete or [discard] on failure. */
 class DownloadTarget private constructor(
@@ -34,7 +35,31 @@ class DownloadTarget private constructor(
         file?.delete()
     }
 
+    /** How many bytes are in the file so far, or null when it is gone. */
+    fun length(): Long? = runCatching {
+        if (uri != null) {
+            context.contentResolver.openFileDescriptor(uri, "r")?.use { it.statSize }
+        } else {
+            file?.takeIf { it.exists() }?.length()
+        }
+    }.getOrNull()
+
+    /** What [saved] needs to find this file again after a restart. */
+    fun toJson(): JSONObject = JSONObject()
+        .put("uri", uri?.toString())
+        .put("path", file?.path)
+        .put("mimeType", mimeType)
+
     companion object {
+        /** A file described by [toJson]. */
+        fun saved(context: Context, json: JSONObject): DownloadTarget? {
+            val uri = json.optString("uri").takeIf { it.isNotEmpty() }?.let(Uri::parse)
+            val file = json.optString("path").takeIf { it.isNotEmpty() }?.let(::File)
+            if (uri == null && file == null) return null
+
+            return DownloadTarget(context, uri, file, json.optString("mimeType", "application/octet-stream"))
+        }
+
         /** Creates an empty file named [name] in Downloads. Android renames it if the name is taken. */
         fun create(context: Context, name: String): DownloadTarget? {
             val extension = name.substringAfterLast('.', "").lowercase()
