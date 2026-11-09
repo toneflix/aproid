@@ -2,6 +2,16 @@ using System.Text.Json;
 
 namespace Aproid.Model;
 
+/// How the panel switches between several paired phones.
+public enum PhoneSwitcherStyle
+{
+    /// The next phone's card peeks at the edge; clicking it moves on, round and round.
+    Carousel,
+
+    /// A menu on the phone's name.
+    Menu,
+}
+
 /// The user's choices and this computer's device id, kept in settings.json.
 internal sealed class Settings
 {
@@ -13,6 +23,7 @@ internal sealed class Settings
         public string? DeviceId { get; set; }
         public bool MirrorsNotifications { get; set; } = true;
         public string? SelectedPhone { get; set; }
+        public PhoneSwitcherStyle SwitcherStyle { get; set; } = PhoneSwitcherStyle.Carousel;
     }
 
     public Settings(string path)
@@ -60,6 +71,16 @@ internal sealed class Settings
         set
         {
             values.SelectedPhone = value;
+            Save();
+        }
+    }
+
+    public PhoneSwitcherStyle SwitcherStyle
+    {
+        get => values.SwitcherStyle;
+        set
+        {
+            values.SwitcherStyle = value;
             Save();
         }
     }

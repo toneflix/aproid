@@ -6,7 +6,7 @@
     xmlns:model="using:Aproid.Model"
     Title="Aproid">
 
-    <Grid x:Name="Root" Background="{ThemeResource AproidPanelBrush}">
+    <Grid x:Name="Root" Background="{ThemeResource AproidGlassBrush}">
         <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled">
             <StackPanel x:Name="Sections" Width="{StaticResource AproidPanelWidth}" Padding="14" Spacing="12">
                 <StackPanel.ChildrenTransitions>
@@ -117,7 +117,16 @@
 
                 <!-- The paired phone -->
                 <StackPanel Spacing="12" Visibility="{x:Bind Model.ShowsPhone, Mode=OneWay}">
-                    <Border Background="{StaticResource AproidGoldBrush}" CornerRadius="{StaticResource AproidRadius}" Padding="16" RequestedTheme="Light">
+                    <!-- In the carousel the next phone's card peeks out at the panel's edge. -->
+                    <Grid ColumnSpacing="8" Margin="{x:Bind CarouselBleed(Model.ShowsCarousel), Mode=OneWay}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border x:Name="Hero" Background="{StaticResource AproidGoldBrush}" CornerRadius="{StaticResource AproidRadius}" Padding="16" RequestedTheme="Light">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="HeroShift" />
+                        </Border.RenderTransform>
                         <Grid ColumnSpacing="14">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -146,6 +155,77 @@
                             <views:BatteryRing Grid.Column="2" VerticalAlignment="Center" Charge="{x:Bind BatteryCharge(Model.Focused), Mode=OneWay}" IsCharging="{x:Bind Model.Focused.IsCharging, Mode=OneWay, FallbackValue=False}" />
                         </Grid>
                     </Border>
+                    <Button Grid.Column="1" Width="22" Padding="0" VerticalAlignment="Stretch" Style="{StaticResource AproidPlainButton}" Visibility="{x:Bind Model.ShowsCarousel, Mode=OneWay}"
+                            Click="NextPhone_Click" ToolTipService.ToolTip="{x:Bind NextTitle(Model.NextPhone), Mode=OneWay}" AutomationProperties.Name="{x:Bind NextTitle(Model.NextPhone), Mode=OneWay}">
+                        <Border Width="22" VerticalAlignment="Stretch" Background="{StaticResource AproidGoldBrush}" CornerRadius="14,0,0,14" Opacity="0.75" />
+                    </Button>
+                    </Grid>
+
+                    <!-- Find the phone: where it is, after asking it to ring -->
+                    <Border Style="{StaticResource AproidCard}" Padding="12" Visibility="{x:Bind IsFinding(Model.Finding, Model.Focused), Mode=OneWay}">
+                        <StackPanel Spacing="10">
+                            <Grid>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <views:LucideIcon Icon="MapPin" Size="13" Foreground="{ThemeResource AproidAccentBrush}" />
+                                    <TextBlock Text="{x:Bind FindTitle(Model.Focused), Mode=OneWay}" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource AproidAccentBrush}" TextTrimming="CharacterEllipsis" MaxWidth="260" />
+                                </StackPanel>
+                                <Button Style="{StaticResource AproidPlainButton}" HorizontalAlignment="Right" Padding="2" Click="StopFinding_Click" ToolTipService.ToolTip="Hide the map" AutomationProperties.Name="Hide the map">
+                                    <views:LucideIcon Icon="CircleX" Size="14" Foreground="{ThemeResource AproidSubBrush}" />
+                                </Button>
+                            </Grid>
+                            <Grid Height="170" CornerRadius="10" Background="{ThemeResource AproidThumbBrush}">
+                                <WebView2 x:Name="Map" Visibility="{x:Bind HasLocation(Model.Found), Mode=OneWay}" />
+                                <StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind NoLocation(Model.Found), Mode=OneWay}">
+                                    <ProgressRing IsActive="{x:Bind IsLocating(Model.Found), Mode=OneWay}" Width="18" Height="18" />
+                                    <TextBlock Text="Ringing and asking where it is…" Style="{StaticResource AproidCaption}" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Visibility="{x:Bind HasLocation(Model.Found), Mode=OneWay}">
+                                <TextBlock Text="{x:Bind LocationDetail(Model.Found), Mode=OneWay}" Style="{StaticResource AproidCaption}" VerticalAlignment="Center" />
+                                <HyperlinkButton HorizontalAlignment="Right" Padding="4,0" FontSize="11" FontWeight="SemiBold" Click="OpenMap_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Open map" />
+                                        <views:LucideIcon Icon="ExternalLink" Size="11" Foreground="{ThemeResource AproidAccentBrush}" />
+                                    </StackPanel>
+                                </HyperlinkButton>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- What the phone is playing -->
+                    <Border Style="{StaticResource AproidCard}" Padding="12" Visibility="{x:Bind HasMedia(Model.Focused), Mode=OneWay}">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid Width="46" Height="46" CornerRadius="9" Background="{ThemeResource AproidTintBrush}">
+                                    <views:LucideIcon Icon="Music" Size="18" Foreground="{ThemeResource AproidAccentBrush}" />
+                                    <Image Source="{x:Bind Artwork(Model.Focused), Mode=OneWay}" Stretch="UniformToFill" />
+                                </Grid>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="{x:Bind MediaTitle(Model.Focused), Mode=OneWay}" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource AproidTextBrush}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{x:Bind MediaSubtitle(Model.Focused), Mode=OneWay}" Style="{StaticResource AproidCaption}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource AproidPlainButton}" Width="32" Height="32" CornerRadius="16" Padding="0" Tag="Previous" Click="Media_Click" IsEnabled="{x:Bind CanGoPrevious(Model.Focused), Mode=OneWay}" ToolTipService.ToolTip="Previous" AutomationProperties.Name="Previous">
+                                        <views:LucideIcon Icon="SkipBack" Size="13" Foreground="{ThemeResource AproidTextBrush}" />
+                                    </Button>
+                                    <Button Style="{StaticResource AproidPlainButton}" Width="36" Height="36" CornerRadius="18" Padding="0" Tag="PlayPause" Click="Media_Click" ToolTipService.ToolTip="Play or pause" AutomationProperties.Name="Play or pause">
+                                        <views:LucideIcon Icon="{x:Bind PlayIcon(Model.Focused), Mode=OneWay}" Size="17" Foreground="{ThemeResource AproidTextBrush}" />
+                                    </Button>
+                                    <Button Style="{StaticResource AproidPlainButton}" Width="32" Height="32" CornerRadius="16" Padding="0" Tag="Next" Click="Media_Click" IsEnabled="{x:Bind CanGoNext(Model.Focused), Mode=OneWay}" ToolTipService.ToolTip="Next" AutomationProperties.Name="Next">
+                                        <views:LucideIcon Icon="SkipForward" Size="13" Foreground="{ThemeResource AproidTextBrush}" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                            <Grid x:Name="MediaTrack" Height="10" Background="Transparent" PointerPressed="MediaTrack_PointerPressed" Visibility="{x:Bind HasLength(Model.Focused), Mode=OneWay}">
+                                <ProgressBar x:Name="MediaProgress" Maximum="1" VerticalAlignment="Center" IsHitTestVisible="False" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
 
                     <Grid ColumnSpacing="10" RowSpacing="10">
                         <Grid.ColumnDefinitions>
@@ -155,11 +235,16 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <views:ActionTile Icon="Volume2" Title="Ring phone" Subtitle="Full volume" Click="Ring_Click" />
                         <views:ActionTile Grid.Column="1" Icon="FileUp" Title="Send file" Subtitle="To Downloads" Click="SendFiles_Click" />
                         <views:ActionTile Grid.Row="1" Icon="Clipboard" Title="Clipboard" Subtitle="{x:Bind Model.ClipboardSubtitle, Mode=OneWay}" Click="Clipboard_Click" />
                         <views:ActionTile Grid.Row="1" Grid.Column="1" Icon="{x:Bind NotificationsIcon(Model.MirrorsNotifications), Mode=OneWay}" Title="Notifications" Subtitle="{x:Bind Model.NotificationsSubtitle, Mode=OneWay}" IsOn="{x:Bind Model.MirrorsNotifications, Mode=OneWay}" Click="Notifications_Click" />
+                        <views:ActionTile Grid.Row="2" Icon="MessageSquare" Title="Messages" Subtitle="{x:Bind Model.MessagesSubtitle, Mode=OneWay}" Click="Messages_Click" />
+                        <views:ActionTile Grid.Row="2" Grid.Column="1" Icon="Phone" Title="Call" Subtitle="From your phone" Click="Call_Click" />
+                        <views:ActionTile Grid.Row="3" Grid.ColumnSpan="2" Icon="Images" Title="Photos" Subtitle="Browse &amp; download" Click="Photos_Click" />
                     </Grid>
 
                     <!-- Drop files to send them -->

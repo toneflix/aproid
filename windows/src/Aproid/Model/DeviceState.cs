@@ -1,4 +1,5 @@
 using Aproid.Core;
+using Aproid.Plugins;
 
 namespace Aproid.Model;
 
@@ -10,7 +11,9 @@ public sealed record DeviceState(
     string Host,
     PairState PairState,
     string? Code,
-    BatteryStatus? Battery)
+    BatteryStatus? Battery,
+    NowPlaying? Media = null,
+    PhoneLocation? Location = null)
 {
     public bool IsPaired => PairState == PairState.Paired;
 
