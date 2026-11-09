@@ -29,7 +29,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var notificationsToday = 0
     @Published private(set) var call: ActiveCall?
 
-    /// The paired phone the panel, Messages, calls and the Services menu use.
+    /// The paired phone the panel, Messages, calls and the Share menu use.
     @Published private(set) var primaryId: String?
 
     /// The phone the user picked when several are paired. Kept across launches.
@@ -54,6 +54,9 @@ final class AppModel: ObservableObject {
             UserDefaults.standard.set(mirrorsNotifications, forKey: "mirrorsNotifications")
         }
     }
+
+    /// Sends what is shared from the Share menu.
+    private(set) lazy var shareInbox = ShareInbox(model: self)
 
     static let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
         ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads")
@@ -141,6 +144,9 @@ final class AppModel: ObservableObject {
         screenPlugin.onEnded = { [weak self] deviceId in Task { @MainActor in self?.screen.ended(deviceId: deviceId) } }
         screenSize = screen.$videoSize.sink { [weak self] size in Task { @MainActor in self?.screenWindow.fit(size) } }
         photosPlugin.onPage = { [weak self] page, deviceId in Task { @MainActor in self?.photos.ingest(page, from: deviceId) } }
+        photosPlugin.onPreview = { [weak self] id, url, deviceId in
+            Task { @MainActor in self?.photos.ingestPreview(id, url: url, from: deviceId) }
+        }
         photos.send = { [weak self] packet in
             guard let id = self?.primaryId, let device = self?.connected[id] else { return false }
             return device.send(packet)

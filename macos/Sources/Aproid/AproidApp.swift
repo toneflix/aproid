@@ -27,20 +27,24 @@ struct AproidApp: App {
     static let photosWindow = "photos"
 }
 
-/// Offers the Services menu item, and opens tel: links, such as a number clicked in Safari, by calling from the phone.
+/// Opens links handed to the app: aproid://share from the Share menu, and tel: numbers, such as one clicked in Safari.
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private let services = ServiceProvider()
-
-    func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApplication.shared.servicesProvider = services
-        NSUpdateDynamicServices()
-    }
-
     func application(_ application: NSApplication, open urls: [URL]) {
-        for url in urls where url.scheme?.lowercased() == "tel" {
-            let number = (url.absoluteString.dropFirst("tel:".count).removingPercentEncoding ?? "")
-                .filter { $0.isNumber || $0 == "+" || $0 == "*" || $0 == "#" }
-            Task { @MainActor in AppModel.shared.dial(number, name: nil) }
+        Task { @MainActor in
+            let model = AppModel.shared
+
+            for url in urls {
+                switch url.scheme?.lowercased() {
+                case ShareRequest.scheme:
+                    model.shareInbox.open(url)
+                case "tel":
+                    let number = (url.absoluteString.dropFirst("tel:".count).removingPercentEncoding ?? "")
+                        .filter { $0.isNumber || $0 == "+" || $0 == "*" || $0 == "#" }
+                    model.dial(number, name: nil)
+                default:
+                    break
+                }
+            }
         }
     }
 }

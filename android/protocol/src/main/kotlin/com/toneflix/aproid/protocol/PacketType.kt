@@ -44,8 +44,11 @@ object PacketType {
     /** A page of photos with small thumbnails. Body: {"photos": [...], "more": bool}. */
     const val PHOTOS = "aproid.photos"
 
-    /** Asks the phone to send one photo in full, as a normal shared file. Body: {"id"}. */
+    /** Asks the phone to send one photo in full: as a normal shared file, or as [PHOTOS_FILE] to view. Body: {"id", "preview"?}. */
     const val PHOTOS_DOWNLOAD = "aproid.photos.download"
+
+    /** One photo or video in full, for the Mac to show rather than keep. Body: {"id", "name", "mimeType"}, with a payload. */
+    const val PHOTOS_FILE = "aproid.photos.file"
 
     /** Starts or stops mirroring the phone's screen. Body: {"action": "start"|"stop", "maxSize"?, "bitrate"?}. */
     const val SCREEN_REQUEST = "aproid.screen.request"
@@ -100,6 +103,7 @@ object Capabilities {
         PacketType.PHOTOS_REQUEST,
         PacketType.PHOTOS,
         PacketType.PHOTOS_DOWNLOAD,
+        PacketType.PHOTOS_FILE,
         PacketType.SCREEN_REQUEST,
         PacketType.SCREEN,
         PacketType.SCREEN_INPUT,
