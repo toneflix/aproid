@@ -1,0 +1,136 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Aproid's colours, the same as the Mac app's Theme. Each has a light and a dark value. -->
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="AproidAccentBrush" Color="#0086C9" />
+            <SolidColorBrush x:Key="AproidAccentStrongBrush" Color="#005F8F" />
+            <SolidColorBrush x:Key="AproidOnAccentBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="AproidTintBrush" Color="#E3F6FF" />
+            <SolidColorBrush x:Key="AproidOkBrush" Color="#127A4E" />
+            <SolidColorBrush x:Key="AproidOkTintBrush" Color="#E3F5EC" />
+            <SolidColorBrush x:Key="AproidWarnBrush" Color="#9A5B00" />
+            <SolidColorBrush x:Key="AproidPanelBrush" Color="#F8F6F1" />
+            <SolidColorBrush x:Key="AproidCardBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="AproidThumbBrush" Color="#EFEFF3" />
+            <SolidColorBrush x:Key="AproidTrackBrush" Color="#E6E6EB" />
+            <SolidColorBrush x:Key="AproidDeviceBrush" Color="#1C1C20" />
+            <SolidColorBrush x:Key="AproidScreenBrush" Color="#E3F6FF" />
+            <SolidColorBrush x:Key="AproidBorderBrush" Color="#14000000" />
+            <SolidColorBrush x:Key="AproidDashBrush" Color="#2E000000" />
+            <SolidColorBrush x:Key="AproidTextBrush" Color="#1B1B1F" />
+            <SolidColorBrush x:Key="AproidSubBrush" Color="#6B6B73" />
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#0086C9" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E60086C9" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#CC0086C9" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#005F8F" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#0086C9" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="AproidAccentBrush" Color="#3CC8FF" />
+            <SolidColorBrush x:Key="AproidAccentStrongBrush" Color="#A6E4FF" />
+            <SolidColorBrush x:Key="AproidOnAccentBrush" Color="#002A3D" />
+            <SolidColorBrush x:Key="AproidTintBrush" Color="#293CC8FF" />
+            <SolidColorBrush x:Key="AproidOkBrush" Color="#4FD39A" />
+            <SolidColorBrush x:Key="AproidOkTintBrush" Color="#244FD39A" />
+            <SolidColorBrush x:Key="AproidWarnBrush" Color="#FFC46B" />
+            <SolidColorBrush x:Key="AproidPanelBrush" Color="#1E1D1A" />
+            <SolidColorBrush x:Key="AproidCardBrush" Color="#2A2925" />
+            <SolidColorBrush x:Key="AproidThumbBrush" Color="#34343A" />
+            <SolidColorBrush x:Key="AproidTrackBrush" Color="#1AFFFFFF" />
+            <SolidColorBrush x:Key="AproidDeviceBrush" Color="#3A3A40" />
+            <SolidColorBrush x:Key="AproidScreenBrush" Color="#383CC8FF" />
+            <SolidColorBrush x:Key="AproidBorderBrush" Color="#14FFFFFF" />
+            <SolidColorBrush x:Key="AproidDashBrush" Color="#2EFFFFFF" />
+            <SolidColorBrush x:Key="AproidTextBrush" Color="#F2F2F4" />
+            <SolidColorBrush x:Key="AproidSubBrush" Color="#A3A3AB" />
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#3CC8FF" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E63CC8FF" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#CC3CC8FF" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#002A3D" />
+            <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#A6E4FF" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#3CC8FF" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!-- The Toneflix gold behind the paired phone. -->
+    <LinearGradientBrush x:Key="AproidGoldBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Offset="0" Color="#F6C101" />
+        <GradientStop Offset="1" Color="#BB8C01" />
+    </LinearGradientBrush>
+
+    <CornerRadius x:Key="AproidRadius">14</CornerRadius>
+    <x:Double x:Key="AproidPanelWidth">360</x:Double>
+
+    <!-- The rounded card every section sits on. -->
+    <Style x:Key="AproidCard" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource AproidCardBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource AproidBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource AproidRadius}" />
+        <Setter Property="Padding" Value="14" />
+    </Style>
+
+    <Style x:Key="AproidTitle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{ThemeResource AproidTextBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="AproidBody" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{ThemeResource AproidSubBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="AproidCaption" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{ThemeResource AproidSubBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="AproidSectionHeader" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{ThemeResource AproidSubBrush}" />
+        <Setter Property="CharacterSpacing" Value="40" />
+    </Style>
+
+    <!-- Full-width rounded buttons for pairing: filled when prominent. -->
+    <Style x:Key="AproidPillButton" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="Height" Value="38" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <Style x:Key="AproidPillAccentButton" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="Height" Value="38" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- A card-like button for the action tiles and Recent rows. -->
+    <Style x:Key="AproidTileButton" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="Background" Value="{ThemeResource AproidCardBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource AproidBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource AproidRadius}" />
+        <Setter Property="Padding" Value="10" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+
+    <Style x:Key="AproidPlainButton" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="6,4" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+    </Style>
+</ResourceDictionary>
