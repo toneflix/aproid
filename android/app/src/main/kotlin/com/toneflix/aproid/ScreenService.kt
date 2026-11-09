@@ -210,6 +210,7 @@ class ScreenService : Service() {
             .setSmallIcon(android.R.drawable.ic_menu_slideshow)
             .setContentTitle(getString(R.string.screen_mirroring, macName))
             .setContentText(getString(R.string.screen_mirroring_hint))
+            .setContentIntent(MainActivity.pendingIntent(this))
             .setOngoing(true)
             .addAction(Notification.Action.Builder(null, getString(R.string.screen_stop), stop).build())
             .build()
