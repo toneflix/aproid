@@ -109,18 +109,18 @@ private struct PanelHeader: View {
     }
 }
 
-/// The app's mark: a phone between two signal arcs on the accent color.
+/// The app icon in miniature: the logo mark on its dark tile.
 struct AppGlyph: View {
     var size: CGFloat = 26
 
     var body: some View {
-        RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
-            .fill(Theme.accent)
+        RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
+            .fill(AproidMark.tile)
             .frame(width: size, height: size)
             .overlay(
-                Image(systemName: "iphone.radiowaves.left.and.right")
-                    .font(.system(size: size * 0.48, weight: .semibold))
-                    .foregroundStyle(.white)
+                AproidMark()
+                    .fill(AproidMark.gradient)
+                    .frame(width: size * 0.66, height: size * 0.66)
             )
     }
 }
