@@ -47,6 +47,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private string? waitingNumber;
     private DateTimeOffset waitingSince;
     private readonly PhoneHotspot hotspot;
+    private readonly Updater updater;
     private NearbyFinder? nearby;
     private DateTimeOffset lastNearbySearch = DateTimeOffset.MinValue;
     private bool phoneNearby;
@@ -102,6 +103,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         Mirror.Send = (id, packet) => connected[id]?.Send(packet) == true;
         plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen]);
 
+        updater = new Updater(toasts) { OnInstalling = () => ui.TryEnqueue(() => UpdateInstalling?.Invoke()) };
         hotspot = new PhoneHotspot(() => settings.PhoneHotspots, settings.RememberHotspot);
 
         share.Restore();
@@ -351,6 +353,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
                 lan.Start();
 
                 ui.TryEnqueue(() => Started(lan));
+                updater.Start();
             }
             catch (Exception e)
             {
@@ -358,6 +361,13 @@ public sealed class AppModel : Observable, IDeviceDelegate
             }
         });
     }
+
+    /// The installer for a new version is running; quit so it can replace the app.
+    public event Action? UpdateInstalling;
+
+    public string VersionText => Updater.CurrentText;
+
+    public void CheckForUpdates() => _ = updater.CheckAsync(manual: true);
 
     public void Stop()
     {

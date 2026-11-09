@@ -38,6 +38,7 @@ public partial class App : Application
         tray.ClipboardChanged += model.ClipboardChanged;
         model.PairRequested += () => panel.ShowNear(tray.Bounds);
         panel.QuitRequested += Quit;
+        model.UpdateInstalling += Quit;
         call = new CallWindow(model);
         model.MessagesRequested += number => (messages ??= new MessagesWindow(model)).Present(number);
         model.DialerRequested += () => (messages ??= new MessagesWindow(model)).Present(dial: true);

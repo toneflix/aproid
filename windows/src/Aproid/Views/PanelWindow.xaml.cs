@@ -479,6 +479,10 @@ public sealed partial class PanelWindow : Window
         }
         SettingsMenu.Items.Add(switcher);
 
+        var updates = new MenuFlyoutItem { Text = $"Check for updates (you have {Model.VersionText})" };
+        updates.Click += (_, _) => Model.CheckForUpdates();
+        SettingsMenu.Items.Add(updates);
+
         var downloads = new MenuFlyoutItem { Text = "Open Downloads" };
         downloads.Click += (_, _) => Explorer.Open(AppPaths.Downloads);
         SettingsMenu.Items.Add(downloads);
