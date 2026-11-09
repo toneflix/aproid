@@ -40,6 +40,9 @@
     <string name="home_macs_connected">%1$d connected</string>
     <string name="home_mac_shown">Shown</string>
     <string name="home_mac_live">Connected</string>
+    <string name="home_switch_carousel">Swipe between Macs</string>
+    <string name="home_switch_row">Row of Macs</string>
+    <string name="home_show_mac">Show %1$s</string>
     <string name="home_flowing_many">Notifications and clipboard go to all your Macs</string>
     <string name="home_recent">Recent</string>
     <string name="home_clear">Clear</string>
