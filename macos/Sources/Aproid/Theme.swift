@@ -55,7 +55,6 @@ extension View {
     func card(padding: CGFloat = 14) -> some View {
         self
             .padding(padding)
-            .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).stroke(Theme.border))
+            .glassSurface()
     }
 }

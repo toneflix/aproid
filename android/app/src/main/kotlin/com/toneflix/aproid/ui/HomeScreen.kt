@@ -21,6 +21,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -52,12 +55,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -88,8 +98,10 @@ import com.toneflix.aproid.Recent
 import com.toneflix.aproid.RecentItem
 import com.toneflix.aproid.TransferText
 import com.toneflix.aproid.ShareActivity
+import com.toneflix.aproid.SwitcherStyle
 import com.toneflix.aproid.openIntent
 import com.toneflix.aproid.protocol.PairState
+import kotlinx.coroutines.launch
 import kotlin.concurrent.thread
 
 /** Runs a device action off the main thread, since it writes to the network. */
@@ -101,6 +113,7 @@ fun withDevice(id: String, action: (com.toneflix.aproid.protocol.Device) -> Unit
 fun HomeScreen(phoneName: String) {
     val devices by DeviceStore.states.collectAsStateWithLifecycle()
     val focusId by DeviceStore.focusId.collectAsStateWithLifecycle()
+    val style by DeviceStore.switcherStyle.collectAsStateWithLifecycle()
     val recent by Recent.items.collectAsStateWithLifecycle()
     val macs = devices.filter { it.pairState == PairState.PAIRED }
     val mac = DeviceStore.focused(devices, focusId)
@@ -118,12 +131,13 @@ fun HomeScreen(phoneName: String) {
                 .animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Header(macs)
+            Header(macs, style)
 
-            if (macs.size > 1) MacSwitcher(macs, mac?.id)
+            val carousel = macs.size > 1 && style == SwitcherStyle.CAROUSEL
+            if (macs.size > 1 && !carousel) MacSwitcher(macs, mac?.id)
 
             if (mac != null) {
-                ConnectedHero(mac, sharedWithOthers = macs.size > 1)
+                if (carousel) MacCarousel(macs, mac.id) else ConnectedHero(mac, sharedWithOthers = macs.size > 1)
                 QuickTiles(mac, macCount = macs.size)
             } else {
                 SearchingHero(hasNearby = others.isNotEmpty())
@@ -148,7 +162,7 @@ fun HomeScreen(phoneName: String) {
 }
 
 @Composable
-private fun Header(macs: List<DeviceState>) {
+private fun Header(macs: List<DeviceState>, style: SwitcherStyle) {
     val context = LocalContext.current
     var menu by remember { mutableStateOf(false) }
 
@@ -168,6 +182,22 @@ private fun Header(macs: List<DeviceState>) {
                         context.startActivity(NotificationPlugin.accessSettingsIntent())
                     },
                 )
+                if (macs.size > 1) {
+                    HorizontalDivider()
+                    listOf(SwitcherStyle.CAROUSEL to R.string.home_switch_carousel, SwitcherStyle.ROW to R.string.home_switch_row).forEach { (option, label) ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(label)) },
+                            trailingIcon = {
+                                if (option == style) Icon(painterResource(R.drawable.lucide_circle_check), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            },
+                            onClick = {
+                                menu = false
+                                DeviceStore.useSwitcher(context, option)
+                            },
+                        )
+                    }
+                    HorizontalDivider()
+                }
                 macs.forEach { mac ->
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.home_unpair, mac.name)) },
@@ -214,6 +244,62 @@ private fun MacSwitcher(macs: List<DeviceState>, focusedId: String?) {
     }
 }
 
+/**
+ * The shown Mac's card with the next one peeking at the screen edge. Swiping or tapping the peek
+ * moves on, and the pages wrap round so the Macs cycle forever.
+ */
+@Composable
+private fun MacCarousel(macs: List<DeviceState>, focusedId: String) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val ordered = macs.sortedWith(compareBy({ it.name }, { it.id }))
+
+    key(ordered.map { it.id }) {
+        val middle = Int.MAX_VALUE / 2
+        val start = middle - middle % ordered.size + ordered.indexOfFirst { it.id == focusedId }.coerceAtLeast(0)
+        val pager = rememberPagerState(initialPage = start) { Int.MAX_VALUE }
+
+        LaunchedEffect(pager) {
+            snapshotFlow { pager.settledPage }.collect { page -> DeviceStore.focus(context, ordered[page % ordered.size].id) }
+        }
+
+        HorizontalPager(
+            state = pager,
+            contentPadding = PaddingValues(end = CAROUSEL_BLEED + CAROUSEL_PEEK),
+            pageSpacing = 10.dp,
+            beyondViewportPageCount = 1,
+            modifier = Modifier.bleedToEnd(CAROUSEL_BLEED),
+        ) { page ->
+            val mac = ordered[page % ordered.size]
+            val isShown = page == pager.currentPage
+            val showLabel = stringResource(R.string.home_show_mac, mac.name)
+
+            ConnectedHero(
+                mac,
+                sharedWithOthers = true,
+                modifier = Modifier
+                    .alpha(if (isShown) 1f else 0.82f)
+                    .then(
+                        if (isShown) Modifier else Modifier
+                            .semantics { contentDescription = showLabel }
+                            .clickable { scope.launch { pager.animateScrollToPage(page) } },
+                    ),
+            )
+        }
+    }
+}
+
+private val CAROUSEL_BLEED = 16.dp
+private val CAROUSEL_PEEK = 28.dp
+
+/** Lets the content run past the screen padding to the edge. */
+private fun Modifier.bleedToEnd(extra: androidx.compose.ui.unit.Dp) = layout { measurable, constraints ->
+    val px = extra.roundToPx()
+    val placeable = measurable.measure(constraints.copy(minWidth = constraints.minWidth + px, maxWidth = constraints.maxWidth + px))
+
+    layout(constraints.maxWidth, placeable.height) { placeable.place(0, 0) }
+}
+
 @Composable
 private fun MacChip(mac: DeviceState, isFocused: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(18.dp)
@@ -244,11 +330,11 @@ private fun MacChip(mac: DeviceState, isFocused: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ConnectedHero(mac: DeviceState, sharedWithOthers: Boolean) {
+private fun ConnectedHero(mac: DeviceState, sharedWithOthers: Boolean, modifier: Modifier = Modifier) {
     val colors = Aproid.colors
 
     Column(
-        Modifier
+        modifier
             .fillMaxWidth()
             .background(colors.hero, MaterialTheme.shapes.large)
             .padding(22.dp),

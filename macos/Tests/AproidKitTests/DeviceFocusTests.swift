@@ -29,6 +29,24 @@ final class DeviceFocusTests: XCTestCase {
         XCTAssertEqual(pick(nil, [Peer(id: "c", name: "Pixel"), Peer(id: "b", name: "Pixel")]), Peer(id: "b", name: "Pixel"))
     }
 
+    private func next(_ preferredId: String?, _ list: [Peer]? = nil) -> Peer? {
+        DeviceFocus(preferredId: preferredId).next(list ?? devices, id: \.id, name: \.name)
+    }
+
+    func testNextFollowsNameOrder() {
+        XCTAssertEqual(next("a"), Peer(id: "b", name: "Pixel"))
+        XCTAssertEqual(next("b"), Peer(id: "c", name: "Pixel"))
+    }
+
+    func testNextWrapsToFirst() {
+        XCTAssertEqual(next("c"), Peer(id: "a", name: "Galaxy"))
+    }
+
+    func testNextWithoutPreferredStartsAtFirst() {
+        XCTAssertEqual(next("gone"), Peer(id: "a", name: "Galaxy"))
+        XCTAssertNil(next("a", []))
+    }
+
     func testNoDevicesPicksNothing() {
         XCTAssertNil(pick("a", []))
     }

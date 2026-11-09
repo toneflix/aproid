@@ -28,6 +28,23 @@ class DeviceFocusTest {
         assertEquals(Peer("b", "Pixel"), pick(null, listOf(Peer("c", "Pixel"), Peer("b", "Pixel"))))
     }
 
+    private fun next(preferredId: String?, list: List<Peer> = devices) =
+        DeviceFocus(preferredId).next(list, { it.id }, { it.name })
+
+    @Test fun nextFollowsNameOrder() {
+        assertEquals(Peer("b", "Pixel"), next("a"))
+        assertEquals(Peer("c", "Pixel"), next("b"))
+    }
+
+    @Test fun nextWrapsToFirst() {
+        assertEquals(Peer("a", "Galaxy"), next("c"))
+    }
+
+    @Test fun nextWithoutPreferredStartsAtFirst() {
+        assertEquals(Peer("a", "Galaxy"), next("gone"))
+        assertNull(next("a", emptyList()))
+    }
+
     @Test fun noDevicesPicksNothing() {
         assertNull(pick("a", emptyList()))
     }

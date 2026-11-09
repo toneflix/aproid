@@ -1,6 +1,62 @@
 import SwiftUI
 import AproidKit
 
+/// How the panel switches between several paired phones.
+enum PhoneSwitcherStyle: String, CaseIterable, Identifiable {
+    case carousel
+    case row
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .carousel: return "Card carousel"
+        case .row: return "Row of phones"
+        }
+    }
+}
+
+/// The shown phone's card with the next one peeking at the edge. Clicking it moves forward, round and round.
+struct PhoneCarousel: View {
+    let current: DeviceState
+    let next: DeviceState
+    @ObservedObject var model: AppModel
+
+    /// How far the panel's padding lets the next card run to the window edge.
+    private static let bleed: CGFloat = 14
+    private static let peek: CGFloat = 22
+    private static let gap: CGFloat = 8
+    private static let cardWidth = Theme.panelWidth - bleed * 2 - peek
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            HStack(spacing: Self.gap) {
+                DeviceHero(device: current, model: model)
+                    .frame(width: Self.cardWidth)
+
+                Button { model.showNextPhone() } label: {
+                    DeviceHero(device: next, model: model)
+                        .frame(width: Self.cardWidth)
+                        .opacity(0.8)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressStyle())
+                .help("Show \(next.name)")
+                .accessibilityLabel("Show \(next.name)")
+            }
+            .id(current.id)
+            .transition(.asymmetric(
+                insertion: .move(edge: .trailing),
+                removal: .move(edge: .leading).combined(with: .opacity)
+            ))
+        }
+        .frame(width: Theme.panelWidth - Self.bleed, alignment: .leading)
+        .clipped()
+        .padding(.trailing, -Self.bleed)
+        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: current.id)
+    }
+}
+
 /// The paired phones, all connected at once. Picking one shows it in the panel, Messages and Photos.
 struct PhoneSwitcher: View {
     let phones: [DeviceState]
@@ -65,20 +121,16 @@ private struct PhoneChip: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
             .frame(minWidth: 110, alignment: .leading)
-            .background(background, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .glassSurface(cornerRadius: 10, tint: isFocused || hovering ? Theme.tint : nil)
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(isFocused ? Theme.goldEdge : Theme.border, lineWidth: isFocused ? 1.5 : 1)
+                    .stroke(isFocused ? Theme.goldEdge : .clear, lineWidth: 1.5)
             )
         }
         .buttonStyle(PressStyle())
         .onHover { hovering = $0 }
         .help(isFocused ? "\(phone.name) is shown" : "Show \(phone.name)")
         .accessibilityAddTraits(isFocused ? .isSelected : [])
-    }
-
-    private var background: Color {
-        isFocused || hovering ? Theme.tint : Theme.card
     }
 
     private var detail: String {

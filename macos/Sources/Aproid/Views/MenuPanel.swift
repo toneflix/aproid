@@ -15,7 +15,7 @@ struct MenuPanel: View {
             }
 
             let phones = model.devices.filter { $0.pairState == .paired }
-            if phones.count > 1 {
+            if phones.count > 1 && model.switcherStyle == .row {
                 PhoneSwitcher(phones: phones, focusedId: focused?.id, model: model)
                     .transition(.opacity)
             }
@@ -39,7 +39,7 @@ struct MenuPanel: View {
         }
         .padding(14)
         .frame(width: Theme.panelWidth)
-        .background(Theme.panel)
+        .glassBackdrop()
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: model.devices)
         .animation(.easeOut(duration: 0.2), value: model.recent)
         .fitsWindowHeight()
@@ -56,7 +56,11 @@ struct MenuPanel: View {
             PairingCard(device: device, model: model)
                 .transition(.scale(scale: 0.96).combined(with: .opacity))
         } else if let device = focused {
-            DeviceHero(device: device, model: model)
+            if model.switcherStyle == .carousel, let next = model.nextPhone, next.id != device.id {
+                PhoneCarousel(current: device, next: next, model: model)
+            } else {
+                DeviceHero(device: device, model: model)
+            }
             if model.finding == device.id, let location = device.location {
                 FindCard(deviceName: device.name, location: location) { model.finding = nil }
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -90,6 +94,9 @@ private struct PanelHeader: View {
             Spacer()
             Menu {
                 Toggle("Show phone notifications", isOn: $model.mirrorsNotifications)
+                Picker("Switch phones with", selection: $model.switcherStyle) {
+                    ForEach(PhoneSwitcherStyle.allCases) { Text($0.title).tag($0) }
+                }
                 Button("Open Downloads") { NSWorkspace.shared.open(AppModel.downloads) }
 
                 let paired = model.devices.filter { $0.pairState == .paired }

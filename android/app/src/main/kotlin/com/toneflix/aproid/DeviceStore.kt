@@ -39,6 +39,7 @@ object DeviceStore {
     private const val TRUST_PREFS = "aproid_trusted"
     private const val KEY_ID = "device_id"
     private const val KEY_FOCUS = "focused_device"
+    private const val KEY_SWITCHER = "switcher_style"
 
     private val devices = linkedMapOf<String, Device>()
 
@@ -59,6 +60,9 @@ object DeviceStore {
 
     /** The Mac the user picked to show when several are paired. Every paired Mac stays connected. */
     val focusId: StateFlow<String?> = _focusId.asStateFlow()
+
+    private val _switcherStyle = MutableStateFlow(SwitcherStyle.CAROUSEL)
+    val switcherStyle: StateFlow<SwitcherStyle> = _switcherStyle.asStateFlow()
 
     val listener = object : Device.Listener {
         override fun onPairRequest(device: Device, code: String) {
@@ -94,8 +98,17 @@ object DeviceStore {
         )
     }
 
-    fun restoreFocus(context: Context) {
-        _focusId.value = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_FOCUS, null)
+    fun restorePreferences(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        _focusId.value = prefs.getString(KEY_FOCUS, null)
+        _switcherStyle.value = prefs.getString(KEY_SWITCHER, null)
+            ?.let { name -> SwitcherStyle.entries.firstOrNull { it.name == name } }
+            ?: SwitcherStyle.CAROUSEL
+    }
+
+    fun useSwitcher(context: Context, style: SwitcherStyle) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_SWITCHER, style.name).apply()
+        _switcherStyle.value = style
     }
 
     fun focus(context: Context, id: String) {
