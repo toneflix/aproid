@@ -37,7 +37,7 @@ struct CallAudioWindow: View {
         .padding(.horizontal, 24)
         .padding(.bottom, 20)
         .frame(width: 480, height: 600)
-        .background(Theme.panel)
+        .glassBackdrop()
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: audio.stage)
         .onAppear { audio.refresh() }
     }
