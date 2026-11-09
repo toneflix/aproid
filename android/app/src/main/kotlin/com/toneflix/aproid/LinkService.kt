@@ -155,7 +155,7 @@ class LinkService : Service() {
             .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
             .setContentIntent(MainActivity.pendingIntent(this))
-            .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
+            .setSmallIcon(R.drawable.ic_stat_aproid)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .addAction(Notification.Action.Builder(null, getString(R.string.clipboard_send), sendClipboard).build())

@@ -7,8 +7,10 @@ struct AproidApp: App {
     @StateObject private var model = AppModel.shared
 
     var body: some Scene {
-        MenuBarExtra("Aproid", systemImage: "iphone.radiowaves.left.and.right") {
+        MenuBarExtra {
             MenuPanel(model: model)
+        } label: {
+            Image(nsImage: .aproidMenuBar)
         }
         .menuBarExtraStyle(.window)
 

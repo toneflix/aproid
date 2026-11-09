@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import UniformTypeIdentifiers
 
 /// The "Aproid" entry in the Share menu. Collects what was shared and hands it to the app to send.
@@ -133,10 +134,7 @@ final class SendingView: NSView {
     override init(frame: NSRect) {
         super.init(frame: frame)
 
-        let symbol = NSImage(systemSymbolName: "iphone.radiowaves.left.and.right", accessibilityDescription: nil)
-        let icon = NSImageView(image: symbol ?? NSImage())
-        icon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 28, weight: .semibold)
-        icon.contentTintColor = .controlAccentColor
+        let icon = NSHostingView(rootView: AproidMark().fill(AproidMark.gradient).frame(width: 34, height: 34))
 
         let title = NSTextField(labelWithString: "Sending to your phone")
         title.font = .systemFont(ofSize: 13, weight: .semibold)
