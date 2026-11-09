@@ -145,10 +145,10 @@ private struct CallAudioHero: View {
 
     var body: some View {
         HStack(spacing: 18) {
-            glyph("iphone", size: 34)
+            glyph(.smartphone, size: 34)
             Waves(isLive: isLive)
                 .frame(width: 96, height: 34)
-            glyph("laptopcomputer", size: 40)
+            glyph(.laptop, size: 40)
         }
         .padding(.vertical, 18)
         .padding(.horizontal, 26)
