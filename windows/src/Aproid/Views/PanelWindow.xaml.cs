@@ -1,11 +1,14 @@
 using Aproid.Core;
 using Aproid.Icons;
 using Aproid.Model;
+using Aproid.Plugins;
 using Aproid.Shell;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
@@ -23,6 +26,8 @@ public sealed partial class PanelWindow : Window
 
     private readonly IntPtr hwnd;
     private readonly DispatcherQueueTimer dots;
+    private readonly DispatcherQueueTimer progress;
+    private PhoneLocation? mapped;
     private DateTimeOffset hiddenAt = DateTimeOffset.MinValue;
     private RECT? anchor;
     private bool keepOpen;
@@ -66,6 +71,16 @@ public sealed partial class PanelWindow : Window
         dots.Interval = TimeSpan.FromMilliseconds(400);
         dots.Tick += (_, _) => StepDots();
 
+        progress = DispatcherQueue.CreateTimer();
+        progress.Interval = TimeSpan.FromSeconds(1);
+        progress.Tick += (_, _) => ShowProgress();
+
+        Model.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(AppModel.Focused)) ShowProgress();
+            if (args.PropertyName == nameof(AppModel.Found)) ShowMap(Model.Found);
+        };
+
         StartPulse();
     }
 
@@ -100,6 +115,8 @@ public sealed partial class PanelWindow : Window
         Activate();
         SetForegroundWindow(hwnd);
         dots.Start();
+        progress.Start();
+        ShowProgress();
     }
 
     public void Hide()
@@ -108,6 +125,7 @@ public sealed partial class PanelWindow : Window
 
         AppWindow.Hide();
         dots.Stop();
+        progress.Stop();
         hiddenAt = DateTimeOffset.Now;
     }
 
@@ -116,6 +134,7 @@ public sealed partial class PanelWindow : Window
     {
         quitting = true;
         dots.Stop();
+        progress.Stop();
         Close();
     }
 
@@ -220,6 +239,40 @@ public sealed partial class PanelWindow : Window
 
     public Lucide NotificationsIcon(bool on) => on ? Lucide.BellRing : Lucide.BellOff;
 
+    public bool HasMedia(DeviceState? device) => device?.Media is not null;
+
+    public bool HasLength(DeviceState? device) => device?.Media?.Player.Length > 0;
+
+    public string MediaTitle(DeviceState? device) => device?.Media?.Player.Title ?? "";
+
+    public string MediaSubtitle(DeviceState? device) =>
+        device?.Media?.Player is { } player ? string.Join(" · ", new[] { player.Artist, player.Name }.Where(s => s.Length > 0)) : "";
+
+    public ImageSource? Artwork(DeviceState? device) => Pictures.FromFile(device?.Media?.Artwork, 92);
+
+    public Lucide PlayIcon(DeviceState? device) => device?.Media?.Player.IsPlaying == true ? Lucide.Pause : Lucide.Play;
+
+    public bool CanGoPrevious(DeviceState? device) => device?.Media?.Player.CanGoPrevious == true;
+
+    public bool CanGoNext(DeviceState? device) => device?.Media?.Player.CanGoNext == true;
+
+    public bool IsFinding(string? finding, DeviceState? device) => finding is not null && finding == device?.Id;
+
+    public string FindTitle(DeviceState? device) => device is null ? "" : $"Finding {device.Name}";
+
+    public bool HasLocation(PhoneLocation? location) => location is not null;
+
+    public bool NoLocation(PhoneLocation? location) => location is null;
+
+    public string LocationDetail(PhoneLocation? location)
+    {
+        if (location is null) return "";
+
+        var when = location.Time > 0 ? RelativeTime.Text(DateTimeOffset.FromUnixTimeMilliseconds(location.Time)) : "just now";
+
+        return $"Within {Math.Round(location.Accuracy)} m · {when}";
+    }
+
     public static string RowAction(PairState state) => state switch
     {
         PairState.Paired => "Show",
@@ -253,6 +306,58 @@ public sealed partial class PanelWindow : Window
     }
 
     private void Notifications_Click(object sender, RoutedEventArgs e) => Model.MirrorsNotifications = !Model.MirrorsNotifications;
+
+    private void Messages_Click(object sender, RoutedEventArgs e)
+    {
+        Hide();
+        Model.ShowMessages();
+    }
+
+    private void Photos_Click(object sender, RoutedEventArgs e)
+    {
+        Hide();
+        Model.ShowPhotos();
+    }
+
+    private void StopFinding_Click(object sender, RoutedEventArgs e) => Model.StopFinding();
+
+    private void OpenMap_Click(object sender, RoutedEventArgs e)
+    {
+        if (Model.Found is PhoneLocation location) Explorer.Open(MapLinks.Search(location));
+    }
+
+    private void Media_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string tag } || !Enum.TryParse<MediaAction>(tag, out var action)) return;
+        if (Model.Focused is not { Media: { } media } device) return;
+
+        Model.Control(device.Id, media.Player.Name, action);
+    }
+
+    private void MediaTrack_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (Model.Focused is not { Media: { Player: { CanSeek: true, Length: > 0 } player } } device || MediaTrack.ActualWidth <= 0) return;
+
+        var fraction = Math.Clamp(e.GetCurrentPoint(MediaTrack).Position.X / MediaTrack.ActualWidth, 0, 1);
+        Model.Seek(device.Id, player.Name, (long)(fraction * player.Length));
+        MediaProgress.Value = fraction;
+    }
+
+    /// Moves the song's progress bar along while the panel is open.
+    private void ShowProgress()
+    {
+        if (Model.Focused?.Media is not NowPlaying media || media.Player.Length <= 0) return;
+
+        MediaProgress.Value = (double)media.Position(DateTimeOffset.Now) / media.Player.Length;
+    }
+
+    private void ShowMap(PhoneLocation? location)
+    {
+        if (location is null || location == mapped) return;
+
+        mapped = location;
+        Map.Source = new Uri(MapLinks.Embed(location));
+    }
 
     private async void SendFiles_Click(object sender, RoutedEventArgs e)
     {
