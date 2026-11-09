@@ -15,10 +15,10 @@ public static class Program
 
         if (RedirectToRunningInstance()) return 0;
 
-        Application.Start(_ =>
+        Application.Start(callback =>
         {
             SynchronizationContext.SetSynchronizationContext(new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread()));
-            _ = new App();
+            new App();
         });
 
         return 0;
