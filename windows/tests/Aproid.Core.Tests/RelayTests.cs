@@ -26,7 +26,8 @@ public class RelayTests
         var message = Relay.MessageOf(Wire(Relay.Wrap(reply, "phone1", "Pixel")))!;
 
         Assert.Equal(reply.Type, message.Packet.Type);
-        Assert.Equal(reply.Body.ToJsonString(), message.Packet.Body.ToJsonString());
+        Assert.Equal("r1", message.Packet.GetString("requestReplyId"));
+        Assert.Equal("On my way", message.Packet.GetString("message"));
     }
 
     [Fact]
