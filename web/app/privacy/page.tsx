@@ -134,7 +134,7 @@ export default function PrivacyPage() {
       </ul>
       <p>
         Because we do not receive or hold your personal data, there is nothing for us to export or delete on our side.
-        If you have a question about your rights under laws such as the GDPR or CCPA, contact us and we will help.
+        If you have a question about your rights under laws such as the Nigeria Data Protection Act 2023, the GDPR or the CCPA, contact us and we will help.
       </p>
 
       <h2>8. Security</h2>
