@@ -708,7 +708,7 @@ public sealed partial class PanelWindow : Window
         var switcher = new MenuFlyoutSubItem { Text = "Switch phones with" };
         foreach (var (style, label) in new[] { (PhoneSwitcherStyle.Carousel, "Card carousel"), (PhoneSwitcherStyle.Menu, "Menu on the phone name") })
         {
-            var item = new RadioMenuFlyoutItem { Text = label, GroupName = "switcher", IsChecked = Model.SwitcherStyle == style };
+            var item = new ToggleMenuFlyoutItem { Text = label, IsChecked = Model.SwitcherStyle == style };
             item.Click += (_, _) => Model.SwitcherStyle = style;
             switcher.Items.Add(item);
         }
@@ -722,7 +722,7 @@ public sealed partial class PanelWindow : Window
             (Core.FlyyDrop.Receiving.Everyone, "Everyone"),
         })
         {
-            var item = new RadioMenuFlyoutItem { Text = label, GroupName = "flyydrop", IsChecked = Model.FlyyDropReceiving == mode };
+            var item = new ToggleMenuFlyoutItem { Text = label, IsChecked = Model.FlyyDropReceiving == mode };
             item.Click += (_, _) => Model.FlyyDropReceiving = mode;
             flyyDrop.Items.Add(item);
         }
