@@ -34,8 +34,6 @@ let package = Package(
         // The menu bar app.
         .executableTarget(
             name: "Aproid",
-        .executableTarget(
-            name: "Aproid",
             dependencies: ["AproidKit", .product(name: "Sparkle", package: "Sparkle")],
             linkerSettings: [
                 // Linked by name so Shortcuts' metadata tool sees the app uses App Intents.
