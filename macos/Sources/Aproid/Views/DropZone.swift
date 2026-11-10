@@ -39,7 +39,7 @@ struct DropZone: View {
         }
     }
 
-    private static func loadURLs(_ providers: [NSItemProvider], then send: @escaping ([URL]) -> Void) {
+    static func loadURLs(_ providers: [NSItemProvider], then send: @escaping ([URL]) -> Void) {
         let group = DispatchGroup()
         let lock = NSLock()
         var urls: [URL] = []
