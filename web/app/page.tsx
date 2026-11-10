@@ -98,7 +98,7 @@ export default function Home() {
           points={[
             "Pair as many phones and computers as you want",
             "Calls and texts always come from the right phone",
-            "Pair your Mac and PC to share files and the clipboard",
+            "Pair your computers with each other to share files and the clipboard",
           ]}
           media={<img className="tall" src="/screens/mac-panel.png" alt="The Aproid panel on a Mac with two phones paired" />}
         />
