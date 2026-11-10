@@ -39,15 +39,24 @@ internal sealed class NotificationPlugin(ToastCenter toasts, DeviceRegistry devi
     /// Called after a phone notification is shown, on any thread.
     public Action? OnShown { get; set; }
 
+    /// Sends replies, buttons and dismissals to a phone. Set by the app model, so they also reach phones
+    /// that another computer passed on.
+    public Func<string, NetworkPacket, bool> Send { get; set; } = (id, packet) => devices[id]?.Send(packet) == true;
+
     public void OnPaired(Device device) => device.Send(NotificationRequests.RequestAll());
 
-    public void OnPacket(NetworkPacket packet, Device device)
+    public void OnPacket(NetworkPacket packet, Device device) => Present(packet, device.Id, device.Name, device);
+
+    /// A notification another computer passed on from its phone. Relayed notifications come without icons.
+    public void PresentRelayed(NetworkPacket packet, string phoneId, string phoneName) => Present(packet, phoneId, phoneName, null);
+
+    private void Present(NetworkPacket packet, string deviceId, string deviceName, Device? iconsFrom)
     {
         if (PhoneNotification.CancelledId(packet) is string cancelled)
         {
             var tag = Tag(cancelled);
-            lock (gate) shown.Remove(Identifier(device.Id, cancelled));
-            toasts.Remove(tag, device.Id);
+            lock (gate) shown.Remove(Identifier(deviceId, cancelled));
+            toasts.Remove(tag, deviceId);
             return;
         }
 
@@ -57,27 +66,26 @@ internal sealed class NotificationPlugin(ToastCenter toasts, DeviceRegistry devi
         var summary = $"{note.Title}\n{note.Text}";
         lock (gate)
         {
-            var identifier = Identifier(device.Id, note.Id);
+            var identifier = Identifier(deviceId, note.Id);
             if (shown.TryGetValue(identifier, out var previous) && previous == summary) return;
 
             shown[identifier] = summary;
         }
 
-        _ = ShowAsync(note, packet, device);
+        _ = ShowAsync(note, packet, deviceId, deviceName, iconsFrom);
     }
 
-    private async Task ShowAsync(PhoneNotification note, NetworkPacket packet, Device device)
+    private async Task ShowAsync(PhoneNotification note, NetworkPacket packet, string deviceId, string deviceName, Device? iconsFrom)
     {
         // The phone sends the app icon, or the sender's photo, as the payload.
-        var icon = await icons.IconAsync(packet, note.IconHash, device);
-        var deviceId = device.Id;
+        var icon = iconsFrom is null ? null : await icons.IconAsync(packet, note.IconHash, iconsFrom);
 
         toasts.Show(key =>
         {
             var builder = new AppNotificationBuilder()
                 .AddText(note.Title.Length == 0 ? note.AppName : note.Title)
                 .AddText(note.Text)
-                .SetAttributionText(note.Title.Length == 0 ? device.Name : $"{note.AppName} · {device.Name}");
+                .SetAttributionText(note.Title.Length == 0 ? deviceName : $"{note.AppName} · {deviceName}");
 
             if (icon is not null) builder.SetAppLogoOverride(new Uri(icon), AppNotificationImageCrop.Circle);
 
@@ -106,18 +114,16 @@ internal sealed class NotificationPlugin(ToastCenter toasts, DeviceRegistry devi
 
     private void Respond(string action, IDictionary<string, string> input, string deviceId, PhoneNotification note)
     {
-        if (devices[deviceId] is not Device device) return;
-
         switch (action)
         {
             case "reply" when note.ReplyId is not null && input.TryGetValue(ReplyInput, out var text) && text.Trim().Length > 0:
-                device.Send(NotificationRequests.Reply(note.ReplyId, text));
+                Send(deviceId, NotificationRequests.Reply(note.ReplyId, text));
                 break;
             case "dismiss":
-                device.Send(NotificationRequests.Dismiss(note.Id));
+                Send(deviceId, NotificationRequests.Dismiss(note.Id));
                 break;
             case var pressed when pressed.StartsWith(ActionPrefix, StringComparison.Ordinal):
-                device.Send(NotificationRequests.Action(note.Id, pressed[ActionPrefix.Length..]));
+                Send(deviceId, NotificationRequests.Action(note.Id, pressed[ActionPrefix.Length..]));
                 break;
         }
     }

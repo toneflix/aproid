@@ -31,6 +31,7 @@ internal sealed class Settings
         public bool SharesNotifications { get; set; } = true;
         public Dictionary<string, string> InputEdges { get; set; } = new();
         public bool AllowsRemoteInput { get; set; } = true;
+        public bool RelaysPhones { get; set; } = true;
     }
 
     public Settings(string path)
@@ -126,6 +127,17 @@ internal sealed class Settings
     }
 
     /// Whether this PC's notifications go to paired computers.
+    /// Pass phone notifications and calls between this PC and the user's other computers.
+    public bool RelaysPhones
+    {
+        get => values.RelaysPhones;
+        set
+        {
+            values.RelaysPhones = value;
+            Save();
+        }
+    }
+
     public bool SharesNotifications
     {
         get => values.SharesNotifications;
