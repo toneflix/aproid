@@ -1,0 +1,12 @@
+{
+  "name": "aproid-play-store-graphics",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node generate.mjs"
+  },
+  "dependencies": {
+    "@fontsource/inter": "5.2.5",
+    "@fontsource/roboto": "5.2.5"
+  }
+}
