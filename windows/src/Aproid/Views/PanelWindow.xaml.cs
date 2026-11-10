@@ -158,8 +158,11 @@ public sealed partial class PanelWindow : Window
         var screen = info.rcMonitor;
         var margin = (int)(Margin * scale);
 
-        var width = (int)Math.Ceiling(Sections.Width * scale);
-        var height = Math.Min((int)Math.Ceiling(Sections.DesiredSize.Height * scale), work.Bottom - work.Top - 2 * margin);
+        // The window's size includes its border, so the content gets the full panel width.
+        var frameWidth = AppWindow.Size.Width - AppWindow.ClientSize.Width;
+        var frameHeight = AppWindow.Size.Height - AppWindow.ClientSize.Height;
+        var width = (int)Math.Ceiling(Sections.Width * scale) + frameWidth;
+        var height = Math.Min((int)Math.Ceiling(Sections.DesiredSize.Height * scale) + frameHeight, work.Bottom - work.Top - 2 * margin);
 
         // The taskbar sits on the side where the work area stops short of the screen.
         int x, y;
