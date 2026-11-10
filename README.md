@@ -6,7 +6,7 @@
 
 <p align="center"><strong>Your Android phone and your computer, finally on speaking terms.</strong></p>
 
-<p align="center">For Android, Mac and Windows. Free, with no servers and no account.</p>
+<p align="center">For Android, Mac and Windows. Free, no account.</p>
 
 ---
 
@@ -14,23 +14,21 @@
 
 ## What it does
 
-- **Notifications** with app icons. Reply from your keyboard; clear one and it's gone from the phone too.
-- **Texts and calls.** A Messages window for SMS. Answer or decline calls, and on a Mac talk through it (still experimental).
-- **Files.** Drop them on Aproid or share from any app. Big transfers resume if cut off.
-- **FlyyDrop.** Send to anyone nearby with Aproid, no pairing. They tap Accept. You pick who can FlyyDrop to you.
-- **Screen mirroring** with sound, mouse and keyboard.
-- **Photos.** Your latest photos and screenshots on the computer, and in File Explorer on Windows.
-- **Clipboard.** Text, pictures and files.
-- **Find your phone.** Ring it, even on silent, or see it on a map.
-- **Media and battery.** Play, pause, skip, and low battery alerts.
-- **Several phones and computers.** Pair as many as you like, including computers with each other.
-- **No shared Wi-Fi?** Aproid connects over Bluetooth and your phone's hotspot.
-
-![Swipe between paired devices on Android and the Mac](web/public/screens/android-carousel.png)
+- **Notifications.** Reply from your keyboard.
+- **Texts and calls.** Read, reply, answer.
+- **Files.** Any size, from any app.
+- **FlyyDrop.** Send to anyone nearby.
+- **Screen mirroring.** Use your phone from your computer.
+- **Photos.** Your latest shots, on your computer.
+- **Clipboard.** Copy on one, paste on the other.
+- **Find your phone.** Ring it, even on silent.
+- **Media and battery.** Play, pause, skip, and check the battery.
+- **Several devices.** Pair as many phones and computers as you like.
+- **No shared Wi-Fi?** Connects through your phone's hotspot.
 
 ## Privacy
 
-No server, no account, no tracking. Devices talk directly over your network or Bluetooth, encrypted, and only after you pair them. Unpaired devices can only FlyyDrop to you if you allow it, and nothing arrives until you accept.
+No servers, no account, no tracking. Your devices talk to each other directly, encrypted.
 
 ## Get it
 
