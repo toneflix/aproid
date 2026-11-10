@@ -23,7 +23,7 @@ object ScreenPlugin : Plugin {
     override val incoming = setOf(PacketType.SCREEN_REQUEST, PacketType.SCREEN_INPUT)
 
     /** Who to stream to once the user allows the recording. */
-    data class Pending(val deviceId: String, val maxSize: Int, val bitrate: Int)
+    data class Pending(val deviceId: String, val maxSize: Int, val bitrate: Int, val audio: Boolean)
 
     @Volatile var pending: Pending? = null
         private set
@@ -39,7 +39,7 @@ object ScreenPlugin : Plugin {
 
         Screen.request(packet)?.let { request ->
             when (request.action) {
-                Screen.Action.START -> ask(context, device, request.maxSize, request.bitrate)
+                Screen.Action.START -> ask(context, device, request)
                 Screen.Action.STOP -> ScreenService.stop(context)
             }
         }
@@ -51,14 +51,15 @@ object ScreenPlugin : Plugin {
 
     /** Starts mirroring from the phone itself, to the Mac the user picked. */
     fun mirror(context: Context, deviceId: String) {
-        pending = Pending(deviceId, Screen.MAX_SIZE, Screen.BITRATE)
+        // Computers that can't play sound skip its frames, so always offer it.
+        pending = Pending(deviceId, Screen.MAX_SIZE, Screen.BITRATE, audio = true)
         context.startActivity(captureIntent(context))
     }
 
-    private fun ask(context: Context, device: Device, maxSize: Int, bitrate: Int) {
+    private fun ask(context: Context, device: Device, request: Screen.Request) {
         if (ScreenService.isRunning) return
 
-        pending = Pending(device.id, maxSize, bitrate)
+        pending = Pending(device.id, request.maxSize, request.bitrate, request.audio)
 
         // Android only lets the app open the permission screen from the background when tapped.
         val tap = PendingIntent.getActivity(context, 4, captureIntent(context), PendingIntent.FLAG_IMMUTABLE)

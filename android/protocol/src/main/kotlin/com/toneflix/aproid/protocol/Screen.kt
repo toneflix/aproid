@@ -6,6 +6,8 @@ import java.nio.ByteBuffer
 /**
  * Mirroring the phone's screen on the Mac. The Mac asks with [start]; the phone answers with an
  * "aproid.screen" packet whose payload is a live H.264 stream of [ScreenFrame]s, sent until either side stops.
+ * When the Mac asks for sound and the phone can record it, the stream also carries [ScreenFrame.AUDIO] frames of
+ * 16-bit little-endian PCM at [AUDIO_RATE] Hz with [AUDIO_CHANNELS] channels, interleaved.
  */
 object Screen {
     /** The payload size of a live stream: read until the sender closes it. */
@@ -13,21 +15,29 @@ object Screen {
 
     const val MAX_SIZE = 1600
     const val BITRATE = 8_000_000
+    const val AUDIO_RATE = 48_000
+    const val AUDIO_CHANNELS = 2
 
     enum class Action(val wire: String) {
         START("start"),
         STOP("stop"),
     }
 
-    data class Request(val action: Action, val maxSize: Int = MAX_SIZE, val bitrate: Int = BITRATE)
+    data class Request(val action: Action, val maxSize: Int = MAX_SIZE, val bitrate: Int = BITRATE, val audio: Boolean = false)
 
-    /** What the phone is sending. Sizes are in pixels; [running] is false once mirroring stops. */
-    data class Info(val width: Int, val height: Int, val running: Boolean)
+    /**
+     * What the phone is sending. Sizes are in pixels; [running] is false once mirroring stops.
+     * [audioRate] and [audioChannels] are 0 when the stream has no sound.
+     */
+    data class Info(val width: Int, val height: Int, val running: Boolean, val audioRate: Int = 0, val audioChannels: Int = 0) {
+        val hasAudio: Boolean get() = audioRate > 0 && audioChannels > 0
+    }
 
-    fun start(maxSize: Int = MAX_SIZE, bitrate: Int = BITRATE): NetworkPacket = NetworkPacket(
-        PacketType.SCREEN_REQUEST,
-        NetworkPacket.body("action" to Action.START.wire, "maxSize" to maxSize, "bitrate" to bitrate),
-    )
+    fun start(maxSize: Int = MAX_SIZE, bitrate: Int = BITRATE, audio: Boolean = false): NetworkPacket {
+        val fields = mutableListOf<Pair<String, Any?>>("action" to Action.START.wire, "maxSize" to maxSize, "bitrate" to bitrate)
+        if (audio) fields += "audio" to true
+        return NetworkPacket(PacketType.SCREEN_REQUEST, NetworkPacket.body(*fields.toTypedArray()))
+    }
 
     fun stop(): NetworkPacket = NetworkPacket(PacketType.SCREEN_REQUEST, NetworkPacket.body("action" to Action.STOP.wire))
 
@@ -39,32 +49,43 @@ object Screen {
             action,
             (packet.int("maxSize") ?: MAX_SIZE).coerceIn(320, 4096),
             (packet.int("bitrate") ?: BITRATE).coerceIn(500_000, 50_000_000),
+            packet.bool("audio") ?: false,
         )
     }
 
     /** Announces a stream; send it with [STREAM] as the payload size. */
-    fun started(width: Int, height: Int): NetworkPacket = NetworkPacket(
-        PacketType.SCREEN,
-        NetworkPacket.body("width" to width, "height" to height, "codec" to "h264", "running" to true),
-    )
+    fun started(width: Int, height: Int, audio: Boolean = false): NetworkPacket {
+        val fields = mutableListOf<Pair<String, Any?>>("width" to width, "height" to height, "codec" to "h264", "running" to true)
+        if (audio) fields += listOf("audioCodec" to "pcm16le", "audioRate" to AUDIO_RATE, "audioChannels" to AUDIO_CHANNELS)
+        return NetworkPacket(PacketType.SCREEN, NetworkPacket.body(*fields.toTypedArray()))
+    }
 
     fun stopped(): NetworkPacket = NetworkPacket(PacketType.SCREEN, NetworkPacket.body("running" to false))
 
     fun info(packet: NetworkPacket): Info? {
         if (packet.type != PacketType.SCREEN) return null
 
-        return Info(packet.int("width") ?: 0, packet.int("height") ?: 0, packet.bool("running") ?: false)
+        val pcm = packet.string("audioCodec") == "pcm16le"
+        return Info(
+            packet.int("width") ?: 0,
+            packet.int("height") ?: 0,
+            packet.bool("running") ?: false,
+            if (pcm) (packet.int("audioRate") ?: 0).coerceIn(0, 192_000) else 0,
+            if (pcm) (packet.int("audioChannels") ?: 0).coerceIn(0, 8) else 0,
+        )
     }
 }
 
 /**
  * One encoded piece of the screen stream. On the wire each is a 13 byte header (size, then the
- * presentation time in microseconds, then [flags]) followed by the H.264 data in Annex B form.
+ * presentation time in microseconds, then [flags]) followed by the H.264 data in Annex B form, or by PCM
+ * sound when [isAudio].
  */
 class ScreenFrame(val data: ByteArray, val timeUs: Long, val flags: Int) {
     /** The SPS and PPS the decoder needs before any picture. */
     val isConfig: Boolean get() = flags and CONFIG != 0
     val isKey: Boolean get() = flags and KEY != 0
+    val isAudio: Boolean get() = flags and AUDIO != 0
 
     fun header(): ByteArray = ByteBuffer.allocate(HEADER).putInt(data.size).putLong(timeUs).put(flags.toByte()).array()
 
@@ -77,6 +98,7 @@ class ScreenFrame(val data: ByteArray, val timeUs: Long, val flags: Int) {
         const val HEADER = 13
         const val CONFIG = 1
         const val KEY = 2
+        const val AUDIO = 4
 
         /** Larger than any real frame; anything bigger means the stream is corrupt. */
         const val MAX_SIZE = 16 * 1024 * 1024
