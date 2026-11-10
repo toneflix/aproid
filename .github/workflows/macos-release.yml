@@ -1,0 +1,162 @@
+name: Mac release
+
+# Tag a version as macos-v1.2.3 to publish a signed, notarized Aproid-1.2.3.dmg as a GitHub release.
+# The Mac app checks the feed in the "macos-appcast" release for updates (Sparkle).
+#
+# Secrets: MACOS_CERT_P12 (base64 Developer ID Application .p12), MACOS_CERT_PASSWORD,
+# NOTARY_KEY (App Store Connect API .p8 contents), NOTARY_KEY_ID, NOTARY_ISSUER_ID, SPARKLE_PRIVATE_KEY.
+# Variable: SPARKLE_PUBLIC_KEY. Without the Sparkle key and variable, the release works but can't auto-update.
+on:
+  push:
+    tags: ["macos-v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: macos
+    env:
+      FEED_URL: https://github.com/${{ github.repository }}/releases/download/macos-appcast/appcast.xml
+      SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+      SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pick Xcode
+        run: |
+          xcode=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$xcode" ]; then sudo xcode-select -s "$xcode"; fi
+          swift --version
+      - name: Test
+        run: swift test
+      - name: Read the version from the tag
+        id: version
+        run: echo "number=${GITHUB_REF_NAME#macos-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Load the signing certificate
+        id: cert
+        env:
+          CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          if [ -z "$CERT_P12" ]; then
+            echo "::error::Add the MACOS_CERT_P12 and MACOS_CERT_PASSWORD secrets first."
+            exit 1
+          fi
+          keychain="$RUNNER_TEMP/release.keychain-db"
+          password="$(uuidgen)"
+          echo "$CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$keychain"
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/cert.p12"
+          identity=$(security find-identity -v -p codesigning "$keychain" | awk -F'"' '/Developer ID Application/ { print $2; exit }')
+          if [ -z "$identity" ]; then
+            echo "::error::The certificate isn't a Developer ID Application certificate."
+            exit 1
+          fi
+          echo "identity=$identity" >> "$GITHUB_OUTPUT"
+
+      - name: Build and sign
+        env:
+          VERSION: ${{ steps.version.outputs.number }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          SIGN_IDENTITY: ${{ steps.cert.outputs.identity }}
+        run: |
+          if [ -n "$SPARKLE_PRIVATE_KEY" ] && [ -n "$SPARKLE_PUBLIC_KEY" ]; then
+            export SPARKLE_FEED_URL="$FEED_URL"
+          else
+            echo "::warning::No Sparkle key, so this build won't update itself."
+          fi
+          ./scripts/bundle.sh release
+
+      - name: Notarize
+        env:
+          NOTARY_KEY: ${{ secrets.NOTARY_KEY }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          VERSION: ${{ steps.version.outputs.number }}
+          SIGN_IDENTITY: ${{ steps.cert.outputs.identity }}
+        run: |
+          key="$RUNNER_TEMP/notary.p8"
+          printf '%s' "$NOTARY_KEY" > "$key"
+          notarize() {
+            xcrun notarytool submit "$1" --key "$key" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" --wait --timeout 30m
+          }
+
+          # The app first, so the copy inside the disk image and the update zip carry the ticket.
+          ditto -c -k --keepParent build/Aproid.app "$RUNNER_TEMP/notarize.zip"
+          notarize "$RUNNER_TEMP/notarize.zip"
+          xcrun stapler staple build/Aproid.app
+
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent build/Aproid.app "dist/Aproid-$VERSION.zip"
+
+          # A disk image with a shortcut to Applications, for first installs.
+          stage="$RUNNER_TEMP/dmg"
+          mkdir -p "$stage"
+          ditto build/Aproid.app "$stage/Aproid.app"
+          ln -s /Applications "$stage/Applications"
+          hdiutil create -volname Aproid -srcfolder "$stage" -ov -format UDZO "dist/Aproid-$VERSION.dmg"
+          codesign --force --sign "$SIGN_IDENTITY" --timestamp "dist/Aproid-$VERSION.dmg"
+          notarize "dist/Aproid-$VERSION.dmg"
+          xcrun stapler staple "dist/Aproid-$VERSION.dmg"
+          rm "$key"
+
+      - name: Write the update feed
+        if: env.SPARKLE_PRIVATE_KEY != '' && env.SPARKLE_PUBLIC_KEY != ''
+        env:
+          VERSION: ${{ steps.version.outputs.number }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/sparkle.tar.xz" https://github.com/sparkle-project/Sparkle/releases/download/2.6.4/Sparkle-2.6.4.tar.xz
+          mkdir -p "$RUNNER_TEMP/sparkle"
+          tar -xJf "$RUNNER_TEMP/sparkle.tar.xz" -C "$RUNNER_TEMP/sparkle"
+          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$RUNNER_TEMP/sparkle.key"
+          # Prints: sparkle:edSignature="..." length="..."
+          signature=$("$RUNNER_TEMP/sparkle/bin/sign_update" --ed-key-file "$RUNNER_TEMP/sparkle.key" "dist/Aproid-$VERSION.zip")
+          rm "$RUNNER_TEMP/sparkle.key"
+          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/Aproid-$VERSION.zip"
+          cat > dist/appcast.xml <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+            <channel>
+              <title>Aproid</title>
+              <item>
+                <title>Aproid $VERSION</title>
+                <pubDate>$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')</pubDate>
+                <sparkle:version>$BUILD_NUMBER</sparkle:version>
+                <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
+                <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+                <link>https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}</link>
+                <enclosure url="$url" type="application/octet-stream" $signature />
+              </item>
+            </channel>
+          </rss>
+          EOF
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Aproid for Mac ${{ steps.version.outputs.number }}
+          files: |
+            macos/dist/Aproid-*.dmg
+            macos/dist/Aproid-*.zip
+          generate_release_notes: true
+
+      # One fixed release holds the feed, so the app's feed address never changes.
+      - name: Publish update feed
+        if: env.SPARKLE_PRIVATE_KEY != '' && env.SPARKLE_PUBLIC_KEY != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: macos-appcast
+          name: Mac update feed
+          body: Aproid for Mac checks this feed for updates. Don't delete it.
+          prerelease: true
+          files: macos/dist/appcast.xml
