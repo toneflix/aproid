@@ -23,6 +23,7 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
+        CrashLog.Attach(this);
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
