@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
+import androidx.core.content.FileProvider
 import java.io.File
 import java.io.OutputStream
 import org.json.JSONObject
@@ -22,6 +23,11 @@ class DownloadTarget private constructor(
     fun open(append: Boolean = false): OutputStream =
         uri?.let { context.contentResolver.openOutputStream(it, if (append) "wa" else "w") }
             ?: java.io.FileOutputStream(file!!, append)
+
+    /** The address another app opens the finished file with. Files from before Android 10 go through our FileProvider. */
+    fun viewUri(): Uri? = uri ?: file?.let {
+        runCatching { FileProvider.getUriForFile(context, "${context.packageName}.files", it) }.getOrNull()
+    }
 
     fun publish() {
         val uri = uri ?: return

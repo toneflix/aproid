@@ -450,8 +450,27 @@ public sealed partial class PanelWindow : Window
     {
         if (sender is not Button { Tag: Activity activity }) return;
 
-        if (activity.Path is string path) Explorer.Reveal(path);
+        if (activity.Path is string path) Explorer.OpenFile(path);
         else if (activity.Url is string url) Explorer.Open(url);
+    }
+
+    /// Right-clicking a received file offers to show it in its folder.
+    private void Activity_ContextRequested(UIElement sender, ContextRequestedEventArgs e)
+    {
+        if (sender is not Button { Tag: Activity { Path: string path } } button) return;
+
+        var open = new MenuFlyoutItem { Text = "Open" };
+        open.Click += (_, _) => Explorer.OpenFile(path);
+        var reveal = new MenuFlyoutItem { Text = "Show in folder" };
+        reveal.Click += (_, _) => Explorer.Reveal(path);
+
+        var menu = new MenuFlyout();
+        menu.Items.Add(open);
+        menu.Items.Add(reveal);
+
+        if (e.TryGetPosition(button, out var point)) menu.ShowAt(button, point);
+        else menu.ShowAt(button);
+        e.Handled = true;
     }
 
     private void ClearRecent_Click(object sender, RoutedEventArgs e) => Model.ClearRecent();

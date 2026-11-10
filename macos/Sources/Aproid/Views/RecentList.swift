@@ -33,7 +33,8 @@ struct RecentList: View {
     }
 }
 
-/// One activity. Clicking it shows its full title and detail, and clicking again folds it back to one line.
+/// One activity. Clicking a received file opens it. Clicking anything else shows its full title and detail,
+/// and clicking again folds it back to one line.
 private struct RecentRow: View {
     let item: Activity
     let now: Date
@@ -81,8 +82,37 @@ private struct RecentRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 7)
         .contentShape(Rectangle())
-        .onTapGesture { withAnimation(.easeOut(duration: 0.18)) { expanded.toggle() } }
-        .help(expanded ? "Show less" : "Show more")
+        .onTapGesture(perform: tap)
+        .help(help)
+        .contextMenu { menu }
+    }
+
+    private var receivedFile: URL? {
+        if case .received(let url) = item.kind { return url }
+        return nil
+    }
+
+    private var help: String {
+        if receivedFile != nil { return "Open" }
+        return expanded ? "Show less" : "Show more"
+    }
+
+    private func tap() {
+        if let url = receivedFile {
+            ReceivedFile.open(url)
+            return
+        }
+
+        withAnimation(.easeOut(duration: 0.18)) { expanded.toggle() }
+    }
+
+    @ViewBuilder private var menu: some View {
+        if let url = receivedFile {
+            Button("Open") { ReceivedFile.open(url) }
+            Button("Show in Finder") { ReceivedFile.reveal(url) }
+            Divider()
+        }
+        Button(expanded ? "Show less" : "Show more") { withAnimation(.easeOut(duration: 0.18)) { expanded.toggle() } }
     }
 
     private var subtitle: String {
@@ -103,7 +133,8 @@ private struct RecentRow: View {
                 ProgressView().controlSize(.small)
             }
         case .received(let url):
-            LinkButton(title: "Show") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+            LinkButton(title: "Show") { ReceivedFile.reveal(url) }
+                .help("Show in Finder")
         case .link(let url):
             LinkButton(title: "Open") { NSWorkspace.shared.open(url) }
         case .sent, .failed, .text:
