@@ -11,7 +11,8 @@ SHARE="$APP/Contents/PlugIns/AproidShare.appex"
 WIDGET="$APP/Contents/PlugIns/AproidWidget.appex"
 
 swift build -c "$CONFIG"
-BIN="$(swift build -c "$CONFIG" --show-bin-path)/Aproid"
+BIN_DIR="$(swift build -c "$CONFIG" --show-bin-path)"
+BIN="$BIN_DIR/Aproid"
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$SHARE/Contents/MacOS" "$SHARE/Contents/Resources" "$WIDGET/Contents/MacOS"
@@ -47,7 +48,10 @@ xcrun swiftc $OPTIMIZE \
 # same tool for it. If this Xcode's tool wants something else, the app still works, just without the actions.
 SWIFT_FILES="$(mktemp)"
 EMPTY_LIST="$(mktemp)"
+CONST_VALUES="$(mktemp)"
 ls "$PWD"/Sources/Aproid/*.swift > "$SWIFT_FILES"
+find "$BIN_DIR/Aproid.build" -name '*.swiftconstvalues' > "$CONST_VALUES" 2>/dev/null || true
+echo "Shortcuts actions: $(wc -l < "$CONST_VALUES" | tr -d ' ') const value files"
 if xcrun appintentsmetadataprocessor \
     --toolchain-dir "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain" \
     --module-name Aproid \
@@ -59,18 +63,18 @@ if xcrun appintentsmetadataprocessor \
     --output "$APP/Contents/Resources" \
     --target-triple "$(uname -m)-apple-macos13.0" \
     --binary-file "$APP/Contents/MacOS/Aproid" \
-    --dependency-file "$(mktemp)" \
+    --dependency-file "$PWD/.build/Aproid_dependency_info.dat" \
     --stringsdata-file "$(mktemp)" \
     --source-file-list "$SWIFT_FILES" \
     --metadata-file-list "$EMPTY_LIST" \
     --static-metadata-file-list "$EMPTY_LIST" \
-    --swift-const-vals-list "$EMPTY_LIST" \
+    --swift-const-vals-list "$CONST_VALUES" \
+    --force \
     --no-app-shortcuts-localization; then
     if [ -d "$APP/Contents/Resources/Metadata.appintents" ]; then
         echo "Shortcuts actions: added"
     else
         echo "Shortcuts actions: the metadata tool ran but wrote nothing"
-        if [ -n "${CI:-}" ]; then xcrun appintentsmetadataprocessor --help 2>&1 | head -120; fi
     fi
 else
     echo "Shortcuts actions: skipped (the metadata tool failed)"
