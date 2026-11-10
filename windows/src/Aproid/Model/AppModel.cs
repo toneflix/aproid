@@ -633,7 +633,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
     {
         if (waitingFiles.Count == 0 && waitingNumber is null && waitingText is null) return;
 
-        if (Primary is Device phone)
+        // Files go to whichever device the panel shows; a number needs a phone.
+        if ((waitingNumber is null ? Shown : Primary) is Device phone)
         {
             if (waitingFiles.Count > 0) SendFiles(waitingFiles.ToList(), phone.Id);
             if (waitingNumber is string number) Dial(number);
