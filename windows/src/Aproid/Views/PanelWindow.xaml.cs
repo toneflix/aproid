@@ -302,7 +302,7 @@ public sealed partial class PanelWindow : Window
     // The hero's notifications badge: a bell, crossed out and faded while paused.
     public Lucide HeroBell(bool on) => on ? Lucide.Bell : Lucide.BellOff;
 
-    public string NotificationsHint(bool on) => on ? "Notifications on · click to pause" : "Notifications paused · click to turn on";
+    public string NotificationsHint(bool on) => on ? "Pause notifications" : "Turn on notifications";
 
     public Brush StatusBackground(bool on) => new SolidColorBrush(global::Windows.UI.Color.FromArgb(on ? (byte)0x14 : (byte)0x0A, 0, 0, 0));
 
