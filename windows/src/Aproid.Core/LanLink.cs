@@ -270,7 +270,7 @@ public sealed class LanLink(
         }
     }
 
-    private static List<IPAddress> BroadcastAddresses()
+    internal static List<IPAddress> BroadcastAddresses()
     {
         var addresses = new List<IPAddress> { IPAddress.Broadcast };
 

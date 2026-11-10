@@ -5,7 +5,9 @@ import java.io.InputStreamReader
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
+import java.net.Inet4Address
 import java.net.InetSocketAddress
+import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
@@ -70,13 +72,20 @@ class LanLink(
         udp = null
     }
 
-    /** Send our identity to everyone on the local network. */
-    fun broadcastIdentity(target: InetAddress = InetAddress.getByName("255.255.255.255")) {
+    /**
+     * Sends our identity to everyone on the local network: to 255.255.255.255 and to each network's own
+     * broadcast address, so it also reaches networks that aren't the default route, such as the phone's
+     * own hotspot. Throws only when no copy could be sent.
+     */
+    fun broadcastIdentity(target: InetAddress? = null) {
         val bytes = currentIdentity().toPacket().serialize().toByteArray(StandardCharsets.UTF_8)
+        val targets = target?.let(::listOf) ?: broadcastAddresses()
 
         DatagramSocket().use { socket ->
             socket.broadcast = true
-            socket.send(DatagramPacket(bytes, bytes.size, target, udpPort))
+
+            val results = targets.map { runCatching { socket.send(DatagramPacket(bytes, bytes.size, it, udpPort)) } }
+            if (results.none { it.isSuccess }) results.first().getOrThrow()
         }
     }
 
@@ -231,6 +240,23 @@ class LanLink(
             }.getOrNull() ?: continue
 
             handleAnnouncement(identity, dp.address)
+        }
+    }
+
+    companion object {
+        /** 255.255.255.255 plus the broadcast address of each IPv4 network this device is on. */
+        fun broadcastAddresses(): List<InetAddress> {
+            val addresses = linkedSetOf<InetAddress>(InetAddress.getByName("255.255.255.255"))
+
+            runCatching {
+                NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
+                    .filter { it.isUp && !it.isLoopback }
+                    .flatMap { it.interfaceAddresses }
+                    .filter { it.address is Inet4Address }
+                    .mapNotNullTo(addresses) { it.broadcast }
+            }
+
+            return addresses.toList()
         }
     }
 }

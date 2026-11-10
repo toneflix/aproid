@@ -132,6 +132,16 @@ public sealed class LanLinkTests : IDisposable
         return (onPhone, onPc);
     }
 
+    [Fact]
+    public void BroadcastsToEveryNetworkAndTheLimitedAddress()
+    {
+        var addresses = LanLink.BroadcastAddresses();
+
+        Assert.Equal(System.Net.IPAddress.Broadcast, addresses[0]);
+        Assert.Equal(addresses.Count, addresses.Distinct().Count());
+        Assert.DoesNotContain(addresses, System.Net.IPAddress.IsLoopback);
+    }
+
     private (Device Phone, Device Pc) ConnectPaired()
     {
         var (onPhone, onPc) = Connect();

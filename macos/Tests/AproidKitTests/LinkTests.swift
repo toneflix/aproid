@@ -137,6 +137,14 @@ final class LanLinkTests: XCTestCase {
         return (onPhone, onMac)
     }
 
+    func testBroadcastsToEveryNetworkAndTheLimitedAddress() {
+        let addresses = LanLink.broadcastAddresses()
+
+        XCTAssertEqual(addresses.first, "255.255.255.255")
+        XCTAssertEqual(addresses.count, Set(addresses).count)
+        XCTAssertFalse(addresses.contains { $0.hasPrefix("127.") })
+    }
+
     func testLinkIsEncryptedAndCarriesIdentities() throws {
         let (onPhone, onMac) = try connect()
 

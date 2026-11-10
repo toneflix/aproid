@@ -89,30 +89,79 @@ public final class LanLink {
         tcpPort = nil
     }
 
-    /// Send our identity to everyone on the local network.
+    /// How an identity broadcast went.
+    public enum BroadcastResult: Equatable {
+        case sent
+        /// macOS refused to send, which is what Local Network privacy does when Aproid isn't allowed.
+        case blocked
+        case failed
+    }
+
+    /// Sends our identity to everyone on the local network: to 255.255.255.255 and to each network's own
+    /// broadcast address, so it reaches every network this Mac is on and not only the default one.
     /// A plain BSD socket keeps this independent of the event loops.
-    public func broadcastIdentity(to address: String = "255.255.255.255") {
-        guard let data = try? currentIdentity().toPacket().serialize() else { return }
+    @discardableResult
+    public func broadcastIdentity(to address: String? = nil) -> BroadcastResult {
+        guard let data = try? currentIdentity().toPacket().serialize() else { return .failed }
 
         let fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
-        guard fd >= 0 else { return }
+        guard fd >= 0 else { return .failed }
         defer { close(fd) }
 
         var yes: Int32 = 1
         setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &yes, socklen_t(MemoryLayout<Int32>.size))
 
+        let errors = (address.map { [$0] } ?? Self.broadcastAddresses()).map { send(data, to: $0, over: fd) }
+
+        if errors.contains(0) { return .sent }
+        if errors.contains(EHOSTUNREACH) { return .blocked }
+        return .failed
+    }
+
+    /// 255.255.255.255 plus the broadcast address of each IPv4 network this Mac is on.
+    static func broadcastAddresses() -> [String] {
+        var addresses = ["255.255.255.255"]
+
+        var list: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&list) == 0, let first = list else { return addresses }
+        defer { freeifaddrs(list) }
+
+        for entry in sequence(first: first, next: { $0.pointee.ifa_next }) {
+            let flags = Int32(bitPattern: entry.pointee.ifa_flags)
+            guard flags & IFF_UP != 0, flags & IFF_BROADCAST != 0, flags & IFF_LOOPBACK == 0,
+                  let address = entry.pointee.ifa_addr, address.pointee.sa_family == sa_family_t(AF_INET),
+                  let netmask = entry.pointee.ifa_netmask else { continue }
+
+            let ip = address.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee.sin_addr.s_addr }
+            let mask = netmask.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee.sin_addr.s_addr }
+            var broadcast = in_addr(s_addr: ip | ~mask)
+
+            var buffer = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
+            guard inet_ntop(AF_INET, &broadcast, &buffer, socklen_t(INET_ADDRSTRLEN)) != nil else { continue }
+
+            let text = String(cString: buffer)
+            if !addresses.contains(text) { addresses.append(text) }
+        }
+
+        return addresses
+    }
+
+    /// Sends one datagram and returns 0, or the errno it failed with.
+    private func send(_ data: Data, to address: String, over fd: Int32) -> Int32 {
         var addr = sockaddr_in()
         addr.sin_family = sa_family_t(AF_INET)
         addr.sin_port = udpPortNumber.bigEndian
-        inet_pton(AF_INET, address, &addr.sin_addr)
+        guard inet_pton(AF_INET, address, &addr.sin_addr) == 1 else { return EINVAL }
 
-        _ = data.withUnsafeBytes { buf in
+        let sent = data.withUnsafeBytes { buf in
             withUnsafePointer(to: &addr) { ptr in
                 ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) {
                     sendto(fd, buf.baseAddress, buf.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
                 }
             }
         }
+
+        return sent < 0 ? errno : 0
     }
 
     /// Connect to a peer that announced itself. The link arrives through `onLink`.
