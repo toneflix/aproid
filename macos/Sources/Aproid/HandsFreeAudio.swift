@@ -123,7 +123,7 @@ final class HandsFreeAudio: NSObject, ObservableObject {
         stage = .pairing
         _ = send?(CallAudio.request(CallAudio.Request(.pair, address: address, name: macName)))
         openBluetoothSettings()
-        expire(after: 90, "Pairing didn't finish. Confirm the code on both screens, or pick \(macName) in your phone's Bluetooth settings.")
+        expire(after: 90, "Pairing didn't finish. Pick \(macName) in your phone's Bluetooth settings.")
     }
 
     func retry() {
@@ -208,7 +208,7 @@ final class HandsFreeAudio: NSObject, ObservableObject {
     private func connect() {
         guard let device = phoneDevice() else {
             gaveUp = true
-            stage = .failed("This Mac can't find your phone among its Bluetooth devices. Pair again, or remove the phone in Bluetooth settings first.")
+            stage = .failed("Phone not found in Bluetooth devices. Remove it in Bluetooth settings and pair again.")
             return
         }
 
@@ -217,7 +217,7 @@ final class HandsFreeAudio: NSObject, ObservableObject {
         self.handsFree = handsFree
         stage = .connecting
         handsFree?.connect()
-        expire(after: 20, "Your phone didn't accept the call audio link. Make sure Calls is on for \(macName) in your phone's Bluetooth settings.")
+        expire(after: 20, "Your phone refused. Turn on Calls for \(macName) in its Bluetooth settings.")
     }
 
     private func disconnect() {
@@ -268,7 +268,7 @@ final class HandsFreeAudio: NSObject, ObservableObject {
         guard ok else {
             disconnect()
             gaveUp = true
-            stage = .failed("Your phone refused the call audio link. Turn Bluetooth off and on on your phone, then try again.")
+            stage = .failed("Your phone refused. Restart Bluetooth on it and try again.")
             return
         }
 

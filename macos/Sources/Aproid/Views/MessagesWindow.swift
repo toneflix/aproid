@@ -121,9 +121,11 @@ private struct EmptyDetail: View {
                 .foregroundStyle(Theme.accent)
             Text(hasPhone ? "Pick a conversation" : "Your phone isn't connected")
                 .font(.system(size: 17, weight: .semibold))
-            Text(hasPhone ? "Texts you send go out from your phone's number." : "Open Aproid on your phone, on the same Wi-Fi as this Mac.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
+            if !hasPhone {
+                Text("Open Aproid on your phone, on the same Wi-Fi.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

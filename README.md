@@ -6,49 +6,35 @@
 
 <p align="center"><strong>Your Android phone and your computer, finally on speaking terms.</strong></p>
 
-<p align="center">For Android, Mac and Windows. Free, and nothing leaves your own network.</p>
+<p align="center">For Android, Mac and Windows. Free, with no servers and no account.</p>
 
 ---
-
-iPhone owners get a quiet little luxury: their phone and their Mac just work together. A text arrives and they answer it from the laptop. A photo goes from pocket to desktop in a second. The phone rings in the other room and they pick up from where they're sitting.
-
-If you carry an Android phone, you've mostly had to do without. Aproid fixes that. Install it on your phone and your computer, pair them once, and they'll work together like they came in the same box.
 
 ![The Aproid panel on a Mac with two phones paired, a call coming in, and the Messages window](web/public/screens/mac-overview.png)
 
 ## What it does
 
-**Notifications.** Your phone's notifications pop up on your computer, app icon and all. Reply to a WhatsApp message from your keyboard, or clear a notification on the computer and it's gone from the phone too.
-
-**Texts and calls.** Read and answer your SMS in a proper Messages window. When the phone rings, you'll see who it is and can pick up or decline right there. On a Mac you can even talk through the Mac's speakers and mic. That part is still new, so expect the odd hiccup.
-
-**Files.** Drop a file on Aproid, use the Share menu, or share from any app on your phone. A big video that gets cut off halfway carries on from where it stopped.
-
-**FlyyDrop.** Want to send photos to a friend's phone or a colleague's laptop? If they have Aproid and you're on the same Wi-Fi, just FlyyDrop them. No pairing needed. They see who it's from and what you're sending, and tap Accept or Decline. You choose who can FlyyDrop to you: only your own devices, everyone for the next 10 minutes, or everyone.
-
-**Screen mirroring.** See your phone in a window on your computer, with sound, and use it with your mouse and keyboard. Great for the apps that only live on your phone.
-
-**Photos.** Your latest photos and screenshots are right there on the computer. Grab the ones you want. On Windows they also show up in File Explorer.
-
-**Clipboard.** Copy on one, paste on the other. Text, pictures, even files.
-
-**Finding your phone.** Lost it in the sofa again? Make it ring from your computer, at full volume, even if it's on silent. If it's not in the house, see where it was last on a map.
-
-**And the rest.** Battery level at a glance, a heads up when it's running low, and play, pause and skip for whatever's playing on the phone.
-
-**Several phones, several computers.** Got a work phone and a personal one? Pair both. Got a Mac at home and a PC at work? Pair the phone with each. You can pair your computers with each other too, to pass files and links back and forth, share a clipboard and control the music on the other one.
-
-**No Wi-Fi? Still works.** On a hotel or café network that won't let devices see each other, Aproid finds your phone over Bluetooth and connects through your phone's hotspot instead.
+- **Notifications** with app icons. Reply from your keyboard; clear one and it's gone from the phone too.
+- **Texts and calls.** A Messages window for SMS. Answer or decline calls, and on a Mac talk through it (still experimental).
+- **Files.** Drop them on Aproid or share from any app. Big transfers resume if cut off.
+- **FlyyDrop.** Send to anyone nearby with Aproid, no pairing. They tap Accept. You pick who can FlyyDrop to you.
+- **Screen mirroring** with sound, mouse and keyboard.
+- **Photos.** Your latest photos and screenshots on the computer, and in File Explorer on Windows.
+- **Clipboard.** Text, pictures and files.
+- **Find your phone.** Ring it, even on silent, or see it on a map.
+- **Media and battery.** Play, pause, skip, and low battery alerts.
+- **Several phones and computers.** Pair as many as you like, including computers with each other.
+- **No shared Wi-Fi?** Aproid connects over Bluetooth and your phone's hotspot.
 
 ![Swipe between paired devices on Android and the Mac](web/public/screens/android-carousel.png)
 
-## Your stuff stays yours
+## Privacy
 
-There's no Aproid server, no account to make and nothing tracking you. Your phone and your computer talk straight to each other over your own network or Bluetooth, and everything they send is encrypted. Your own devices only connect after you've paired them and checked the same code on both screens. Someone you haven't paired can only ask to FlyyDrop you something, only if you've allowed it, and nothing arrives until you tap Accept. Your texts, photos and notifications never go anywhere but your own devices.
+No server, no account, no tracking. Devices talk directly over your network or Bluetooth, encrypted, and only after you pair them. Unpaired devices can only FlyyDrop to you if you allow it, and nothing arrives until you accept.
 
 ## Get it
 
-Download the latest version for each platform from the [Releases page](https://github.com/toneflix/aproid/releases).
+Download from [Releases](https://github.com/toneflix/aproid/releases).
 
 | | Needs | How it installs |
 | --- | --- | --- |
@@ -58,14 +44,14 @@ Download the latest version for each platform from the [Releases page](https://g
 
 ### Setting up
 
-1. Put your phone and computer on the same Wi-Fi (or turn on your phone's hotspot and join it).
-2. Open Aproid on both. Each one shows the other within a few seconds.
-3. Tap **Pair**, check the code matches on both screens, and accept.
-4. On the phone, allow notification access and whichever extras you want (messages, calls, screen control). Aproid explains each one when you turn it on.
+1. Put your phone and computer on the same Wi-Fi, or join your phone's hotspot.
+2. Open Aproid on both.
+3. Tap **Pair** and check the code matches.
+4. On the phone, allow notification access and any extras you want.
 
-Some phones, especially Tecno, Infinix, itel and Xiaomi models, close background apps aggressively. If the connection drops when you put the phone away, let Aproid run in the background in your phone's battery settings.
+If the connection drops when the phone is idle (common on Tecno, Infinix, itel and Xiaomi), let Aproid run in the background in your battery settings.
 
-Using KDE Connect as well? Close it while you set up Aproid, because the two apps compete for the same network port.
+Close KDE Connect while setting up; both use the same network port.
 
 ## For developers
 
@@ -100,7 +86,7 @@ swift test
 open build/Aproid.app
 ```
 
-Run it as a bundle. Without one, macOS won't show notifications or the Share menu entry.
+Run it as a bundle, or notifications and the Share menu won't work.
 
 **Windows** (.NET 8 SDK, and Windows for the app itself):
 
@@ -121,7 +107,7 @@ npm run dev
 
 ### Releasing
 
-Push a version tag such as `1.2.3` and `.github/workflows/release.yml` builds and publishes all three apps in one release. Use `android-1.2.3`, `macos-1.2.3` or `windows-1.2.3` to release a single app. The signing secrets each app needs are listed at the top of the workflow.
+Push a tag like `1.2.3` to release all three apps, or `android-1.2.3`, `macos-1.2.3`, `windows-1.2.3` for one. `.github/workflows/release.yml` lists the signing secrets.
 
 ## License
 

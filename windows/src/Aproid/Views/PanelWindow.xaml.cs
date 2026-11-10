@@ -247,9 +247,7 @@ public sealed partial class PanelWindow : Window
 
     public string SearchingTitle(bool hasNearby) => hasNearby ? "Pick your phone to pair" : "Looking for your phone";
 
-    public string SearchingHint(bool hasNearby) => hasNearby
-        ? "Choose it below, then check the same code shows on both screens."
-        : "Open Aproid on your Android phone, on the same Wi-Fi as this PC.";
+    public string SearchingHint(bool hasNearby) => hasNearby ? "" : "Open Aproid on your phone, on the same Wi-Fi.";
 
     public int BatteryCharge(DeviceState? device) => device?.Battery?.Charge ?? -1;
 
@@ -676,16 +674,16 @@ public sealed partial class PanelWindow : Window
 
         if (Model.CanShareNotifications)
         {
-            var share = new ToggleMenuFlyoutItem { Text = "Send this PC's notifications to my computers", IsChecked = Model.SharesNotifications };
+            var share = new ToggleMenuFlyoutItem { Text = "Share this PC's notifications", IsChecked = Model.SharesNotifications };
             share.Click += (_, _) => Model.SharesNotifications = share.IsChecked;
             SettingsMenu.Items.Add(share);
         }
 
-        var remote = new ToggleMenuFlyoutItem { Text = "Let my other computers see and use this PC", IsChecked = Model.AllowsRemoteInput };
+        var remote = new ToggleMenuFlyoutItem { Text = "Let my computers control this PC", IsChecked = Model.AllowsRemoteInput };
         remote.Click += (_, _) => Model.AllowsRemoteInput = remote.IsChecked;
         SettingsMenu.Items.Add(remote);
 
-        var relay = new ToggleMenuFlyoutItem { Text = "Pass phone notifications and calls between my computers", IsChecked = Model.RelaysPhones };
+        var relay = new ToggleMenuFlyoutItem { Text = "Share phone notifications and calls with my computers", IsChecked = Model.RelaysPhones };
         relay.Click += (_, _) => Model.RelaysPhones = relay.IsChecked;
         SettingsMenu.Items.Add(relay);
 
@@ -714,7 +712,7 @@ public sealed partial class PanelWindow : Window
         }
         SettingsMenu.Items.Add(switcher);
 
-        var flyyDrop = new MenuFlyoutSubItem { Text = "FlyyDrop: who can send to this PC" };
+        var flyyDrop = new MenuFlyoutSubItem { Text = "Who can FlyyDrop to this PC" };
         foreach (var (mode, label) in new[]
         {
             (Core.FlyyDrop.Receiving.Off, "Paired devices only"),
@@ -811,6 +809,6 @@ public sealed partial class PanelWindow : Window
     private void ResetDropZone()
     {
         DropOutline.SetValue(Microsoft.UI.Xaml.Shapes.Shape.StrokeProperty, Application.Current.Resources["AproidDashBrush"]);
-        DropLabel.Text = "Drop files or links here to send them";
+        DropLabel.Text = "Drop files or links to send";
     }
 }

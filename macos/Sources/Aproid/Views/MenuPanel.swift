@@ -121,11 +121,11 @@ private struct PanelHeader: View {
                 Picker("Switch phones with", selection: $model.switcherStyle) {
                     ForEach(PhoneSwitcherStyle.allCases) { Text($0.title).tag($0) }
                 }
-                Toggle("Let my other computers see and use this Mac", isOn: Binding(
+                Toggle("Let my computers control this Mac", isOn: Binding(
                     get: { model.allowsRemoteInput },
                     set: { model.allowsRemoteInput = $0 }
                 ))
-                Toggle("Pass phone notifications and calls between my computers", isOn: Binding(
+                Toggle("Share phone notifications and calls with my computers", isOn: Binding(
                     get: { model.relaysPhones },
                     set: { model.relaysPhones = $0 }
                 ))
@@ -208,13 +208,13 @@ private struct SearchingCard: View {
             VStack(spacing: 5) {
                 Text(hasNearby ? "Pick your phone to pair" : "Looking for your phone")
                     .font(.system(size: 16, weight: .bold))
-                Text(hasNearby
-                     ? "Choose it below, then check the same code shows on both screens."
-                     : "Open Aproid on your Android phone, on the same Wi-Fi as this Mac.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                if !hasNearby {
+                    Text("Open Aproid on your phone, on the same Wi-Fi.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .frame(maxWidth: .infinity)
@@ -230,8 +230,8 @@ private struct HotspotCard: View {
 
     private var explanation: String {
         model.phoneHotspotName == nil
-            ? "It isn't on this Wi-Fi. Use its hotspot to get online and connect; this Mac leaves its current network."
-            : "It isn't on this Wi-Fi. Your phone shows a switch to turn its hotspot on, and this Mac joins it."
+            ? "Not on this Wi-Fi. Join its hotspot to connect."
+            : "Not on this Wi-Fi. Turn on its hotspot to connect."
     }
 
     var body: some View {

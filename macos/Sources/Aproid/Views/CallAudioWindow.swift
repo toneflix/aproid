@@ -15,7 +15,7 @@ struct CallAudioWindow: View {
                     Text("Hear calls on your Mac").font(.system(size: 20, weight: .bold))
                     ExperimentalBadge()
                 }
-                Text("Your Mac joins your phone like a Bluetooth headset. Pair once, and calls ring, answer and play here.")
+                Text("Works like a Bluetooth headset. Pair once.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -73,13 +73,13 @@ struct CallAudioWindow: View {
     private var bluetoothDetail: AnyView {
         switch audio.stage {
         case .macOff:
-            return AnyView(StepHint(icon: .laptop, text: "Turn on Bluetooth on this Mac.", action: ("Open Bluetooth Settings", audio.openBluetoothSettings)))
+            return AnyView(StepHint(icon: .laptop, text: "Turn on Bluetooth on this Mac", action: ("Open Bluetooth Settings", audio.openBluetoothSettings)))
         case .phoneOff:
-            return AnyView(StepHint(icon: .smartphone, text: "Turn on Bluetooth on your phone.", action: ("Check again", audio.refresh)))
+            return AnyView(StepHint(icon: .smartphone, text: "Turn on Bluetooth on your phone", action: ("Check again", audio.refresh)))
         case .notAllowed:
-            return AnyView(StepHint(icon: .hand, text: "Open Aproid on your phone and allow Nearby devices.", action: ("Check again", audio.refresh)))
+            return AnyView(StepHint(icon: .hand, text: "Allow Nearby devices in Aproid on your phone", action: ("Check again", audio.refresh)))
         case .noPhone, .checking:
-            return AnyView(StepHint(icon: .wifi, text: "Waiting for your phone to connect to Aproid…", action: nil))
+            return AnyView(StepHint(icon: .wifi, text: "Waiting for your phone…", action: nil))
         default:
             return AnyView(EmptyView())
         }
@@ -88,11 +88,11 @@ struct CallAudioWindow: View {
     private var pairDetail: AnyView {
         switch audio.stage {
         case .notPaired:
-            return AnyView(StepHint(icon: .link, text: "Your phone asks to pair with \(audio.macName).", action: ("Pair", audio.pair)))
+            return AnyView(StepHint(icon: .link, text: "Pair your phone with \(audio.macName)", action: ("Pair", audio.pair)))
         case .pairing:
             return AnyView(StepHint(
                 icon: .hash,
-                text: "Check that the same code shows on both screens, then confirm on each. Nothing yet? Pick \(audio.macName) in your phone's Bluetooth settings.",
+                text: "Confirm the code on both screens. Nothing showing? Pick \(audio.macName) in your phone's Bluetooth settings.",
                 action: ("Open Bluetooth Settings", audio.openBluetoothSettings),
                 isBusy: true
             ))
@@ -108,9 +108,9 @@ struct CallAudioWindow: View {
         case .connecting:
             return AnyView(StepHint(icon: .radio, text: "Connecting to \(audio.phoneName ?? "your phone")…", action: nil, isBusy: true))
         case .paused:
-            return AnyView(StepHint(icon: .circlePause, text: "Paired. Turn on “Use this Mac for calls” to connect.", action: nil))
+            return AnyView(StepHint(icon: .circlePause, text: "Paired. Turn on “Use this Mac for calls”.", action: nil))
         case .ready:
-            return AnyView(StepHint(icon: .badgeCheck, text: "Calls now play here. Use the call banner to move them back to your phone.", action: nil))
+            return AnyView(StepHint(icon: .badgeCheck, text: "Calls play here", action: nil))
         case .failed(let reason) where audio.isPaired:
             return AnyView(StepHint(icon: .triangleAlert, text: reason, action: ("Try again", audio.retry), isWarning: true))
         default:
@@ -123,7 +123,7 @@ struct CallAudioWindow: View {
             Toggle(isOn: $audio.isEnabled) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Use this Mac for calls").font(.system(size: 13, weight: .semibold))
-                    Text("Off keeps calls on your phone, still paired.")
+                    Text("Off keeps calls on your phone")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
@@ -131,7 +131,7 @@ struct CallAudioWindow: View {
             .toggleStyle(.switch)
             .card(padding: 12)
 
-            Text("Bluetooth call audio is phone-call quality, like a headset, and some macOS versions handle it unreliably.")
+            Text("Headset-quality audio. Can be unreliable on some macOS versions.")
                 .font(.system(size: 10.5))
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)

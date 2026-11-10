@@ -80,7 +80,6 @@
                         <views:LucideIcon Icon="MessagesSquare" Size="28" Foreground="{ThemeResource AproidAccentBrush}" />
                     </Border>
                     <TextBlock Text="Pick a conversation" Style="{StaticResource AproidTitle}" HorizontalAlignment="Center" />
-                    <TextBlock Text="Your phone's texts show here. Replies are sent from your phone." Style="{StaticResource AproidBody}" TextAlignment="Center" MaxWidth="260" />
                 </StackPanel>
 
                 <Grid Visibility="{x:Bind Store.HasSelection, Mode=OneWay}">

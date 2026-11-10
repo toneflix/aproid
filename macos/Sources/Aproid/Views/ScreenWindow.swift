@@ -56,15 +56,15 @@ struct ScreenWindow: View {
 
     private var statusHint: String {
         switch mirror.phase {
-        case .ended: return "The phone stopped sharing its screen, or the connection dropped."
-        case .idle: return "Choose Mirror in the Aproid menu to start."
-        default: return "Tap the Aproid notification on your phone, then choose \"Start now\"."
+        case .ended: return "The phone stopped sharing or disconnected."
+        case .idle: return "Start from Mirror in the Aproid menu."
+        default: return "Tap the notification on your phone, then \"Start now\"."
         }
     }
 
     private var controls: some View {
         HStack(spacing: 34) {
-            control(.chevronLeft, help: "Back (Esc or right-click). Type, select and edit text with your keyboard.") { mirror.input(.key(ScreenInput.back)) }
+            control(.chevronLeft, help: "Back (Esc or right-click)") { mirror.input(.key(ScreenInput.back)) }
             control(.circle, help: "Home") { mirror.input(.key(ScreenInput.home)) }
             control(.copy, help: "Recent apps") { mirror.input(.key(ScreenInput.recents)) }
             control(.bell, help: "Notifications") { mirror.input(.key(ScreenInput.notifications)) }

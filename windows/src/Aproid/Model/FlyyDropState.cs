@@ -28,9 +28,14 @@ public sealed record FlyyDropAsk(FlyyDrop.Offer Offer, string DeviceName, Device
         }
     }
 
-    /// Where it lands once accepted, and that a stranger gets nothing more.
-    public string Hint => (Offer.Items.Count > 0 ? "Saved to Downloads. " : "")
-        + (IsPaired ? "From your paired device." : "Not paired: they can't see or use anything else.");
+    /// Where it lands once accepted, and whether the sender is paired.
+    public string Hint => (Offer.Items.Count > 0, IsPaired) switch
+    {
+        (true, true) => "Saved to Downloads",
+        (true, false) => "Saved to Downloads · Not paired",
+        (false, true) => "",
+        (false, false) => "Not paired",
+    };
 
     public Lucide Icon => Offer.Items.Count == 0 ? Lucide.Link : IsImages ? Lucide.Image : Lucide.File;
 }

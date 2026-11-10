@@ -740,11 +740,11 @@ final class AppModel: ObservableObject {
         nearby.search(.hotspot)
 
         guard let id = hotspotPhoneId else {
-            hotspotStatus = "Turn on the hotspot on your phone, then pick it in the Wi-Fi menu. Aproid remembers it for next time."
+            hotspotStatus = "Turn on your phone's hotspot and pick it in the Wi-Fi menu once."
             return
         }
 
-        hotspotStatus = "Asking your phone to turn on its hotspot…"
+        hotspotStatus = "Turning on your phone's hotspot…"
         hotspot.join(deviceId: id) { [weak self] status in Task { @MainActor in self?.hotspotChanged(status) } }
     }
 
@@ -755,10 +755,10 @@ final class AppModel: ObservableObject {
 
     private func hotspotChanged(_ status: PhoneHotspot.Status?) {
         switch status {
-        case .waiting(let ssid): hotspotStatus = "Waiting for \(ssid). Tap the notification on your phone to turn it on."
+        case .waiting(let ssid): hotspotStatus = "Tap the notification on your phone to turn on \(ssid)."
         case .joining(let ssid): hotspotStatus = "Joining \(ssid)…"
         case .failed(let reason): hotspotStatus = reason
-        case nil: hotspotStatus = "Joined. Connecting to your phone…"
+        case nil: hotspotStatus = "Connecting…"
         }
     }
 

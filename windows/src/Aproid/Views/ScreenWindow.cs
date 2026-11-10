@@ -147,9 +147,9 @@ public sealed class ScreenWindow : Window
         };
         statusHint.Text = phase switch
         {
-            MirrorPhase.Ended => "The phone stopped sharing its screen, or the connection dropped.",
-            MirrorPhase.Idle => "Choose Mirror in the Aproid panel to start.",
-            _ => "Tap the Aproid notification on your phone, then choose \"Start now\".",
+            MirrorPhase.Ended => "The phone stopped sharing or disconnected.",
+            MirrorPhase.Idle => "Start from Mirror in the Aproid panel.",
+            _ => "Tap the notification on your phone, then \"Start now\".",
         };
         waiting.IsActive = phase == MirrorPhase.Waiting;
         waiting.Visibility = phase == MirrorPhase.Waiting ? Visibility.Visible : Visibility.Collapsed;

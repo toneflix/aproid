@@ -30,9 +30,7 @@ public sealed record DeviceState(
 
     public string PairingTitle => IsOurRequest ? $"Waiting for {Name}" : $"Pair with {Name}?";
 
-    public string PairingHint => IsOurRequest
-        ? $"Accept on {Other} if it shows the same code."
-        : $"Check that the same code shows on {Other}. Pairing lets it send {(IsComputer ? "files, links" : "notifications, files")} and your clipboard to this PC.";
+    public string PairingHint => IsOurRequest ? $"Accept on {Other} if the code matches" : $"Same code on {Other}?";
 
     /// The verification code as separate characters.
     public IReadOnlyList<string> CodeCharacters => (Code ?? "").Where(c => !char.IsWhiteSpace(c)).Select(c => c.ToString()).ToList();
@@ -56,7 +54,7 @@ public sealed record DeviceState(
 
     public Icons.Lucide FlyyDropIcon => IsFlyyDropWaiting ? Icons.Lucide.X : Icons.Lucide.Radar;
 
-    public string FlyyDropHint => IsFlyyDropWaiting ? "Stop waiting" : $"FlyyDrop files to {Name} · or drop them on this row";
+    public string FlyyDropHint => IsFlyyDropWaiting ? "Stop waiting" : $"FlyyDrop files to {Name}";
 
     /// The row's second line: how a FlyyDrop to it is going, or else the usual subtitle.
     public string RowSubtitle => Outgoing?.Status ?? Subtitle;

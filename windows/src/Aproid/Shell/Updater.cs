@@ -86,7 +86,7 @@ internal sealed class Updater(ToastCenter toasts)
     private void Offer(Release release) => toasts.Show(
         key => new AppNotificationBuilder()
             .AddText($"Aproid {release.Version.ToString(3)} is available")
-            .AddText($"You have {CurrentText}. Aproid restarts to update, which takes a few seconds.")
+            .AddText($"You have {CurrentText}. Aproid restarts to update.")
             .AddButton(ToastCenter.Button("Update now", "update", key))
             .AddButton(ToastCenter.Button("What's new", "notes", key)),
         (action, input) =>

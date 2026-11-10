@@ -53,7 +53,7 @@ internal sealed class PhoneHotspot(Func<IReadOnlyDictionary<string, string>> nam
         {
             if (await WiFiAdapter.RequestAccessAsync() != WiFiAccessStatus.Allowed)
             {
-                onStatus(new Status.Failed("Windows didn't let Aproid use Wi-Fi. Turn on location for apps in Settings, then try again."));
+                onStatus(new Status.Failed("Turn on location for apps in Settings to use Wi-Fi."));
                 return;
             }
 
@@ -81,13 +81,13 @@ internal sealed class PhoneHotspot(Func<IReadOnlyDictionary<string, string>> nam
                     var result = await adapter.ConnectAsync(network, WiFiReconnectionKind.Automatic);
                     onStatus(result.ConnectionStatus == WiFiConnectionStatus.Success
                         ? null
-                        : new Status.Failed($"Couldn't join {ssid}. Pick it once in the Wi-Fi menu so Windows saves its password."));
+                        : new Status.Failed($"Couldn't join {ssid}. Pick it once in the Wi-Fi menu."));
                     return;
                 }
 
                 if (DateTimeOffset.Now > deadline)
                 {
-                    onStatus(new Status.Failed($"Couldn't see {ssid}. Turn on the hotspot on your phone and try again."));
+                    onStatus(new Status.Failed($"Couldn't find {ssid}. Turn on your phone's hotspot and try again."));
                     return;
                 }
 

@@ -52,10 +52,9 @@ struct RemoteDesktopWindow: View {
     private var hint: String {
         switch desktop.phase {
         case .ended:
-            return "\(desktop.deviceName) stopped sharing or went offline. Aproid there needs Screen Recording access, "
-                + "and \"Let my other computers see and use\" turned on."
-        case .idle: return "Choose View screen in the Aproid menu to start."
-        default: return "Waiting for the first picture."
+            return "\(desktop.deviceName) stopped sharing. It needs Screen Recording access and \"Let my computers control this Mac\" on."
+        case .idle: return "Start from View screen in the Aproid menu."
+        default: return "Connecting…"
         }
     }
 }

@@ -19,7 +19,7 @@ struct ScreenShareCard: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Screen").font(.system(size: 13, weight: .semibold))
-                Text(watching ? "\(device.name) is watching this Mac." : "See and use \(device.name)'s screen.")
+                Text(watching ? "\(device.name) is watching" : "View and control \(device.name)")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
