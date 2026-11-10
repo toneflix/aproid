@@ -32,6 +32,8 @@ internal sealed class Settings
         public Dictionary<string, string> InputEdges { get; set; } = new();
         public bool AllowsRemoteInput { get; set; } = true;
         public bool RelaysPhones { get; set; } = true;
+        public Core.FlyyDrop.Receiving FlyyDropReceiving { get; set; } = Core.FlyyDrop.Receiving.Off;
+        public long FlyyDropUntil { get; set; }
     }
 
     public Settings(string path)
@@ -166,6 +168,17 @@ internal sealed class Settings
         set
         {
             values.AllowsRemoteInput = value;
+            Save();
+        }
+    }
+
+    /// Who may FlyyDrop to this PC without being paired, and when "Everyone for 10 minutes" ends.
+    public (Core.FlyyDrop.Receiving Mode, long Until) FlyyDropReceiving
+    {
+        get => (values.FlyyDropReceiving, values.FlyyDropUntil);
+        set
+        {
+            (values.FlyyDropReceiving, values.FlyyDropUntil) = value;
             Save();
         }
     }

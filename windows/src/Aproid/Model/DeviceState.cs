@@ -13,7 +13,9 @@ public sealed record DeviceState(
     string? Code,
     BatteryStatus? Battery,
     NowPlaying? Media = null,
-    PhoneLocation? Location = null)
+    PhoneLocation? Location = null,
+    bool CanFlyyDrop = false,
+    FlyyDropSend? Outgoing = null)
 {
     public bool IsPaired => PairState == PairState.Paired;
 
@@ -42,6 +44,22 @@ public sealed record DeviceState(
     public bool HasBattery => Battery is not null;
 
     public string BatteryText => Battery is { } battery ? $"{battery.Charge}%" : "–";
+
+    /// Files can go to it with FlyyDrop, without pairing first.
+    public bool ShowsFlyyDrop => PairState == PairState.NotPaired && CanFlyyDrop;
+
+    public bool IsFlyyDropWaiting => Outgoing?.Stage == FlyyDropStage.Waiting;
+
+    public bool IsFlyyDropSending => Outgoing?.Stage == FlyyDropStage.Sending;
+
+    public double FlyyDropPercent => (Outgoing?.Progress?.Fraction ?? 0) * 100;
+
+    public Icons.Lucide FlyyDropIcon => IsFlyyDropWaiting ? Icons.Lucide.X : Icons.Lucide.Radar;
+
+    public string FlyyDropHint => IsFlyyDropWaiting ? "Stop waiting" : $"FlyyDrop files to {Name} · or drop them on this row";
+
+    /// The row's second line: how a FlyyDrop to it is going, or else the usual subtitle.
+    public string RowSubtitle => Outgoing?.Status ?? Subtitle;
 
     public string Subtitle => PairState switch
     {

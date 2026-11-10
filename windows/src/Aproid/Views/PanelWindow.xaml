@@ -40,6 +40,63 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Someone nearby wants to FlyyDrop -->
+                <Border Style="{StaticResource AproidCard}" Padding="18" Visibility="{x:Bind Model.ShowsFlyyDropAsk, Mode=OneWay}">
+                    <StackPanel Spacing="14">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid Width="52" Height="52">
+                                <Ellipse x:Name="FlyyDropPulse" Fill="{ThemeResource AproidTintBrush}" RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform>
+                                        <ScaleTransform x:Name="FlyyDropPulseScale" />
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+                                <views:DeviceArt Type="{x:Bind AskType(Model.FlyyDropAsk), Mode=OneWay}" ArtWidth="24" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Grid>
+                            <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                <TextBlock Text="{x:Bind Model.FlyyDropAsk.Title, Mode=OneWay, FallbackValue=''}" Style="{StaticResource AproidTitle}" TextWrapping="Wrap" />
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <views:LucideIcon Icon="{x:Bind AskIcon(Model.FlyyDropAsk), Mode=OneWay}" Size="12" Foreground="{ThemeResource AproidAccentBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind Model.FlyyDropAsk.Summary, Mode=OneWay, FallbackValue=''}" FontSize="12.5" FontWeight="SemiBold" Foreground="{ThemeResource AproidTextBrush}" TextTrimming="CharacterEllipsis" MaxWidth="230" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="Decline" Style="{StaticResource AproidPillButton}" HorizontalAlignment="Stretch" Click="DeclineFlyyDrop_Click" />
+                            <Button Grid.Column="1" Content="Accept" Style="{StaticResource AproidPillAccentButton}" HorizontalAlignment="Stretch" Click="AcceptFlyyDrop_Click" />
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                            <views:LucideIcon Icon="Lock" Size="11" Foreground="{ThemeResource AproidSubBrush}" />
+                            <TextBlock Text="{x:Bind Model.FlyyDropAsk.Hint, Mode=OneWay, FallbackValue=''}" FontSize="10.5" Foreground="{ThemeResource AproidSubBrush}" TextWrapping="Wrap" MaxWidth="280" TextAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Visible to everyone nearby -->
+                <Border Style="{StaticResource AproidCard}" Padding="10,8" Visibility="{x:Bind Model.ShowsFlyyDropBanner, Mode=OneWay}">
+                    <Grid ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="26" Height="26" CornerRadius="13" Background="{ThemeResource AproidTintBrush}">
+                            <views:LucideIcon Icon="Radar" Size="13" Foreground="{ThemeResource AproidAccentBrush}" />
+                        </Border>
+                        <TextBlock Grid.Column="1" Text="{x:Bind Model.FlyyDropBannerText, Mode=OneWay}" Style="{StaticResource AproidCaption}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <HyperlinkButton Grid.Column="2" Content="Turn off" Padding="4,0" FontSize="11" VerticalAlignment="Center" Click="StopFlyyDropReceiving_Click" />
+                    </Grid>
+                </Border>
+
                 <!-- No phone yet -->
                 <Border Style="{StaticResource AproidCard}" Padding="18" Visibility="{x:Bind Model.ShowsSearching, Mode=OneWay}">
                     <StackPanel Spacing="14" Padding="0,10">
@@ -345,10 +402,11 @@
                         <ItemsControl ItemsSource="{x:Bind Model.Others, Mode=OneWay}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="model:DeviceState">
-                                    <Grid ColumnSpacing="10" Padding="0,4">
+                                    <Grid ColumnSpacing="10" Padding="0,4" CornerRadius="8" Background="Transparent" Tag="{x:Bind Id}" AllowDrop="True" DragOver="Row_DragOver" DragLeave="Row_DragLeave" Drop="Row_Drop">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Border Width="30" Height="30" CornerRadius="8" Background="{ThemeResource AproidTintBrush}">
@@ -356,9 +414,14 @@
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBlock Text="{x:Bind Name}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource AproidTextBrush}" />
-                                            <TextBlock Text="{x:Bind Subtitle}" Style="{StaticResource AproidCaption}" />
+                                            <TextBlock Text="{x:Bind RowSubtitle}" Style="{StaticResource AproidCaption}" TextTrimming="CharacterEllipsis" />
+                                            <ProgressBar Value="{x:Bind FlyyDropPercent}" Margin="0,4,0,0" Visibility="{x:Bind IsFlyyDropSending}" />
                                         </StackPanel>
-                                        <Button Grid.Column="2" Content="{x:Bind views:PanelWindow.RowAction(PairState)}" Tag="{x:Bind Id}" Click="RowAction_Click" VerticalAlignment="Center" CornerRadius="8" Padding="12,4" />
+                                        <Button Grid.Column="2" Width="30" Height="30" Padding="0" CornerRadius="15" Tag="{x:Bind Id}" Click="FlyyDrop_Click" VerticalAlignment="Center" Visibility="{x:Bind ShowsFlyyDrop}"
+                                                ToolTipService.ToolTip="{x:Bind FlyyDropHint}" AutomationProperties.Name="{x:Bind FlyyDropHint}">
+                                            <views:LucideIcon Icon="{x:Bind FlyyDropIcon}" Size="14" Foreground="{ThemeResource AproidAccentBrush}" />
+                                        </Button>
+                                        <Button Grid.Column="3" Content="{x:Bind views:PanelWindow.RowAction(PairState)}" Tag="{x:Bind Id}" Click="RowAction_Click" VerticalAlignment="Center" CornerRadius="8" Padding="12,4" />
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
