@@ -83,6 +83,9 @@ public enum PacketType {
 
     /// Keyboard and mouse shared between computers. Body: {"action", ...}; see `RemoteInput`.
     public static let input = "aproid.input"
+
+    /// A phone's packet passed on through another computer. Body: {"phoneId", "phoneName", "packet"}; see `Relay`.
+    public static let relay = "aproid.relay"
 }
 
 public enum Capabilities {
@@ -121,5 +124,6 @@ public enum Capabilities {
         PacketType.callAudio,
         PacketType.heartbeat,
         PacketType.input,
+        PacketType.relay,
     ]
 }

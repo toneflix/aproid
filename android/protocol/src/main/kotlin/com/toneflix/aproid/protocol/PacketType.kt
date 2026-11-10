@@ -82,6 +82,9 @@ object PacketType {
 
     /** Keyboard and mouse shared between computers. Body: {"action", ...}; see [RemoteInput]. */
     const val INPUT = "aproid.input"
+
+    /** A phone's packet passed on through another computer. Body: {"phoneId", "phoneName", "packet"}; see [Relay]. */
+    const val RELAY = "aproid.relay"
 }
 
 /** What this MVP sends and accepts. Kept in one place so both apps advertise the same set. */
@@ -121,5 +124,6 @@ object Capabilities {
         PacketType.CALL_AUDIO,
         PacketType.HEARTBEAT,
         PacketType.INPUT,
+        PacketType.RELAY,
     )
 }
