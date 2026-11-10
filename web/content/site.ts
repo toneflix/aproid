@@ -6,10 +6,9 @@ export const site = {
   url: "https://aproid.toneflix.com",
   github: "https://github.com/toneflix/aproid",
   releases: "https://github.com/toneflix/aproid/releases/latest",
-  // TODO: replace with the registered company name, address and support email before publishing.
-  legalEntity: "[Legal entity name]",
-  legalAddress: "[Registered address]",
-  contactEmail: "[contact email]",
-  jurisdiction: "[Country or state]",
+  legalEntity: "Toneflix Technologies Limited",
+  legalAddress: "197, Ahoada Road, Omoku, Rivers State, Nigeria",
+  contactEmail: "support@toneflix.net",
+  jurisdiction: "the Federal Republic of Nigeria",
   policyDate: "10 November 2026",
 };
