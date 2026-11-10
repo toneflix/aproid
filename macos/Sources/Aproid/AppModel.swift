@@ -124,6 +124,7 @@ final class AppModel: ObservableObject {
     private let calls = CallPlugin()
     private let callAudioPlugin = CallAudioPlugin()
     private let find = FindPlugin()
+    private let mediaHost: MediaHostPlugin
     /// Carries call audio over Bluetooth, with this Mac as the phone's hands-free device.
     let callAudio = HandsFreeAudio()
     private let callPanel = CallPanel()
@@ -163,6 +164,7 @@ final class AppModel: ObservableObject {
             deviceType: Self.isLaptop() ? .laptop : .desktop
         )
         battery = BatteryPlugin(devices: connected)
+        mediaHost = MediaHostPlugin(devices: connected)
         clipboard = ClipboardPlugin(devices: connected)
         nearby = NearbyFinder(ownId: identity.deviceId)
         let screen = ScreenMirror()
@@ -170,7 +172,7 @@ final class AppModel: ObservableObject {
         screenPlugin = ScreenPlugin(decoder: screen.decoder, audio: screen.audio)
         screenWindow = ScreenWindowController(mirror: screen)
         notifications = NotificationPlugin(devices: connected)
-        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin, find])
+        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin, find, mediaHost])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
         switcherStyle = UserDefaults.standard.string(forKey: "switcherStyle").flatMap(PhoneSwitcherStyle.init(rawValue:)) ?? .carousel
         opensAtLogin = LoginItem.isEnabled

@@ -31,6 +31,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private readonly PhotosPlugin photos = new();
     private readonly ScreenPlugin screen = new();
     private readonly FindPlugin find;
+    private readonly MediaHostPlugin mediaHost;
     private LanLink? link;
     private DispatcherQueueTimer? timer;
     private DateOnly notificationsDay = DateOnly.FromDateTime(DateTime.Now);
@@ -137,7 +138,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
         };
         Mirror.Send = (id, packet) => connected[id]?.Send(packet) == true;
         find = new FindPlugin(toasts);
-        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find]);
+        mediaHost = new MediaHostPlugin(connected);
+        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find, mediaHost]);
 
         updater = new Updater(toasts) { OnInstalling = () => ui.TryEnqueue(() => UpdateInstalling?.Invoke()) };
         hotspot = new PhoneHotspot(() => settings.PhoneHotspots, settings.RememberHotspot);
