@@ -74,7 +74,7 @@ export const features: Feature[] = [
   {
     icon: Laptop,
     title: "Computer to computer",
-    body: "Pair your Mac with your PC to pass files and links back and forth, share a clipboard and control the music on the other one.",
+    body: "Pair your computers with each other, Mac or PC, to pass files and links back and forth, share a clipboard and control the music on the other one.",
   },
   {
     icon: Wifi,

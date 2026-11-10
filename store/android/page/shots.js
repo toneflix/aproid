@@ -92,7 +92,7 @@ const SHOTS = [
         size: '48.6 MB',
         targets: [
           { name: 'MacBook Pro', progress: 64, detail: '8 of 12 · 41 MB/s · about 1 second left' },
-          { name: 'iMac' },
+          { name: 'Work PC' },
         ],
       }),
     ),
@@ -120,13 +120,13 @@ const SHOTS = [
     lines: ['Copy here,', 'paste there'],
     screen: (app) => app.screen(
       app.home([
-        app.hero('MacBook Pro', FLOWING),
+        app.hero('Work PC', FLOWING),
         app.tiles(),
         app.recent([
-          { icon: 'clipboard', title: 'Copied from MacBook Pro', detail: 'Wi-Fi password: blue-lagoon-42', when: '1 min. ago' },
+          { icon: 'clipboard', title: 'Copied from Work PC', detail: 'Wi-Fi password: blue-lagoon-42', when: '1 min. ago' },
         ]),
       ]),
-      app.toast('Clipboard sent to your Mac'),
+      app.toast('Clipboard sent to your computer'),
     ),
   }),
   new StoreShot({
@@ -134,10 +134,10 @@ const SHOTS = [
     lines: ['One phone,', 'all your computers'],
     dark: true,
     screen: (app) => app.screen(app.home([
-      app.carousel(['MacBook Pro', 'iMac']),
+      app.carousel(['MacBook Pro', 'Work PC']),
       app.tiles(),
       app.recent([
-        { icon: 'file-text', title: 'Q3-report.xlsx', detail: 'From iMac · Saved to Downloads', when: '3 min. ago' },
+        { icon: 'file-text', title: 'Q3-report.xlsx', detail: 'From Work PC · Saved to Downloads', when: '3 min. ago' },
         { icon: 'image', title: 'Screenshot 2026-11-10.png', detail: 'From MacBook Pro · Saved to Downloads', when: '8 min. ago' },
       ]),
     ])),
@@ -146,8 +146,8 @@ const SHOTS = [
     id: '06-pair',
     lines: ['Pair once,', 'stay connected'],
     screen: (app) => app.screen(
-      app.home([app.hero('MacBook Pro', FLOWING), app.tiles()]),
-      app.pairSheet('MacBook Pro', '4F7A2C91'),
+      app.home([app.hero('Work PC', FLOWING), app.tiles()]),
+      app.pairSheet('Work PC', '4F7A2C91'),
     ),
   }),
 ];
