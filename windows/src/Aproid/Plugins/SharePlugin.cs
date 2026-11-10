@@ -217,18 +217,18 @@ internal sealed class SharePlugin(string folder, TransferStore store, ToastCente
         Report(key, done, finished: error is null || transferId is null);
     }
 
-    /// Tells the user a file arrived. Clicking it shows the file in Explorer.
+    /// Tells the user a file arrived. Clicking it opens the file, and its second button shows it in Explorer.
     private void AnnounceFile(string path, string deviceName)
     {
         toasts.Show(key => new AppNotificationBuilder()
             .AddText(Path.GetFileName(path))
             .AddText($"From {deviceName} · Saved to Downloads")
-            .AddButton(ToastCenter.Button("Open", "file", key))
-            .AddButton(ToastCenter.Button("Show in folder", "open", key)),
+            .AddButton(ToastCenter.Button("Open", "open", key))
+            .AddButton(ToastCenter.Button("Show in folder", "folder", key)),
             (action, _) =>
             {
-                if (action == "file") Shell.Explorer.Open(path);
-                else Shell.Explorer.Reveal(path);
+                if (action == "folder") Shell.Explorer.Reveal(path);
+                else Shell.Explorer.OpenFile(path);
             });
     }
 

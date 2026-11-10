@@ -31,6 +31,9 @@ public sealed record Activity(ActivityKind Kind, string Title, string Detail)
 
     public bool ShowsProgress => Progress is not null;
 
+    /// The row's tooltip: what clicking it does.
+    public string? Hint => Path is not null ? "Click to open · right-click to show in folder" : Url is not null ? "Click to open" : null;
+
     public double ProgressPercent => (Progress?.Fraction ?? 0) * 100;
 
     /// The detail line, or how far the transfer has got while it moves.

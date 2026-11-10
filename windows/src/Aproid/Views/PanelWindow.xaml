@@ -311,7 +311,7 @@
                         <ItemsControl ItemsSource="{x:Bind Model.Recent}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="model:Activity">
-                                    <Button Style="{StaticResource AproidPlainButton}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="4,6" Tag="{x:Bind}" Click="Activity_Click">
+                                    <Button Style="{StaticResource AproidPlainButton}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="4,6" Tag="{x:Bind}" Click="Activity_Click" ContextRequested="Activity_ContextRequested" ToolTipService.ToolTip="{x:Bind Hint}">
                                         <Grid ColumnSpacing="10">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
