@@ -1,0 +1,51 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Inter, -apple-system, sans-serif; color: #1c1c1e; background: transparent; -webkit-font-smoothing: antialiased; }
+svg.i { width: 14px; height: 14px; stroke-width: 2.2; }
+
+.panel { width: 360px; padding: 14px; background: #F8F6F1; border-radius: 14px; display: flex; flex-direction: column; gap: 12px; }
+.header { display: flex; align-items: center; gap: 10px; }
+.header img { width: 26px; height: 26px; border-radius: 7px; }
+.header b { font-size: 15px; flex: 1; }
+.header svg { color: #8a8a8e; }
+
+.carousel { position: relative; padding-right: 22px; }
+.hero { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 14px; background: linear-gradient(135deg, #F6C101, #BB8C01); }
+.peek { position: absolute; right: 0; top: 0; bottom: 0; width: 14px; border-radius: 14px 0 0 14px; background: linear-gradient(135deg, #F6C101, #D9A401); opacity: 0.75; }
+.phone-art { width: 40px; height: 76px; border-radius: 10px; background: #1C1C20; padding: 3px; }
+.phone-art div { width: 100%; height: 100%; border-radius: 7px; background: #0086C9; }
+.hero .info { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.hero .name { font-size: 16px; font-weight: 700; }
+.pill { align-self: flex-start; display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #127A4E; background: #E3F5EC; padding: 4px 9px; border-radius: 99px; }
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #127A4E; }
+.pill svg { width: 11px; height: 11px; }
+.status { display: flex; gap: 6px; }
+.status span { width: 24px; height: 24px; border-radius: 50%; background: rgba(0,0,0,0.08); display: grid; place-items: center; color: rgba(0,0,0,0.7); }
+.status svg { width: 12px; height: 12px; }
+.ring { width: 52px; height: 52px; position: relative; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.ring svg { position: absolute; inset: 0; width: 52px; height: 52px; transform: rotate(-90deg); }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.card { background: #fff; border-radius: 14px; border: 1px solid rgba(0,0,0,0.06); padding: 10px; }
+.tile { display: flex; align-items: center; gap: 10px; min-height: 56px; }
+.chip { width: 34px; height: 34px; border-radius: 9px; background: #E3F6FF; color: #0086C9; display: grid; place-items: center; flex: none; }
+.chip.green { background: #E3F5EC; color: #127A4E; }
+.tile .t { font-size: 13px; font-weight: 600; }
+.tile .s { font-size: 11px; color: #8a8a8e; margin-top: 1px; }
+.toggle { margin-left: auto; width: 38px; height: 22px; border-radius: 11px; background: #34C759; position: relative; }
+.toggle::after { content: ''; position: absolute; right: 2px; top: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+
+.drop { border: 1.5px dashed rgba(0,0,0,0.18); border-radius: 14px; padding: 18px; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 12px; color: #8a8a8e; }
+.label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; color: #8a8a8e; padding: 0 4px; }
+.nearby { display: flex; align-items: center; gap: 12px; }
+.tablet { width: 30px; height: 40px; border-radius: 6px; border: 3px solid #1C1C20; background: #E3F6FF; }
+.nearby .t { font-size: 13px; font-weight: 600; flex: 1; }
+.nearby .s { font-size: 11px; color: #8a8a8e; font-weight: 400; }
+.pair { font-size: 12px; font-weight: 600; color: #0086C9; background: #E3F6FF; padding: 6px 12px; border-radius: 8px; }
+.footer { display: flex; justify-content: space-between; font-size: 11px; color: #8a8a8e; padding: 0 4px; }
+.footer a { color: #0086C9; }
+
+.overview { width: 1600px; height: 1080px; padding: 70px 80px; display: flex; gap: 60px; align-items: flex-start;
+  background: linear-gradient(135deg, #3d5a80 0%, #7a6a9a 55%, #c9a073 100%); }
+.overview .panel { box-shadow: 0 30px 80px rgba(0,0,0,0.35); zoom: 1.32; }
+.overview .side { display: flex; flex-direction: column; gap: 50px; padding-top: 20px; }
+.overview .side img { border-radius: 20px; box-shadow: 0 30px 80px rgba(0,0,0,0.35); }

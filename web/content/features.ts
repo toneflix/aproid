@@ -25,67 +25,67 @@ export const features: Feature[] = [
   {
     icon: Bell,
     title: "Notifications",
-    body: "Reply from your keyboard. Clear one and it's gone from the phone too.",
+    body: "Reply from your keyboard.",
   },
   {
     icon: MessageSquare,
     title: "Texts",
-    body: "Read and answer SMS in a proper Messages window.",
+    body: "Read and reply.",
   },
   {
     icon: Phone,
     title: "Calls",
-    body: "Pick up or decline from your computer. On a Mac, talk through it too.",
+    body: "Answer on your computer.",
   },
   {
     icon: FolderUp,
     title: "Files",
-    body: "Drop, or share from any app. Big transfers resume if cut off.",
+    body: "Any size, from any app.",
   },
   {
     icon: Radar,
     title: "FlyyDrop",
-    body: "Send to anyone nearby with Aproid, no pairing. They tap Accept.",
+    body: "Send to anyone nearby.",
   },
   {
     icon: MonitorSmartphone,
     title: "Screen mirroring",
-    body: "Your phone in a window, with sound, mouse and keyboard.",
+    body: "Use your phone from your computer.",
   },
   {
     icon: Images,
     title: "Photos",
-    body: "Your latest photos and screenshots, on your computer. In File Explorer on Windows.",
+    body: "Your latest shots, on your computer.",
   },
   {
     icon: Clipboard,
     title: "Clipboard",
-    body: "Copy on one, paste on the other. Text, pictures and files.",
+    body: "Copy on one, paste on the other.",
   },
   {
     icon: MapPin,
     title: "Find your phone",
-    body: "Ring it, even on silent, or see it on a map.",
+    body: "Ring it, even on silent.",
   },
   {
     icon: Music,
     title: "Music and battery",
-    body: "Control what's playing and see the battery level.",
+    body: "Play, pause, skip, and check the battery.",
   },
   {
     icon: Smartphone,
-    title: "Two phones? Fine.",
-    body: "Pair several phones and computers. Swipe between them.",
+    title: "Several phones",
+    body: "Pair as many as you like.",
   },
   {
     icon: Laptop,
     title: "Computer to computer",
-    body: "Pair your Macs and PCs to share files, links, clipboard and music controls.",
+    body: "Share files and the clipboard between Macs and PCs.",
   },
   {
     icon: Wifi,
     title: "No Wi-Fi? Still works.",
-    body: "Aproid connects over Bluetooth and your phone's hotspot.",
+    body: "Connects through your phone's hotspot.",
   },
 ];
 
@@ -96,7 +96,7 @@ export const platforms = [
 ];
 
 export const steps = [
-  { title: "Install", body: "On your phone and your computer." },
+  { title: "Install", body: "Phone and computer." },
   { title: "Same Wi-Fi", body: "Or join your phone's hotspot." },
-  { title: "Pair once", body: "Check the code matches and accept." },
+  { title: "Pair once", body: "Check the code matches." },
 ];
