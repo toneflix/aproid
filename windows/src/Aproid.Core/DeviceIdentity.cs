@@ -69,6 +69,11 @@ public sealed record DeviceIdentity
         return shortened.Length == 0 ? fallback : shortened;
     }
 
+    /// The identity sent over UDP. Capabilities follow over TLS, and leaving them out keeps the datagram
+    /// under one MTU: macOS refuses to send a broadcast that would need fragmenting.
+    public NetworkPacket Announcement() =>
+        (this with { IncomingCapabilities = new HashSet<string>(), OutgoingCapabilities = new HashSet<string>() }).ToPacket();
+
     public NetworkPacket ToPacket()
     {
         var body = new JsonObject

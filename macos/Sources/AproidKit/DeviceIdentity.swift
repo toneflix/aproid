@@ -66,6 +66,16 @@ public struct DeviceIdentity: Equatable, Sendable {
         return NetworkPacket(type: PacketType.identity, body: body)
     }
 
+    /// The identity sent over UDP. Capabilities follow over TLS, and leaving them out keeps the datagram
+    /// under one MTU: macOS refuses to send a broadcast that would need fragmenting.
+    public func announcement() -> NetworkPacket {
+        var slim = self
+        slim.incomingCapabilities = []
+        slim.outgoingCapabilities = []
+
+        return slim.toPacket()
+    }
+
     public init(packet: NetworkPacket) throws {
         guard packet.type == PacketType.identity else { throw ProtocolError("not an identity packet: \(packet.type)") }
         guard let id = packet.string("deviceId") else { throw ProtocolError("missing deviceId") }

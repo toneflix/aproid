@@ -78,7 +78,7 @@ class LanLink(
      * own hotspot. Throws only when no copy could be sent.
      */
     fun broadcastIdentity(target: InetAddress? = null) {
-        val bytes = currentIdentity().toPacket().serialize().toByteArray(StandardCharsets.UTF_8)
+        val bytes = currentIdentity().announcement().serialize().toByteArray(StandardCharsets.UTF_8)
         val targets = target?.let(::listOf) ?: broadcastAddresses()
 
         DatagramSocket().use { socket ->
