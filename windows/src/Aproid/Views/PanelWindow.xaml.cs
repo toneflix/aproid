@@ -456,6 +456,21 @@ public sealed partial class PanelWindow : Window
 
         if (activity.Path is string path) Explorer.Reveal(path);
         else if (activity.Url is string url) Explorer.Open(url);
+        else Expand(sender);
+    }
+
+    /// Shows a Recent row's full title and detail, or folds it back to one line each.
+    private static void Expand(object row)
+    {
+        if (row is not Button { Content: Grid content } || content.Children.OfType<StackPanel>().FirstOrDefault() is not StackPanel text) return;
+
+        var lines = text.Children.OfType<TextBlock>().ToList();
+        var expanding = lines.FirstOrDefault()?.TextWrapping != TextWrapping.Wrap;
+        foreach (var line in lines)
+        {
+            line.TextWrapping = expanding ? TextWrapping.Wrap : TextWrapping.NoWrap;
+            line.TextTrimming = expanding ? TextTrimming.None : TextTrimming.CharacterEllipsis;
+        }
     }
 
     private void ClearRecent_Click(object sender, RoutedEventArgs e) => Model.ClearRecent();
