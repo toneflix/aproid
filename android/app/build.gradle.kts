@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "com.toneflix.aproid"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.toneflix.aproid"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 1
         versionName = findProperty("versionName") as String? ?: "0.1.0"
     }
