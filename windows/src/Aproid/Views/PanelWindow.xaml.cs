@@ -242,6 +242,15 @@ public sealed partial class PanelWindow : Window
 
     public Lucide NotificationsIcon(bool on) => on ? Lucide.BellRing : Lucide.BellOff;
 
+    // The hero's notifications badge: a bell, crossed out and faded while paused.
+    public Lucide HeroBell(bool on) => on ? Lucide.Bell : Lucide.BellOff;
+
+    public string NotificationsHint(bool on) => on ? "Notifications on · click to pause" : "Notifications paused · click to turn on";
+
+    public Brush StatusBackground(bool on) => new SolidColorBrush(global::Windows.UI.Color.FromArgb(on ? (byte)0x14 : (byte)0x0A, 0, 0, 0));
+
+    public double StatusOpacity(bool on) => on ? 1 : 0.55;
+
     /// The carousel runs to the window's edge so the next card looks cut off by it.
     public Thickness CarouselBleed(bool carousel) => carousel ? new Thickness(0, 0, -14, 0) : new Thickness(0);
 

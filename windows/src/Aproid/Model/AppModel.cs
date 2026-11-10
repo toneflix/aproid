@@ -237,7 +237,6 @@ public sealed class AppModel : Observable, IDeviceDelegate
             notifications.IsEnabled = value;
             Raise();
             Raise(nameof(NotificationsSubtitle));
-            Raise(nameof(PhoneSummary));
         }
     }
 
@@ -371,8 +370,6 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public string ClipboardSubtitle => ClipboardSyncedAt is { } date ? $"Synced {RelativeTime.Text(date)}" : "Send it now";
 
     public string NotificationsSubtitle => !MirrorsNotifications ? "Paused" : NotificationsToday == 0 ? "On" : $"{NotificationsToday} today";
-
-    public string PhoneSummary => $"{(MirrorsNotifications ? "Notifications on" : "Notifications paused")} · Clipboard synced";
 
     public string ThisComputer => $"This PC: {Identity.DeviceName}";
 
