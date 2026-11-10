@@ -410,12 +410,14 @@ private fun SearchingHero(hasNearby: Boolean) {
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
         )
-        Text(
-            stringResource(if (hasNearby) R.string.home_pick_mac_hint else R.string.home_looking_hint),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
+        if (!hasNearby) {
+            Text(
+                stringResource(R.string.home_looking_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 

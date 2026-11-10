@@ -337,13 +337,12 @@ private fun MacRow(mac: DeviceState, progress: SendProgress?, outgoing: Outgoing
     }
 }
 
-/** "FlyyDrop to nearby", with a note that the other side is asked first. */
+/** The "FlyyDrop to nearby" heading. */
 @Composable
 private fun NearbyTitle() {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(painterResource(R.drawable.lucide_radar), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
         Text(stringResource(R.string.flyydrop_nearby), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("· " + stringResource(R.string.flyydrop_nearby_hint), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

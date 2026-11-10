@@ -101,11 +101,6 @@ fun PairSheet() {
                     Text(stringResource(R.string.not_now), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                 }
             }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(painterResource(R.drawable.lucide_lock), contentDescription = null, modifier = Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(stringResource(R.string.pair_private), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
         }
     }
 }

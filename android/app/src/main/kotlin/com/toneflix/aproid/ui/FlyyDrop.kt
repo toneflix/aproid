@@ -90,12 +90,14 @@ fun FlyyDropSheet() {
                     letterSpacing = (-0.5).sp,
                     textAlign = TextAlign.Center,
                 )
-                Text(
-                    stringResource(if (ask.isPaired) R.string.flyydrop_paired_hint else R.string.flyydrop_guest_hint),
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
+                if (!ask.isPaired) {
+                    Text(
+                        stringResource(R.string.status_not_paired),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
 
             OfferCard(offer, FlyyDropPlugin.summary(context, offer))
