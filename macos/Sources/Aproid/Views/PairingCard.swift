@@ -10,11 +10,8 @@ struct PairingCard: View {
 
     private var hint: String {
         let other = device.isComputer ? "the other computer" : "your phone"
-        let shares = device.isComputer ? "files, links and your clipboard" : "notifications, files and your clipboard"
 
-        return isOurRequest
-            ? "Accept on \(other) if it shows the same code."
-            : "Check that the same code shows on \(other). Pairing lets it send \(shares) to this Mac."
+        return isOurRequest ? "Accept on \(other) if the code matches" : "Same code on \(other)?"
     }
 
     var body: some View {
@@ -52,10 +49,6 @@ struct PairingCard: View {
                         .keyboardShortcut(.defaultAction)
                 }
             }
-
-            Label("End-to-end encrypted on your local network", lucide: .lock, size: 11)
-                .font(.system(size: 10.5))
-                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .card(padding: 20)

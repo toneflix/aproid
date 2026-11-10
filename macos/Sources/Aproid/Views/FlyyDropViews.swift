@@ -17,13 +17,11 @@ struct FlyyDropAskCard: View {
                 Text("\(ask.deviceName) wants to FlyyDrop")
                     .font(.system(size: 17, weight: .bold))
                     .multilineTextAlignment(.center)
-                Text(ask.isPaired
-                     ? "From one of your paired devices."
-                     : "Not paired. It can only send what you accept here, nothing else.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                if !ask.isPaired {
+                    Text("Not paired")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
             }
 
             HStack(spacing: 12) {
@@ -59,10 +57,6 @@ struct FlyyDropAskCard: View {
                     .buttonStyle(PillStyle(prominent: true))
                     .keyboardShortcut(.defaultAction)
             }
-
-            Label("Sent straight from the device, encrypted on your network", lucide: .lock, size: 11)
-                .font(.system(size: 10.5))
-                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .card(padding: 20)
@@ -143,7 +137,7 @@ struct FlyyDropButton: View {
                         .background(Theme.tint, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(PressStyle())
-                .help("FlyyDrop files to \(device.name). Drop files on this row too.")
+                .help("FlyyDrop files to \(device.name)")
             }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: send?.stage)
@@ -197,7 +191,7 @@ struct FlyyDropReceivingMenu: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        Picker("FlyyDrop: who can send to this Mac", selection: Binding(
+        Picker("Who can FlyyDrop to this Mac", selection: Binding(
             get: { model.flyyDropReceiving },
             set: { model.setFlyyDropReceiving($0) }
         )) {
@@ -212,11 +206,11 @@ extension FlyyDrop.Receiving {
     /// A short line for the panel, with the minutes left for the timed setting.
     func caption(until: Date?) -> String {
         switch self {
-        case .off: return "Only paired devices can FlyyDrop to this Mac"
-        case .everyone: return "Anyone nearby can ask to FlyyDrop to this Mac"
+        case .off: return "Paired devices only"
+        case .everyone: return "Open to everyone nearby"
         case .everyoneFor10Minutes:
             let minutes = max(1, Int(((until ?? Date()).timeIntervalSinceNow / 60).rounded(.up)))
-            return "Anyone nearby can ask to FlyyDrop for \(minutes) more min"
+            return "Open to everyone · \(minutes) min left"
         }
     }
 }

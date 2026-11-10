@@ -62,7 +62,7 @@ struct KeyboardMouseCard: View {
             if edge != nil && model.inputNeedsAccess {
                 Banner(
                     icon: .lock,
-                    text: "Turn on Aproid under Accessibility so it can move your keyboard and mouse to \(device.name).",
+                    text: "Turn on Aproid under Accessibility.",
                     action: ("Open Settings", openAccessibility)
                 )
             }
@@ -76,9 +76,9 @@ struct KeyboardMouseCard: View {
     }
 
     private func status(_ edge: ScreenEdge?) -> String {
-        if model.inputTarget == device.id { return "Working \(device.name) now. Press Esc three times to come back." }
-        if model.inputController == device.id { return "\(device.name) is working this Mac." }
-        guard let edge else { return "Choose which side of this Mac \(device.name) sits on." }
+        if model.inputTarget == device.id { return "Using \(device.name). Press Esc three times to return." }
+        if model.inputController == device.id { return "\(device.name) is using this Mac." }
+        guard let edge else { return "Which side is \(device.name) on?" }
 
         let side: String
         switch edge {
@@ -87,7 +87,7 @@ struct KeyboardMouseCard: View {
         case .top: side = "top"
         case .bottom: side = "bottom"
         }
-        return "Move the pointer off the \(side) edge to use \(device.name)."
+        return "Move the pointer off the \(side) edge."
     }
 
     private func openAccessibility() {

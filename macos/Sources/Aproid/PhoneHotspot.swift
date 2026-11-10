@@ -81,7 +81,7 @@ final class PhoneHotspot: @unchecked Sendable {
         let visible = (try? wifi.scanForNetworks(withName: ssid))?.isEmpty == false
         guard visible else {
             guard Date() < deadline else {
-                onStatus(.failed("Couldn't see \(ssid). Turn on the hotspot on your phone and try again."))
+                onStatus(.failed("Couldn't find \(ssid). Turn on your phone's hotspot and try again."))
                 return
             }
 
@@ -98,7 +98,7 @@ final class PhoneHotspot: @unchecked Sendable {
             onStatus(nil)
         } catch {
             log.error("Couldn't join \(ssid, privacy: .public): \(String(describing: error), privacy: .public)")
-            onStatus(.failed("Couldn't join \(ssid). Pick it once in the Wi-Fi menu so macOS saves its password."))
+            onStatus(.failed("Couldn't join \(ssid). Pick it once in the Wi-Fi menu."))
         }
     }
 
