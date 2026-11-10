@@ -71,8 +71,9 @@ public sealed class ActionTile : Button
         icon.Icon = Icon;
         title.Text = Title;
         subtitle.Text = Subtitle;
+        subtitle.Visibility = string.IsNullOrEmpty(Subtitle) ? Visibility.Collapsed : Visibility.Visible;
         chip.SetValue(Border.BackgroundProperty, Application.Current.Resources[IsOn ? "AproidTintBrush" : "AproidThumbBrush"]);
         icon.SetValue(ForegroundProperty, Application.Current.Resources[IsOn ? "AproidAccentBrush" : "AproidSubBrush"]);
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(this, $"{Title}, {Subtitle}");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(this, string.IsNullOrEmpty(Subtitle) ? Title : $"{Title}, {Subtitle}");
     }
 }

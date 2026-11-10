@@ -200,8 +200,7 @@ fun FlyyDropCard() {
     }
 
     val hint = when (receiving) {
-        FlyyDrop.Receiving.OFF -> stringResource(R.string.flyydrop_off_hint)
-        FlyyDrop.Receiving.EVERYONE -> stringResource(R.string.flyydrop_everyone_hint)
+        FlyyDrop.Receiving.OFF, FlyyDrop.Receiving.EVERYONE -> null
         FlyyDrop.Receiving.EVERYONE_FOR_10_MINUTES -> {
             val minutes = (((until ?: now) - now + 59_999) / 60_000).toInt().coerceAtLeast(1)
             pluralStringResource(R.plurals.flyydrop_minutes_left, minutes, minutes)
@@ -224,7 +223,7 @@ fun FlyyDropCard() {
             }
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.flyydrop_receiving_title), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                Text(hint, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                hint?.let { Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
 

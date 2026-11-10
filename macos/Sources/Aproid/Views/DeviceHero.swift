@@ -34,7 +34,7 @@ struct DeviceHero: View {
                         StatusIcon(icon: model.mirrorsNotifications ? .bell : .bellOff, isOn: model.mirrorsNotifications)
                     }
                     .buttonStyle(.plain)
-                    .help(model.mirrorsNotifications ? "Notifications on · click to pause" : "Notifications paused · click to turn on")
+                    .help(model.mirrorsNotifications ? "Pause notifications" : "Turn on notifications")
                     .accessibilityLabel(model.mirrorsNotifications ? "Notifications on" : "Notifications paused")
 
                     StatusIcon(icon: .clipboard, isOn: true)

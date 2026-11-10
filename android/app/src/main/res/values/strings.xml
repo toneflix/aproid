@@ -47,9 +47,7 @@
     <string name="home_clear">Clear</string>
 
     <string name="setup_notifications">Show notifications on your computer</string>
-    <string name="setup_notifications_hint">Needs notification access</string>
     <string name="setup_background">Stay connected in the background</string>
-    <string name="setup_background_hint">Keeps the connection alive</string>
     <string name="setup_allow">Allow</string>
     <string name="setup_phone">Texts and calls on your computer</string>
     <string name="setup_location">Find your phone on a map</string>
@@ -74,19 +72,15 @@
     <string name="control_disclosure_accept">Agree and continue</string>
     <string name="control_disclosure_decline">No thanks</string>
     <string name="setup_control">Control your phone from your computer</string>
-    <string name="setup_control_hint">Turn on \"Aproid computer control\"</string>
     <string name="setup_control_stopped">Computer control stopped working</string>
     <string name="setup_control_stopped_hint">Turn \"Aproid computer control\" off and on again</string>
     <string name="home_mirror">Mirror</string>
     <string name="setup_nearby">Connect without shared Wi-Fi</string>
-    <string name="setup_nearby_hint">Uses Bluetooth and your hotspot</string>
     <string name="channel_hotspot">Hotspot requests</string>
     <string name="hotspot_ask_title">Your computer wants to use your hotspot</string>
     <string name="hotspot_ask_text">Tap to turn it on</string>
     <string name="setup_photos">Browse photos from your computer</string>
-    <string name="setup_photos_hint">Needs photo and video access</string>
     <string name="setup_location_hint">Choose \"Allow all the time\"</string>
-    <string name="setup_phone_hint">Needs phone and SMS access</string>
 
     <string name="status_not_paired">Not paired</string>
     <string name="status_waiting">Waiting…</string>
@@ -154,8 +148,6 @@
     <string name="flyydrop_off">Paired only</string>
     <string name="flyydrop_ten_minutes">10 minutes</string>
     <string name="flyydrop_everyone">Everyone</string>
-    <string name="flyydrop_off_hint">Unpaired devices can\'t ask</string>
-    <string name="flyydrop_everyone_hint">You accept each one</string>
     <plurals name="flyydrop_minutes_left">
         <item quantity="one">%1$d min left</item>
         <item quantity="other">%1$d min left</item>

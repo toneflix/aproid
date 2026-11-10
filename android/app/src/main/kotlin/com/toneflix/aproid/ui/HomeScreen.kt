@@ -519,21 +519,18 @@ private fun SetupCards() {
         SetupCard(
             R.drawable.lucide_bell,
             stringResource(R.string.setup_notifications),
-            stringResource(R.string.setup_notifications_hint),
         ) { context.startActivity(NotificationPlugin.accessSettingsIntent()) }
     }
     AnimatedVisibility(!background) {
         SetupCard(
             R.drawable.lucide_battery_charging,
             stringResource(R.string.setup_background),
-            stringResource(R.string.setup_background_hint),
         ) { context.startActivity(LinkService.unrestrictIntent(context)) }
     }
     AnimatedVisibility(!phone) {
         SetupCard(
             R.drawable.lucide_message_square,
             stringResource(R.string.setup_phone),
-            stringResource(R.string.setup_phone_hint),
         ) { askPhone.launch(CallPlugin.permissions) }
     }
     AnimatedVisibility(!location) {
@@ -553,14 +550,12 @@ private fun SetupCards() {
         SetupCard(
             R.drawable.lucide_image,
             stringResource(R.string.setup_photos),
-            stringResource(R.string.setup_photos_hint),
         ) { askPhotos.launch(PhotosPlugin.permissions) }
     }
     AnimatedVisibility(!nearby) {
         SetupCard(
             R.drawable.lucide_bluetooth,
             stringResource(R.string.setup_nearby),
-            stringResource(R.string.setup_nearby_hint),
         ) { askNearby.launch(NearbyBeacon.permissions) }
     }
     AnimatedVisibility(control != ScreenControlService.Status.ON) {
@@ -568,7 +563,7 @@ private fun SetupCards() {
         SetupCard(
             R.drawable.lucide_pointer,
             stringResource(if (stopped) R.string.setup_control_stopped else R.string.setup_control),
-            stringResource(if (stopped) R.string.setup_control_stopped_hint else R.string.setup_control_hint),
+            if (stopped) stringResource(R.string.setup_control_stopped_hint) else null,
         ) { controlDisclosure = true }
     }
 
@@ -584,7 +579,7 @@ private fun SetupCards() {
 }
 
 @Composable
-private fun SetupCard(@DrawableRes icon: Int, title: String, hint: String, onAllow: () -> Unit) {
+private fun SetupCard(@DrawableRes icon: Int, title: String, hint: String? = null, onAllow: () -> Unit) {
     val colors = Aproid.colors
 
     Row(
@@ -600,7 +595,7 @@ private fun SetupCard(@DrawableRes icon: Int, title: String, hint: String, onAll
         }
         Column(Modifier.weight(1f)) {
             Text(title, color = colors.onSetup, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-            Text(hint, color = colors.onSetupVariant, fontSize = 12.sp)
+            hint?.let { Text(it, color = colors.onSetupVariant, fontSize = 12.sp) }
         }
         Button(
             onClick = onAllow,

@@ -12,7 +12,7 @@ npm run deploy    # build and deploy from this machine (runs `wrangler login` th
 
 Copy lives in `content/`: `site.ts` holds links, the legal entity and contact details, and `features.ts` holds the feature list. Keep it in step with the main README.
 
-Screenshots are in `public/screens`. The app icon is copied from `branding/app-icon.svg`.
+Screenshots are in `public/screens`. The Mac ones (`mac-panel.png`, `mac-overview.png`) are drawn by `screens/generate.mjs` (`node screens/generate.mjs` after `npm install`, with Playwright installed); the Android ones come from `store/android`. The app icon is copied from `branding/app-icon.svg`.
 
 ## Deploying with Cloudflare
 

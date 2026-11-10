@@ -51,7 +51,7 @@ class FeatureGraphic {
   render(assets) {
     const app = new AndroidApp(assets);
     const phone = new Phone(232, 520);
-    const screen = app.screen(app.home([app.hero('MacBook Pro', 'Notifications, clipboard and files are flowing'), app.tiles(), app.flyyDropCard()]));
+    const screen = app.screen(app.home([app.hero('MacBook Pro', 'Syncing'), app.tiles(), app.flyyDropCard()]));
 
     return `<div class="canvas feature">
       <div class="glow"></div>
@@ -60,13 +60,13 @@ class FeatureGraphic {
       <div class="copy">
         <div class="brand"><img src="${assets.mark}"><span>Aproid</span></div>
         <div class="headline">Your Android phone,<br><span class="accent">on your Mac and PC</span></div>
-        <div class="sub">FlyyDrop files to anyone nearby, plus<br>texts, calls and notifications.</div>
+        <div class="sub">Texts, calls, notifications and files.</div>
       </div>
     </div>`;
   }
 }
 
-const FLOWING = 'Notifications, clipboard and files are flowing';
+const FLOWING = 'Syncing';
 
 const SHOTS = [
   new StoreShot({
@@ -84,7 +84,7 @@ const SHOTS = [
   }),
   new StoreShot({
     id: '02-flyydrop',
-    lines: ['FlyyDrop to anyone', 'nearby, no pairing'],
+    lines: ['FlyyDrop to', 'anyone nearby'],
     screen: (app) => app.screen(
       app.home([app.hero('MacBook Pro', FLOWING), app.tiles(), app.flyyDropCard()]),
       app.flyyDropSheet("Ada's Pixel 8", { title: '3 photos · 12.4 MB', detail: 'IMG_2207.jpg, IMG_2208.jpg, IMG_2210.jpg' }),
@@ -92,7 +92,7 @@ const SHOTS = [
   }),
   new StoreShot({
     id: '03-send-files',
-    lines: ['Send files', 'without the cable'],
+    lines: ['Send files', 'in seconds'],
     screen: (app) => app.screen(
       app.home([app.hero('MacBook Pro', FLOWING), app.tiles()]),
       app.shareSheet({
@@ -134,7 +134,7 @@ const SHOTS = [
           { icon: 'clipboard', title: 'Copied from Work PC', detail: 'Wi-Fi password: blue-lagoon-42', when: '1 min. ago' },
         ]),
       ]),
-      app.toast('Clipboard sent to your computer'),
+      app.toast('Clipboard sent'),
     ),
   }),
   new StoreShot({

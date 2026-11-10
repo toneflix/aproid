@@ -61,13 +61,8 @@ export default function Home() {
       <section className="container">
         <Showcase
           eyebrow="Messages and calls"
-          title="Answer from wherever you're sitting."
-          body="Text from a proper Messages window. See who's calling and pick up."
-          points={[
-            "Reply to SMS from your keyboard",
-            "Answer, decline or start calls",
-            "Talk through your Mac's speakers and mic",
-          ]}
+          title="Texts and calls on your computer."
+          points={["Reply from your keyboard", "Answer or decline calls", "Talk through your Mac"]}
           media={
             <div className="stack">
               <img src="/screens/call-card.png" alt="An incoming call card on the Mac with answer and decline buttons" />
@@ -79,38 +74,23 @@ export default function Home() {
         <Showcase
           reverse
           eyebrow="FlyyDrop"
-          title="Send it to anyone nearby. No pairing."
-          body="Send photos and files to any phone or computer with Aproid on your Wi-Fi. They tap Accept."
-          points={[
-            "Phones, Macs and PCs",
-            "Nothing arrives until accepted",
-            "Open to everyone, for 10 minutes, or paired only",
-          ]}
+          title="Send to anyone nearby."
+          points={["Phones, Macs and PCs", "You choose who can send to you"]}
           media={<img className="bleed" src="/screens/flyydrop.png" alt="An Android phone being asked to accept three photos sent with FlyyDrop" />}
         />
 
         <Showcase
           gold
           eyebrow="All your devices"
-          title="Two phones? Two computers? No problem."
-          body="Each device gets its own card. Swipe between them."
-          points={[
-            "Pair as many as you want",
-            "Calls and texts from the right phone",
-            "Share files and the clipboard between computers",
-          ]}
+          title="All your phones and computers."
+          points={["Pair as many as you like", "Switch with a swipe"]}
           media={<img className="tall" src="/screens/mac-panel.png" alt="The Aproid panel on a Mac with two phones paired" />}
         />
 
         <Showcase
           eyebrow="Screen mirroring"
-          title="Your phone, in a window, with sound."
-          body="Use any phone app with your mouse and keyboard."
-          points={[
-            "Smooth video, with sound",
-            "Click, scroll and type",
-            "Mac and Windows",
-          ]}
+          title="Use your phone from your computer."
+          points={["With sound", "Mouse and keyboard"]}
           reverse
           media={<img className="tall" src="/screens/android-home.png" alt="Aproid on Android, showing a paired MacBook Pro" />}
         />
@@ -122,7 +102,6 @@ export default function Home() {
             <div>
               <span className="eyebrow">Privacy</span>
               <h2>Your stuff stays yours.</h2>
-              <p>Your devices talk straight to each other over your own network or Bluetooth. Nothing goes to a server.</p>
             </div>
 
             <div className="pills">
