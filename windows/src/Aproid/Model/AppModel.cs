@@ -588,6 +588,9 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     public string VersionText => Updater.CurrentText;
 
+    /// Whether any device has been paired with this PC, connected or not.
+    public bool HasPaired => trustStore.TrustedIds.Count > 0;
+
     public void CheckForUpdates() => _ = updater.CheckAsync(manual: true);
 
     public void Stop()
