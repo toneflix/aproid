@@ -48,7 +48,7 @@ class AndroidApp {
   }
 
   carousel(names) {
-    const text = 'Notifications and clipboard go to all your computers';
+    const text = 'Syncing with all your computers';
 
     return `<div class="carousel">${this.hero(names[0], text)}${this.hero(names[1], text, 'peek')}</div>`;
   }
@@ -110,10 +110,9 @@ class AndroidApp {
 
     return this.sheet(`<div class="pair">
       ${this.laptop(150)}
-      <div><div class="title">Pair with ${name}?</div><div class="hint">Make sure your computer shows the same code.</div></div>
+      <div><div class="title">Pair with ${name}?</div><div class="hint">Same code on your computer?</div></div>
       <div class="digits">${digits}</div>
       <div class="buttons"><div class="filled">Pair</div><div class="outlined">Not now</div></div>
-      <div class="private">${this.icon('lock')}Encrypted, and never leaves your network</div>
     </div>`);
   }
 
@@ -128,7 +127,7 @@ class AndroidApp {
     const segments = modes.map((mode, i) => `<span class="${i === selected ? 'on' : ''}">${mode}</span>`).join('');
 
     return `<div class="flyy-card">
-      <div class="row"><span class="chip">${this.icon('radar')}</span><div><div class="title">Who can FlyyDrop to you</div><div class="hint">Everyone nearby for 9 more minutes</div></div></div>
+      <div class="row"><span class="chip">${this.icon('radar')}</span><div><div class="title">Who can FlyyDrop to you</div><div class="hint">9 min left</div></div></div>
       <div class="segments">${segments}</div>
     </div>`;
   }
@@ -136,7 +135,7 @@ class AndroidApp {
   flyyDropSheet(name, { title, detail }) {
     return this.sheet(`<div class="flyy">
       <div class="radar"><i></i><i></i><span class="core">${this.phoneArt(52)}</span></div>
-      <div><div class="title">${name} wants to FlyyDrop</div><div class="hint">Not paired. It can only send what you accept here, nothing else.</div></div>
+      <div><div class="title">${name} wants to FlyyDrop</div><div class="hint">Not paired</div></div>
       <div class="offer"><span class="chip">${this.icon('image')}</span><div><div class="name">${title}</div><div class="detail">${detail}</div></div></div>
       <div class="buttons"><div class="outlined">Decline</div><div class="filled">Accept</div></div>
     </div>`);
