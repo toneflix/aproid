@@ -7,7 +7,7 @@
     Title="Aproid">
 
     <Grid x:Name="Root" Background="{ThemeResource AproidGlassBrush}">
-        <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled">
+        <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Hidden" VerticalScrollMode="Enabled" HorizontalScrollMode="Disabled">
             <StackPanel x:Name="Sections" Width="{StaticResource AproidPanelWidth}" Padding="14" Spacing="12">
                 <StackPanel.ChildrenTransitions>
                     <TransitionCollection>
