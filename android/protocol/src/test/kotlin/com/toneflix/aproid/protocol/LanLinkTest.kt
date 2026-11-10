@@ -47,6 +47,14 @@ class LanLinkTest {
         return phone.nextLink() to mac.nextLink()
     }
 
+    @Test fun broadcastsToEveryNetworkAndTheLimitedAddress() {
+        val addresses = LanLink.broadcastAddresses()
+
+        assertEquals(InetAddress.getByName("255.255.255.255"), addresses.first())
+        assertEquals(addresses.size, addresses.toSet().size)
+        assertTrue(addresses.none { it.isLoopbackAddress })
+    }
+
     @Test fun linkIsEncryptedAndCarriesIdentities() {
         val (onPhone, onMac) = connect()
 
