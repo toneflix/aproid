@@ -1,5 +1,11 @@
 // swift-tools-version:5.9
+import Foundation
 import PackageDescription
+
+// Shortcuts finds the app's actions through metadata built from compiler output Xcode normally asks for.
+// These flags ask SwiftPM's compiler and linker for the same files; bundle.sh hands them to Apple's tool.
+let packageDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path
+let intentsFlags = ["-emit-const-values", "-Xfrontend", "-const-gather-protocols-file", "-Xfrontend", "\(packageDir)/AppIntentsProtocols.json"]
 
 let package = Package(
     name: "Aproid",
@@ -31,7 +37,15 @@ let package = Package(
             ]
         ),
         // The menu bar app.
-        .executableTarget(name: "Aproid", dependencies: ["AproidKit"]),
+        .executableTarget(
+            name: "Aproid",
+            dependencies: ["AproidKit"],
+            swiftSettings: [.unsafeFlags(intentsFlags)],
+            linkerSettings: [
+                .linkedFramework("AppIntents"),
+                .unsafeFlags(["-Xlinker", "-dependency_info", "-Xlinker", "\(packageDir)/.build/Aproid_dependency_info.dat"]),
+            ]
+        ),
         .testTarget(name: "AproidKitTests", dependencies: ["AproidKit"]),
     ]
 )
