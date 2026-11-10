@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The 2×2 grid of things to do with the phone.
+/// The grid of things to do with the phone or computer the panel shows.
 struct QuickActions: View {
     let device: DeviceState
     @ObservedObject var model: AppModel
@@ -10,37 +10,56 @@ struct QuickActions: View {
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-            ActionTile(icon: .volume2, title: "Ring phone", subtitle: "Full volume") {
-                model.ring(device.id)
+            if device.isComputer {
+                computerTiles
+            } else {
+                phoneTiles
             }
-            ActionTile(icon: .fileUp, title: "Send file", subtitle: "To Downloads") {
-                model.chooseFiles(for: device.id)
-            }
-            ActionTile(icon: .clipboard, title: "Clipboard", subtitle: clipboardSubtitle) {
-                model.sendClipboard(to: device.id)
-            }
-            ActionTile(
-                icon: model.mirrorsNotifications ? .bellRing : .bellOff,
-                title: "Notifications",
-                subtitle: notificationsSubtitle,
-                isOn: model.mirrorsNotifications
-            ) {
-                model.mirrorsNotifications.toggle()
-            }
-            ActionTile(icon: .messageSquare, title: "Messages", subtitle: messagesSubtitle) {
-                showMessages()
-            }
-            ActionTile(icon: .phone, title: "Call", subtitle: "From your phone") {
-                showMessages()
-                messages.showsDialer = true
-            }
-            ActionTile(icon: .cast, title: "Mirror", subtitle: "See & use your phone") {
-                model.mirror(device.id)
-            }
-            ActionTile(icon: .images, title: "Photos", subtitle: "Browse & download") {
-                NSApplication.shared.activate(ignoringOtherApps: true)
-                openWindow(id: AproidApp.photosWindow)
-            }
+        }
+    }
+
+    @ViewBuilder private var phoneTiles: some View {
+        ActionTile(icon: .volume2, title: "Ring phone", subtitle: "Full volume") {
+            model.ring(device.id)
+        }
+        sharedTiles
+        ActionTile(icon: .messageSquare, title: "Messages", subtitle: messagesSubtitle) {
+            showMessages()
+        }
+        ActionTile(icon: .phone, title: "Call", subtitle: "From your phone") {
+            showMessages()
+            messages.showsDialer = true
+        }
+        ActionTile(icon: .cast, title: "Mirror", subtitle: "See & use your phone") {
+            model.mirror(device.id)
+        }
+        ActionTile(icon: .images, title: "Photos", subtitle: "Browse & download") {
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            openWindow(id: AproidApp.photosWindow)
+        }
+    }
+
+    @ViewBuilder private var computerTiles: some View {
+        ActionTile(icon: .volume2, title: "Play sound", subtitle: "To find it") {
+            model.ring(device.id)
+        }
+        sharedTiles
+    }
+
+    @ViewBuilder private var sharedTiles: some View {
+        ActionTile(icon: .fileUp, title: "Send file", subtitle: "To Downloads") {
+            model.chooseFiles(for: device.id)
+        }
+        ActionTile(icon: .clipboard, title: "Clipboard", subtitle: clipboardSubtitle) {
+            model.sendClipboard(to: device.id)
+        }
+        ActionTile(
+            icon: model.mirrorsNotifications ? .bellRing : .bellOff,
+            title: "Notifications",
+            subtitle: notificationsSubtitle,
+            isOn: model.mirrorsNotifications
+        ) {
+            model.mirrorsNotifications.toggle()
         }
     }
 

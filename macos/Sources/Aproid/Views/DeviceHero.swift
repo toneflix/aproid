@@ -1,14 +1,14 @@
 import SwiftUI
 import AproidKit
 
-/// The paired phone at the top of the panel, on the Toneflix gold: picture, name, connection and battery.
+/// The paired phone or computer at the top of the panel, on the Toneflix gold: picture, name, connection and battery.
 struct DeviceHero: View {
     let device: DeviceState
     @ObservedObject var model: AppModel
 
     var body: some View {
         HStack(spacing: 14) {
-            PhoneArt(width: 40)
+            DeviceArt(type: device.type, width: device.isComputer ? 30 : 40)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(device.name)
@@ -45,7 +45,9 @@ struct DeviceHero: View {
 
             Spacer(minLength: 0)
 
-            BatteryRing(charge: device.battery?.charge, isCharging: device.battery?.isCharging ?? false)
+            if !device.isComputer || device.battery != nil {
+                BatteryRing(charge: device.battery?.charge, isCharging: device.battery?.isCharging ?? false)
+            }
         }
         .padding(16)
         .environment(\.colorScheme, .light)

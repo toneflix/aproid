@@ -31,4 +31,12 @@ class DeviceIdentityTest {
         assertEquals(8, id.protocolVersion)
         assertEquals(setOf("kdeconnect.ping"), id.incomingCapabilities)
     }
+
+    @Test fun tellsComputersFromPhones() {
+        assertTrue(DeviceType.LAPTOP.isComputer)
+        assertTrue(DeviceType.DESKTOP.isComputer)
+        assertFalse(DeviceType.PHONE.isComputer)
+        assertTrue(DeviceType.TABLET.isPhone)
+        assertFalse(DeviceType.TV.isPhone)
+    }
 }

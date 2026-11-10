@@ -207,6 +207,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
             Raise(nameof(ShowsHotspot));
             Raise(nameof(ShowsPairing));
             Raise(nameof(ShowsPhone));
+            Raise(nameof(FocusIsPhone));
+            Raise(nameof(FocusIsComputer));
             Raise(nameof(Found));
         }
     }
@@ -378,6 +380,12 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     public bool ShowsPhone => Focused is { IsPaired: true };
 
+    /// The paired device the panel shows is a phone, so the phone's own actions apply.
+    public bool FocusIsPhone => Focused is { IsPaired: true, IsComputer: false };
+
+    /// The paired device the panel shows is another Mac or PC.
+    public bool FocusIsComputer => Focused is { IsPaired: true, IsComputer: true };
+
     public bool HasOthers => Others.Count > 0;
 
     /// Several phones are paired, so the panel offers to switch between them.
@@ -408,7 +416,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
                 var certificate = LoadCertificate(me.DeviceId);
                 nearby = new NearbyFinder(me.DeviceId, certificate.Certificate.GetRSAPrivateKey()!)
                 {
-                    OnNearby = found => ui.TryEnqueue(() => PhoneNearby = found && connected.Paired.Count == 0),
+                    OnNearby = found => ui.TryEnqueue(() => PhoneNearby = found && connected.PairedPhones.Count == 0),
                     OnAnswer = answer => ui.TryEnqueue(() => Reach(answer)),
                 };
                 var lan = new LanLink(() => me, certificate, trustStore, deviceLink =>
@@ -466,12 +474,14 @@ public sealed class AppModel : Observable, IDeviceDelegate
         Publish();
     }
 
-    /// Rings the phone and asks where it is, so it can be found by sound or on the map.
+    /// Rings the phone and asks where it is, so it can be found by sound or on the map. A computer only plays a sound.
     public void Ring(string id)
     {
         if (connected[id] is not Device device) return;
 
         device.Send(FindMyPhone.Request());
+        if (device.Link.Identity.DeviceType.IsComputer()) return;
+
         locations.Request(device);
         Finding = id;
     }
@@ -701,9 +711,9 @@ public sealed class AppModel : Observable, IDeviceDelegate
         }
 
         if (connected.Insert(device) is Device old && old != device) old.Link.Close("replaced by a newer link");
-        if (device.IsPaired)
+        if (device.IsPaired) plugins.OnPaired(device);
+        if (device.IsPaired && !device.Link.Identity.DeviceType.IsComputer())
         {
-            plugins.OnPaired(device);
             PhoneNearby = false;
             HotspotStatus = null;
             hotspot.Cancel();
@@ -716,7 +726,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     /// Looks for a paired phone over Bluetooth when none is on this network.
     private void SearchNearbyIfLost()
     {
-        var lost = connected.Paired.Count == 0 && trustStore.TrustedIds.Count > 0;
+        var lost = connected.PairedPhones.Count == 0 && trustStore.TrustedIds.Count > 0;
         if (!lost || DateTimeOffset.Now - lastNearbySearch < TimeSpan.FromSeconds(45)) return;
 
         lastNearbySearch = DateTimeOffset.Now;
@@ -834,19 +844,19 @@ public sealed class AppModel : Observable, IDeviceDelegate
             .OrderBy(d => d.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
 
-        var primary = Primary;
+        var shown = Shown;
         Focused = Devices.FirstOrDefault(d => d.PairState is PairState.RequestedByPeer or PairState.Requested)
-            ?? Devices.FirstOrDefault(d => d.Id == primary?.Id);
+            ?? Devices.FirstOrDefault(d => d.Id == shown?.Id);
         Others = Devices.Where(d => d.Id != Focused?.Id).ToList();
 
-        SyncStores(primary);
+        SyncStores(Primary);
         SendWaiting();
         SaveStatus();
     }
 
     private void SaveStatus()
     {
-        var phones = Devices.Where(d => d.IsPaired)
+        var phones = Devices.Where(d => d.IsPaired && !d.IsComputer)
             .OrderBy(d => d.Id == Focused?.Id ? 0 : 1)
             .Select(d => new PhoneStatus.Phone(d.Id, d.Name, d.Battery?.Charge, d.IsCharging, IsConnected: true))
             .ToList();
@@ -857,8 +867,11 @@ public sealed class AppModel : Observable, IDeviceDelegate
         status.Save();
     }
 
-    /// The paired phone the panel, Messages and Photos use. Every paired phone stays connected.
-    private Device? Primary => new DeviceFocus(settings.SelectedPhone).Pick(connected.Paired, d => d.Id, d => d.Name);
+    /// The paired phone or computer the panel shows. Every paired device stays connected.
+    private Device? Shown => new DeviceFocus(settings.SelectedPhone).Pick(connected.Paired, d => d.Id, d => d.Name);
+
+    /// The paired phone Messages and Photos use: the one shown, or else the first paired phone.
+    private Device? Primary => new DeviceFocus(settings.SelectedPhone).Pick(connected.PairedPhones, d => d.Id, d => d.Name);
 
     /// Texts and photos come from the primary phone.
     private void SyncStores(Device? phone)
@@ -947,7 +960,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     /// Asks the phone to share its screen and opens the window that shows it.
     public void StartMirroring(string id)
     {
-        if (connected[id] is not { IsPaired: true } device) return;
+        if (connected[id] is not { IsPaired: true } device || device.Link.Identity.DeviceType.IsComputer()) return;
 
         Mirror.Begin(id, device.Name);
         MirrorRequested?.Invoke();

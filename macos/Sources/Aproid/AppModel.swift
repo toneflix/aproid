@@ -17,6 +17,8 @@ struct DeviceState: Identifiable, Equatable {
     let battery: BatteryStatus?
     let media: NowPlaying?
     let location: PhoneLocation?
+
+    var isComputer: Bool { type.isComputer }
 }
 
 @MainActor
@@ -33,10 +35,13 @@ final class AppModel: ObservableObject {
     @Published private(set) var notificationsToday = 0
     @Published private(set) var call: ActiveCall?
 
-    /// The paired phone the panel, Messages, Photos, call audio and the Share menu use. Every paired phone stays connected.
+    /// The paired device the panel and the Share menu use: a phone or another computer. Every paired device stays connected.
     @Published private(set) var primaryId: String?
 
-    /// The phone the user picked when several are paired. Kept across launches.
+    /// The paired phone Messages, Photos and call audio use.
+    @Published private(set) var phoneId: String?
+
+    /// The device the user picked when several are paired. Kept across launches.
     var selectedPhone: String? {
         get { UserDefaults.standard.string(forKey: "selectedPhone") }
         set {
@@ -202,7 +207,7 @@ final class AppModel: ObservableObject {
             Task { @MainActor in self?.photos.ingestPreview(id, url: url, from: deviceId) }
         }
         photos.send = { [weak self] packet in
-            guard let id = self?.primaryId, let device = self?.connected[id] else { return false }
+            guard let id = self?.phoneId, let device = self?.connected[id] else { return false }
             return device.send(packet)
         }
         messages.send = { [weak self] packet in
@@ -243,18 +248,20 @@ final class AppModel: ObservableObject {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
-    /// Rings the phone and asks where it is, so it can be found by sound or on the map.
+    /// Rings the phone and asks where it is, so it can be found by sound or on the map. A computer only plays a sound.
     func ring(_ id: String) {
         guard let device = connected[id] else { return }
 
         device.send(FindMyPhone.request())
+        guard !device.link.identity.deviceType.isComputer else { return }
+
         locations.request(from: device)
         finding = id
     }
 
     /// Asks the phone to share its screen and opens the window that shows it.
     func mirror(_ id: String) {
-        guard let device = connected[id], device.isPaired else { return }
+        guard let device = connected[id], device.isPaired, !device.link.identity.deviceType.isComputer else { return }
 
         screen.begin(deviceId: id, name: device.name)
         screenWindow.show()
@@ -367,7 +374,7 @@ final class AppModel: ObservableObject {
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         panel.prompt = "Send"
-        panel.message = "Choose files to send to your phone"
+        panel.message = "Choose files to send to \(connected[id]?.name ?? "your phone")"
         panel.begin { [weak self] response in
             guard response == .OK else { return }
 
@@ -490,7 +497,7 @@ final class AppModel: ObservableObject {
 
     /// When no paired phone has answered on the network, look for one over Bluetooth now and then.
     private func searchNearbyIfLost() {
-        let hasPhone = connected.all.contains { $0.isPaired }
+        let hasPhone = !pairedPhones.isEmpty
         guard !hasPhone, !trustStore.trustedIds.isEmpty, Date().timeIntervalSince(lastNearbySearch) > 45 else { return }
 
         lastNearbySearch = Date()
@@ -498,7 +505,7 @@ final class AppModel: ObservableObject {
     }
 
     private func nearbyChanged(_ found: Bool) {
-        let hasPhone = connected.all.contains { $0.isPaired }
+        let hasPhone = !pairedPhones.isEmpty
         phoneNearby = found && !hasPhone
     }
 
@@ -573,6 +580,8 @@ final class AppModel: ObservableObject {
         log.info("Connected to \(device.name, privacy: .public) (\(device.link.isOutgoing ? "we" : "they", privacy: .public) connected)")
         if device.isPaired {
             plugins.onPaired(device)
+        }
+        if device.isPaired, !device.link.identity.deviceType.isComputer {
             phoneNearby = false
             hotspotStatus = nil
             hotspot.cancel()
@@ -594,7 +603,8 @@ final class AppModel: ObservableObject {
     }
 
     fileprivate func publish() {
-        primaryId = primaryPhone?.id
+        primaryId = primaryDevice?.id
+        phoneId = primaryPhone?.id
         callAudio.attach(callAudioPhoneId)
         syncMessages()
 
@@ -660,15 +670,24 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private var primaryPhone: Device? {
+    private var pairedPhones: [Device] {
+        connected.all.filter { $0.isPaired && !$0.link.identity.deviceType.isComputer }
+    }
+
+    private var primaryDevice: Device? {
         DeviceFocus(preferredId: selectedPhone).pick(connected.all.filter(\.isPaired), id: \.id, name: \.name)
+    }
+
+    /// The phone picked in the panel, or else the first paired phone.
+    private var primaryPhone: Device? {
+        DeviceFocus(preferredId: selectedPhone).pick(pairedPhones, id: \.id, name: \.name)
     }
 
     /// Call audio stays with its phone while that phone is connected, so switching phones keeps the Bluetooth link.
     private var callAudioPhoneId: String? {
         if let id = callAudio.phoneId, connected[id]?.isPaired == true { return id }
 
-        return primaryId
+        return phoneId
     }
 
     /// Texts and photos come from the primary phone.

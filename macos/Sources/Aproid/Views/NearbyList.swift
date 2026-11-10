@@ -1,7 +1,7 @@
 import SwiftUI
 import AproidKit
 
-/// Other phones and tablets on the network.
+/// Other phones, tablets and computers on the network.
 struct NearbyList: View {
     let devices: [DeviceState]
     @ObservedObject var model: AppModel
@@ -12,7 +12,8 @@ struct NearbyList: View {
 
             ForEach(devices) { device in
                 HStack(spacing: 12) {
-                    PhoneArt(width: device.type == .tablet ? 28 : 20, screen: Theme.screen)
+                    DeviceArt(type: device.type, width: 20, screen: Theme.screen)
+                        .frame(width: 36)
 
                     VStack(alignment: .leading, spacing: 1) {
                         Text(device.name).font(.system(size: 13, weight: .semibold)).lineLimit(1)

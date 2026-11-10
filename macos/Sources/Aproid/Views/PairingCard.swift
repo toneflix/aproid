@@ -8,10 +8,19 @@ struct PairingCard: View {
 
     private var isOurRequest: Bool { device.pairState == .requested }
 
+    private var hint: String {
+        let other = device.isComputer ? "the other computer" : "your phone"
+        let shares = device.isComputer ? "files, links and your clipboard" : "notifications, files and your clipboard"
+
+        return isOurRequest
+            ? "Accept on \(other) if it shows the same code."
+            : "Check that the same code shows on \(other). Pairing lets it send \(shares) to this Mac."
+    }
+
     var body: some View {
         VStack(spacing: 18) {
             HStack(spacing: 14) {
-                PhoneArt(width: 36)
+                DeviceArt(type: device.type, width: 36)
                 SignalDots()
                 LaptopArt(width: 76)
             }
@@ -21,9 +30,7 @@ struct PairingCard: View {
                 Text(isOurRequest ? "Waiting for \(device.name)" : "Pair with \(device.name)?")
                     .font(.system(size: 18, weight: .bold))
                     .multilineTextAlignment(.center)
-                Text(isOurRequest
-                     ? "Accept on your phone if it shows the same code."
-                     : "Check that the same code shows on your phone. Pairing lets it send notifications, files and your clipboard to this Mac.")
+                Text(hint)
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

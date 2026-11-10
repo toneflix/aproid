@@ -5,6 +5,11 @@ import java.util.UUID
 enum class DeviceType(val wire: String) {
     DESKTOP("desktop"), LAPTOP("laptop"), PHONE("phone"), TABLET("tablet"), TV("tv");
 
+    /** A Mac or PC rather than a phone, tablet or TV. */
+    val isComputer: Boolean get() = this == DESKTOP || this == LAPTOP
+
+    val isPhone: Boolean get() = this == PHONE || this == TABLET
+
     companion object {
         fun fromWire(value: String?): DeviceType = entries.firstOrNull { it.wire == value } ?: DESKTOP
     }

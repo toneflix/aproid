@@ -2,6 +2,11 @@ import Foundation
 
 public enum DeviceType: String, Sendable {
     case desktop, laptop, phone, tablet, tv
+
+    /// A Mac or PC rather than a phone, tablet or TV.
+    public var isComputer: Bool { self == .desktop || self == .laptop }
+
+    public var isPhone: Bool { self == .phone || self == .tablet }
 }
 
 public struct DeviceIdentity: Equatable, Sendable {

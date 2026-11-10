@@ -1,4 +1,21 @@
 import SwiftUI
+import AproidKit
+
+/// The drawing for a kind of device. `width` is a phone's width; computers are drawn wider to look the same size.
+struct DeviceArt: View {
+    let type: DeviceType
+    var width: CGFloat = 40
+    var screen: Color = Theme.accent
+
+    var body: some View {
+        switch type {
+        case .laptop: LaptopArt(width: width * 1.7, screen: screen)
+        case .desktop: DesktopArt(width: width * 1.7, screen: screen)
+        case .tablet: PhoneArt(width: width * 1.4, screen: screen)
+        case .phone, .tv: PhoneArt(width: width, screen: screen)
+        }
+    }
+}
 
 /// A drawn phone: dark body with an accent screen. Height follows the width.
 struct PhoneArt: View {
@@ -23,6 +40,7 @@ struct PhoneArt: View {
 /// A drawn laptop: screen on a thin base.
 struct LaptopArt: View {
     var width: CGFloat = 80
+    var screen: Color = Theme.screen
 
     var body: some View {
         VStack(spacing: 0) {
@@ -31,12 +49,37 @@ struct LaptopArt: View {
                 .frame(width: width, height: width * 0.65)
                 .overlay(
                     RoundedRectangle(cornerRadius: width * 0.04, style: .continuous)
-                        .fill(Theme.screen)
-                        .padding(3)
+                        .fill(screen)
+                        .padding(max(2, width * 0.04))
                 )
             Capsule()
                 .fill(Color.secondary.opacity(0.45))
-                .frame(width: width * 1.15, height: width * 0.075)
+                .frame(width: width * 1.15, height: max(2, width * 0.075))
+        }
+    }
+}
+
+/// A drawn desktop: a monitor on a short stand.
+struct DesktopArt: View {
+    var width: CGFloat = 80
+    var screen: Color = Theme.screen
+
+    var body: some View {
+        VStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: width * 0.06, style: .continuous)
+                .fill(Theme.device)
+                .frame(width: width, height: width * 0.62)
+                .overlay(
+                    RoundedRectangle(cornerRadius: width * 0.03, style: .continuous)
+                        .fill(screen)
+                        .padding(max(2, width * 0.04))
+                )
+            Rectangle()
+                .fill(Theme.device)
+                .frame(width: width * 0.12, height: width * 0.12)
+            Capsule()
+                .fill(Color.secondary.opacity(0.45))
+                .frame(width: width * 0.42, height: max(2, width * 0.06))
         }
     }
 }

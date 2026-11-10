@@ -240,6 +240,13 @@ public sealed partial class PanelWindow : Window
 
     public int BatteryCharge(DeviceState? device) => device?.Battery?.Charge ?? -1;
 
+    public Core.DeviceType FocusedType(DeviceState? device) => device?.Type ?? Core.DeviceType.Phone;
+
+    public double HeroArtWidth(DeviceState? device) => device?.IsComputer == true ? 30 : 40;
+
+    /// Desktops have no battery, so their card leaves the ring out.
+    public Visibility ShowsBattery(DeviceState? device) => Shown(device is { IsComputer: false } || device?.Battery is not null);
+
     public Lucide NotificationsIcon(bool on) => on ? Lucide.BellRing : Lucide.BellOff;
 
     // The hero's notifications badge: a bell, crossed out and faded while paused.
@@ -294,6 +301,13 @@ public sealed partial class PanelWindow : Window
 
         return $"Within {Math.Round(location.Accuracy)} m · {when}";
     }
+
+    public static Lucide RowIcon(Core.DeviceType type) => type switch
+    {
+        Core.DeviceType.Laptop => Lucide.Laptop,
+        Core.DeviceType.Desktop => Lucide.Monitor,
+        _ => Lucide.Smartphone,
+    };
 
     public static string RowAction(PairState state) => state switch
     {

@@ -160,26 +160,88 @@ public sealed class PhoneArt : UserControl
 /// A drawn laptop: screen on a thin base.
 public sealed class LaptopArt : UserControl
 {
-    public LaptopArt()
+    public LaptopArt() => Content = ComputerDrawing.Laptop(76);
+}
+
+/// Draws laptops and desktops at a given width.
+internal static class ComputerDrawing
+{
+    public static UIElement Laptop(double width)
     {
-        const double width = 76;
-
-        var screen = new Border { CornerRadius = new CornerRadius(width * 0.04) };
-        screen.SetValue(Border.BackgroundProperty, Application.Current.Resources["AproidScreenBrush"]);
-
-        var lid = new Border { Width = width, Height = width * 0.65, CornerRadius = new CornerRadius(width * 0.075), Padding = new Thickness(3), Child = screen };
-        lid.SetValue(Border.BackgroundProperty, Application.Current.Resources["AproidDeviceBrush"]);
-
+        var lid = Frame(width, width * 0.65, width * 0.075);
         var stand = new Border
         {
             Width = width * 1.15,
-            Height = width * 0.075,
+            Height = Math.Max(2, width * 0.075),
             CornerRadius = new CornerRadius(width * 0.04),
             Background = new SolidColorBrush(Color.FromArgb(0x73, 0x80, 0x80, 0x88)),
         };
 
-        Content = new StackPanel { Children = { lid, stand }, VerticalAlignment = VerticalAlignment.Center };
+        return new StackPanel { Children = { lid, stand }, VerticalAlignment = VerticalAlignment.Center };
     }
+
+    /// A monitor on a short stand.
+    public static UIElement Desktop(double width)
+    {
+        var monitor = Frame(width, width * 0.62, width * 0.06);
+        var neck = new Border { Width = width * 0.12, Height = width * 0.12 };
+        neck.SetValue(Border.BackgroundProperty, Application.Current.Resources["AproidDeviceBrush"]);
+        var foot = new Border
+        {
+            Width = width * 0.42,
+            Height = Math.Max(2, width * 0.06),
+            CornerRadius = new CornerRadius(width * 0.03),
+            Background = new SolidColorBrush(Color.FromArgb(0x73, 0x80, 0x80, 0x88)),
+        };
+
+        return new StackPanel { Children = { monitor, neck, foot }, VerticalAlignment = VerticalAlignment.Center };
+    }
+
+    private static Border Frame(double width, double height, double radius)
+    {
+        var screen = new Border { CornerRadius = new CornerRadius(width * 0.04) };
+        screen.SetValue(Border.BackgroundProperty, Application.Current.Resources["AproidScreenBrush"]);
+
+        var frame = new Border { Width = width, Height = height, CornerRadius = new CornerRadius(radius), Padding = new Thickness(Math.Max(2, width * 0.04)), Child = screen };
+        frame.SetValue(Border.BackgroundProperty, Application.Current.Resources["AproidDeviceBrush"]);
+
+        return frame;
+    }
+}
+
+/// The drawing for a kind of device. ArtWidth is a phone's width; computers are drawn wider to look the same size.
+public sealed class DeviceArt : UserControl
+{
+    public static readonly DependencyProperty ArtWidthProperty =
+        DependencyProperty.Register(nameof(ArtWidth), typeof(double), typeof(DeviceArt), new PropertyMetadata(40.0, (d, _) => ((DeviceArt)d).Draw()));
+
+    public DeviceArt() => Draw();
+
+    private Core.DeviceType type = Core.DeviceType.Phone;
+
+    public Core.DeviceType Type
+    {
+        get => type;
+        set
+        {
+            type = value;
+            Draw();
+        }
+    }
+
+    public double ArtWidth
+    {
+        get => (double)GetValue(ArtWidthProperty);
+        set => SetValue(ArtWidthProperty, value);
+    }
+
+    private void Draw() => Content = Type switch
+    {
+        Core.DeviceType.Laptop => ComputerDrawing.Laptop(ArtWidth * 1.7),
+        Core.DeviceType.Desktop => ComputerDrawing.Desktop(ArtWidth * 1.7),
+        Core.DeviceType.Tablet => new PhoneArt { ArtWidth = ArtWidth * 1.4 },
+        _ => new PhoneArt { ArtWidth = ArtWidth },
+    };
 }
 
 /// Charge as a ring, green when fine, amber when low, with a bolt while charging.
