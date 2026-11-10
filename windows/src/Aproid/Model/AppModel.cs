@@ -45,6 +45,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private string? messagesDevice;
     private readonly List<string> waitingFiles = [];
     private string? waitingNumber;
+    private string? waitingText;
+    private PhoneStatus status = PhoneStatus.Empty;
     private DateTimeOffset waitingSince;
     private readonly PhoneHotspot hotspot;
     private readonly Updater updater;
@@ -444,6 +446,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         link?.Stop();
         folder.Disconnect();
         Audio.Dispose();
+        status.Disconnected().Save();
         foreach (var device in connected.All) device.Link.Close("Aproid quit");
         toasts.Unregister();
     }
@@ -605,10 +608,11 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     /// Files and tel: links handed over by Windows. Right after Aproid starts no phone is connected yet,
     /// so they wait up to a minute for one.
-    public void Handover(IReadOnlyList<string> files, string? number)
+    public void Handover(IReadOnlyList<string> files, string? number, string? text = null)
     {
         waitingFiles.AddRange(files);
         waitingNumber = number ?? waitingNumber;
+        waitingText = text ?? waitingText;
         waitingSince = DateTimeOffset.Now;
 
         SendWaiting();
@@ -616,12 +620,13 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     private void SendWaiting()
     {
-        if (waitingFiles.Count == 0 && waitingNumber is null) return;
+        if (waitingFiles.Count == 0 && waitingNumber is null && waitingText is null) return;
 
         if (Primary is Device phone)
         {
             if (waitingFiles.Count > 0) SendFiles(waitingFiles.ToList(), phone.Id);
             if (waitingNumber is string number) Dial(number);
+            if (waitingText is string text) SendText(text, phone.Id);
         }
         else if (DateTimeOffset.Now - waitingSince < TimeSpan.FromMinutes(1))
         {
@@ -634,6 +639,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
         waitingFiles.Clear();
         waitingNumber = null;
+        waitingText = null;
     }
 
     public void ClearRecent()
@@ -838,6 +844,20 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
         SyncStores(primary);
         SendWaiting();
+        SaveStatus();
+    }
+
+    private void SaveStatus()
+    {
+        var phones = Devices.Where(d => d.IsPaired)
+            .OrderBy(d => d.Id == Focused?.Id ? 0 : 1)
+            .Select(d => new PhoneStatus.Phone(d.Id, d.Name, d.Battery?.Charge, d.IsCharging, IsConnected: true))
+            .ToList();
+        var next = new PhoneStatus(phones);
+        if (next.Matches(status)) return;
+
+        status = next;
+        status.Save();
     }
 
     /// The paired phone the panel, Messages and Photos use. Every paired phone stays connected.

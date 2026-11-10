@@ -22,6 +22,9 @@ internal static class AppPaths
 
     public static string Transfers => Path.Combine(Data, "transfers.json");
 
+    /// The paired phones' battery, read by scripts.
+    public static string Status => Path.Combine(Data, "status.json");
+
     public static string Certificate => Path.Combine(Data, "device.pfx");
 
     /// The phone's photos in Explorer: %USERPROFILE%\Phone Photos.

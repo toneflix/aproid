@@ -96,7 +96,7 @@ public partial class App : Application
             return;
         }
 
-        model!.Handover(launch.Files, launch.Number);
+        model!.Handover(launch.Files, launch.Number, launch.Text);
 
         // The panel shows the files going across.
         if (launch.Files.Count > 0) panel!.ShowNear(tray!.Bounds);
