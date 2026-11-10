@@ -4,6 +4,7 @@ import Foundation
 import OSLog
 import AproidKit
 import Carbon.HIToolbox
+import WidgetKit
 
 /// What the menu shows for one connected device.
 struct DeviceState: Identifiable, Equatable {
@@ -132,6 +133,8 @@ final class AppModel: ObservableObject {
     private var timer: Timer?
     private let trustStore = DefaultsTrustStore()
     private let log = Logger(subsystem: "com.toneflix.aproid.app", category: "link")
+    /// What the desktop widget last showed. Phones that disconnect stay, dimmed, with their last battery level.
+    private var widgetSnapshot = WidgetSnapshot.load()
 
     /// App Nap would slow the heartbeat timer and make the phone look gone.
     private let activity = ProcessInfo.processInfo.beginActivity(
@@ -228,7 +231,12 @@ final class AppModel: ObservableObject {
 
     func reject(_ id: String) { connected[id]?.reject() }
 
-    func unpair(_ id: String) { connected[id]?.unpair() }
+    func unpair(_ id: String) {
+        connected[id]?.unpair()
+        widgetSnapshot.phones.removeAll { $0.id == id }
+        try? widgetSnapshot.save()
+        WidgetCenter.shared.reloadAllTimelines()
+    }
 
     /// Rings the phone and asks where it is, so it can be found by sound or on the map.
     func ring(_ id: String) {
@@ -588,6 +596,48 @@ final class AppModel: ObservableObject {
                 )
             }
             .sorted { $0.name < $1.name }
+
+        updateWidget()
+    }
+
+    /// Saves each paired phone's battery for the widget, and asks it to redraw when that changed.
+    private func updateWidget() {
+        let live = devices.filter { $0.pairState == .paired && ($0.type == .phone || $0.type == .tablet) }
+        let liveIds = Set(live.map(\.id))
+
+        var phones = live.map { phone in
+            WidgetSnapshot.Phone(
+                id: phone.id,
+                name: phone.name,
+                isTablet: phone.type == .tablet,
+                charge: phone.battery?.charge,
+                isCharging: phone.battery?.isCharging ?? false,
+                isLow: phone.battery?.isLow ?? false
+            )
+        }
+        phones += widgetSnapshot.phones.filter { !liveIds.contains($0.id) }.map { phone in
+            var offline = phone
+            offline.isConnected = false
+            offline.isCharging = false
+            return offline
+        }
+        // The phone the panel shows first, then connected ones, then by name.
+        phones.sort { a, b in
+            if (a.id == primaryId) != (b.id == primaryId) { return a.id == primaryId }
+            if a.isConnected != b.isConnected { return a.isConnected }
+            return a.name.localizedStandardCompare(b.name) == .orderedAscending
+        }
+
+        let snapshot = WidgetSnapshot(phones: phones)
+        guard snapshot != widgetSnapshot else { return }
+
+        widgetSnapshot = snapshot
+        do {
+            try snapshot.save()
+            WidgetCenter.shared.reloadAllTimelines()
+        } catch {
+            log.error("Could not save the widget's data: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private var primaryPhone: Device? {
