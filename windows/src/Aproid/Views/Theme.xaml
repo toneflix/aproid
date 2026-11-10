@@ -65,7 +65,6 @@
     </LinearGradientBrush>
 
     <CornerRadius x:Key="AproidRadius">14</CornerRadius>
-    <x:Double x:Key="AproidPanelWidth">360</x:Double>
 
     <!-- The rounded card every section sits on. -->
     <Style x:Key="AproidCard" TargetType="Border">

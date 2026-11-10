@@ -24,6 +24,7 @@ namespace Aproid.Views;
 public sealed partial class PanelWindow : Window
 {
     private const int Margin = 12;
+    private const double PanelWidth = 360;
 
     private readonly IntPtr hwnd;
     private readonly DispatcherQueueTimer dots;
@@ -149,7 +150,7 @@ public sealed partial class PanelWindow : Window
     private void Fit()
     {
         var scale = GetDpiForWindow(hwnd) / 96.0;
-        Sections.Measure(new Windows.Foundation.Size(Sections.Width, double.PositiveInfinity));
+        Sections.Measure(new Windows.Foundation.Size(PanelWidth, double.PositiveInfinity));
 
         var point = anchor is RECT icon ? new POINT { X = (icon.Left + icon.Right) / 2, Y = (icon.Top + icon.Bottom) / 2 } : Cursor();
         var info = new MONITORINFO { cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf<MONITORINFO>() };
@@ -158,11 +159,12 @@ public sealed partial class PanelWindow : Window
         var screen = info.rcMonitor;
         var margin = (int)(Margin * scale);
 
-        // The window's size includes its border, so the content gets the full panel width.
-        var frameWidth = AppWindow.Size.Width - AppWindow.ClientSize.Width;
-        var frameHeight = AppWindow.Size.Height - AppWindow.ClientSize.Height;
-        var width = (int)Math.Ceiling(Sections.Width * scale) + frameWidth;
-        var height = Math.Min((int)Math.Ceiling(Sections.DesiredSize.Height * scale) + frameHeight, work.Bottom - work.Top - 2 * margin);
+        // The content area gets the panel's size, and the border goes around it.
+        AppWindow.ResizeClient(new SizeInt32(
+            (int)Math.Ceiling(PanelWidth * scale),
+            Math.Min((int)Math.Ceiling(Sections.DesiredSize.Height * scale), work.Bottom - work.Top - 2 * margin)));
+        var width = AppWindow.Size.Width;
+        var height = Math.Min(AppWindow.Size.Height, work.Bottom - work.Top - 2 * margin);
 
         // The taskbar sits on the side where the work area stops short of the screen.
         int x, y;
@@ -187,7 +189,7 @@ public sealed partial class PanelWindow : Window
             y = work.Bottom - height - margin;
         }
 
-        AppWindow.MoveAndResize(new RectInt32(x, y, width, height));
+        AppWindow.Move(new PointInt32(x, y));
     }
 
     private static POINT Cursor()
