@@ -109,6 +109,46 @@ class LanLinkTest {
         assertFalse(phoneDevice.send(NetworkPacket(PacketType.PING)))
     }
 
+    @Test fun flyyDropMovesOnlyTheAcceptedFileBetweenUnpairedDevices() {
+        val (onPhone, onMac) = connect()
+        val phoneDrop = FlyyDrop()
+        val macDrop = FlyyDrop().apply { receiving = FlyyDrop.Receiving.EVERYONE }
+        val onMacPackets = LinkedBlockingQueue<NetworkPacket>()
+        val onPhonePackets = LinkedBlockingQueue<NetworkPacket>()
+        val bytes = "hello from the phone".toByteArray()
+
+        val phoneDevice = Device(onPhone, phone.certificate, phone.trust, guests = phoneDrop).apply {
+            listener = object : Device.Listener {
+                override fun onPacket(device: Device, packet: NetworkPacket) = onPhonePackets.put(packet)
+            }
+            start()
+        }
+        val macDevice = Device(onMac, mac.certificate, mac.trust, guests = macDrop).apply {
+            listener = object : Device.Listener {
+                override fun onPacket(device: Device, packet: NetworkPacket) = onMacPackets.put(packet)
+            }
+            start()
+        }
+
+        assertFalse(phoneDevice.send(NetworkPacket(PacketType.PING)))
+        val item = FlyyDrop.Item("hello.txt", bytes.size.toLong())
+        assertTrue(phoneDevice.send(phoneDrop.request(mac.identity.deviceId, listOf(item))))
+
+        val request = onMacPackets.poll(10, TimeUnit.SECONDS)!!
+        val offer = (macDrop.onRequest(phone.identity.deviceId, request, isPaired = false) as FlyyDrop.Incoming.Ask).offer
+        assertTrue(macDevice.send(macDrop.accept(offer.id)!!))
+        assertTrue(phoneDrop.onResponse(mac.identity.deviceId, onPhonePackets.poll(10, TimeUnit.SECONDS)!!)!!.accepted)
+
+        assertTrue(phoneDevice.sendWithPayload(FlyyDrop.file(offer.id, item), item.size, { bytes.inputStream() }))
+        val file = onMacPackets.poll(10, TimeUnit.SECONDS)!!
+        val received = java.io.ByteArrayOutputStream()
+        macDevice.receivePayload(file, received)
+
+        assertEquals("hello from the phone", received.toString())
+        assertFalse(phoneDevice.sendWithPayload(FlyyDrop.file(offer.id, item), item.size, { bytes.inputStream() }))
+        assertFalse(mac.trust.isTrusted(phone.identity.deviceId))
+    }
+
     @Test fun changedCertificateIsRejected() {
         mac.trust.trust(phone.identity.deviceId, DeviceCertificate.generate(phone.identity.deviceId).encodedCertificate)
 

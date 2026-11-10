@@ -95,6 +95,15 @@ public static class PacketType
 
     /// A phone's packet passed on through another computer. Body: {"phoneId", "phoneName", "packet"}; see `Relay`.
     public const string Relay = "aproid.relay";
+
+    /// Asks to send files, or a link or text, to a device that may not be paired. Body: {"id", "files": [{"name", "size"}], "text"?}; see `FlyyDrop`.
+    public const string FlyyDropRequest = "aproid.flyydrop.request";
+
+    /// Accepts or declines a FlyyDrop request. Body: {"id", "accept", "reason"?}.
+    public const string FlyyDropResponse = "aproid.flyydrop.response";
+
+    /// Stops a FlyyDrop request from either side. Body: {"id"}.
+    public const string FlyyDropCancel = "aproid.flyydrop.cancel";
 }
 
 public static class Capabilities
@@ -136,5 +145,8 @@ public static class Capabilities
         PacketType.Heartbeat,
         PacketType.Input,
         PacketType.Relay,
+        PacketType.FlyyDropRequest,
+        PacketType.FlyyDropResponse,
+        PacketType.FlyyDropCancel,
     };
 }

@@ -97,9 +97,9 @@ internal sealed class Peer : IDisposable
 
     public DeviceIdentity Announced => Identity with { TcpPort = Lan.TcpPort };
 
-    public Device DeviceFor(DeviceLink link, Func<long>? clock = null)
+    public Device DeviceFor(DeviceLink link, Func<long>? clock = null, IGuestAccess? guests = null)
     {
-        var device = new Device(link, Certificate, Trust, clock) { Delegate = Recorder };
+        var device = new Device(link, Certificate, Trust, clock, guests) { Delegate = Recorder };
         device.Start();
 
         return device;
@@ -182,6 +182,35 @@ public sealed class LanLinkTests : IDisposable
 
         Assert.True(phoneDevice.Send(new NetworkPacket(PacketType.Ping)));
         Assert.Equal(PacketType.Ping, pc.Recorder.Packets.Take()?.Type);
+    }
+
+    [Fact]
+    public async Task FlyyDropMovesOnlyTheAcceptedFileBetweenUnpairedDevices()
+    {
+        var (onPhone, onPc) = Connect();
+        var phoneDrop = new FlyyDrop();
+        var pcDrop = new FlyyDrop { ReceivingMode = FlyyDrop.Receiving.Everyone };
+        var phoneDevice = phone.DeviceFor(onPhone, guests: phoneDrop);
+        var pcDevice = pc.DeviceFor(onPc, guests: pcDrop);
+        var bytes = "hello from the phone"u8.ToArray();
+
+        Assert.False(phoneDevice.Send(new NetworkPacket(PacketType.Ping)));
+        var item = new FlyyDrop.Item("hello.txt", bytes.Length);
+        Assert.True(phoneDevice.Send(phoneDrop.Request(pc.Identity.DeviceId, [item])));
+
+        var request = pc.Recorder.Packets.Take()!;
+        var offer = Assert.IsType<FlyyDrop.Incoming.Ask>(pcDrop.OnRequest(phone.Identity.DeviceId, request, isPaired: false)).Offer;
+        Assert.True(pcDevice.Send(pcDrop.Accept(offer.Id)!));
+        Assert.True(phoneDrop.OnResponse(pc.Identity.DeviceId, phone.Recorder.Packets.Take()!)!.Accepted);
+
+        Assert.True(phoneDevice.SendWithPayload(FlyyDrop.File(offer.Id, item), item.Size, new MemoryStream(bytes)));
+        var file = pc.Recorder.Packets.Take()!;
+        var received = new MemoryStream();
+        await pcDevice.ReceivePayloadAsync(file, received);
+
+        Assert.Equal("hello from the phone", System.Text.Encoding.UTF8.GetString(received.ToArray()));
+        Assert.False(phoneDevice.SendWithPayload(FlyyDrop.File(offer.Id, item), item.Size, new MemoryStream(bytes)));
+        Assert.False(((ITrustStore)pc.Trust).IsTrusted(phone.Identity.DeviceId));
     }
 
     [Fact]

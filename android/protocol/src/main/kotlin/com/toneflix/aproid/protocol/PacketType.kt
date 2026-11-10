@@ -85,6 +85,15 @@ object PacketType {
 
     /** A phone's packet passed on through another computer. Body: {"phoneId", "phoneName", "packet"}; see [Relay]. */
     const val RELAY = "aproid.relay"
+
+    /** Asks to send files, or a link or text, to a device that may not be paired. Body: {"id", "files": [{"name", "size"}], "text"?}; see [FlyyDrop]. */
+    const val FLYYDROP_REQUEST = "aproid.flyydrop.request"
+
+    /** Accepts or declines a FlyyDrop request. Body: {"id", "accept", "reason"?}. */
+    const val FLYYDROP_RESPONSE = "aproid.flyydrop.response"
+
+    /** Stops a FlyyDrop request from either side. Body: {"id"}. */
+    const val FLYYDROP_CANCEL = "aproid.flyydrop.cancel"
 }
 
 /** What this MVP sends and accepts. Kept in one place so both apps advertise the same set. */
@@ -125,5 +134,8 @@ object Capabilities {
         PacketType.HEARTBEAT,
         PacketType.INPUT,
         PacketType.RELAY,
+        PacketType.FLYYDROP_REQUEST,
+        PacketType.FLYYDROP_RESPONSE,
+        PacketType.FLYYDROP_CANCEL,
     )
 }

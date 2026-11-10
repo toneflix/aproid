@@ -17,7 +17,7 @@ public extension DeviceDelegate {
 }
 
 /// A connected peer: its encrypted link plus pairing. Packets from a device that
-/// is not paired are dropped, except pairing packets. Mirrors Device.kt.
+/// is not paired are dropped, except pairing packets and what `guests` lets through. Mirrors Device.kt.
 public final class Device {
     public let link: DeviceLink
     public weak var delegate: DeviceDelegate?
@@ -25,6 +25,7 @@ public final class Device {
     private let ownCertificate: DeviceCertificate
     private let trustStore: TrustStore
     private let clock: () -> Int64
+    private let guests: GuestAccess?
     private let pairing: PairingStateMachine
     private let lock = NSLock()
     private var lastReceived: Int64
@@ -37,9 +38,11 @@ public final class Device {
         link: DeviceLink,
         ownCertificate: DeviceCertificate,
         trustStore: TrustStore,
-        clock: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970) }
+        clock: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970) },
+        guests: GuestAccess? = nil
     ) {
         self.link = link
+        self.guests = guests
         self.ownCertificate = ownCertificate
         self.trustStore = trustStore
         self.clock = clock
@@ -72,7 +75,7 @@ public final class Device {
 
     @discardableResult
     public func send(_ packet: NetworkPacket) -> Bool {
-        guard isPaired else { return false }
+        guard maySend(packet) else { return false }
 
         link.send(packet)
 
@@ -81,7 +84,7 @@ public final class Device {
 
     /// Sends `packet` with a payload that the peer downloads from us, such as a file.
     /// `onProgress` gets each piece's byte count as it goes out.
-    /// Returns false when not paired or the payload could not be offered. Call off the event loops.
+    /// Returns false when not allowed to send or the payload could not be offered. Call off the event loops.
     @discardableResult
     public func sendWithPayload(
         _ packet: NetworkPacket,
@@ -90,7 +93,7 @@ public final class Device {
         onProgress: ((Int64) -> Void)? = nil,
         completion: @escaping (Error?) -> Void = { _ in }
     ) -> Bool {
-        guard isPaired, let payloads = lock.withLock({ payloads }) else { return false }
+        guard maySend(packet), let payloads = lock.withLock({ payloads }) else { return false }
 
         do {
             let port = try payloads.offer(
@@ -206,7 +209,11 @@ public final class Device {
             return
         }
 
-        if isPaired { delegate?.device(self, received: packet) }
+        if isPaired || guests?.admitsIncoming(from: id, packet) == true { delegate?.device(self, received: packet) }
+    }
+
+    private func maySend(_ packet: NetworkPacket) -> Bool {
+        isPaired || guests?.admitsOutgoing(to: id, packet) == true
     }
 
     private func run(_ step: (PairingStateMachine) -> PairAction) {

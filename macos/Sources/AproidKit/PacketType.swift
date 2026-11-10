@@ -86,6 +86,15 @@ public enum PacketType {
 
     /// A phone's packet passed on through another computer. Body: {"phoneId", "phoneName", "packet"}; see `Relay`.
     public static let relay = "aproid.relay"
+
+    /// Asks to send files, or a link or text, to a device that may not be paired. Body: {"id", "files": [{"name", "size"}], "text"?}; see `FlyyDrop`.
+    public static let flyyDropRequest = "aproid.flyydrop.request"
+
+    /// Accepts or declines a FlyyDrop request. Body: {"id", "accept", "reason"?}.
+    public static let flyyDropResponse = "aproid.flyydrop.response"
+
+    /// Stops a FlyyDrop request from either side. Body: {"id"}.
+    public static let flyyDropCancel = "aproid.flyydrop.cancel"
 }
 
 public enum Capabilities {
@@ -125,5 +134,8 @@ public enum Capabilities {
         PacketType.heartbeat,
         PacketType.input,
         PacketType.relay,
+        PacketType.flyyDropRequest,
+        PacketType.flyyDropResponse,
+        PacketType.flyyDropCancel,
     ]
 }
