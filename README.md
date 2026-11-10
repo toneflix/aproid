@@ -1,24 +1,89 @@
-# Aproid
+<p align="center">
+  <img src="branding/app-icon.svg" width="112" alt="Aproid">
+</p>
 
-Aproid connects an Android phone to a Mac the way an iPhone connects to one: sharing files, notifications, messages, calls, clipboard and phone controls.
+<h1 align="center">Aproid</h1>
 
-It speaks the [KDE Connect](https://kdeconnect.kde.org/) protocol, so it also works with existing KDE Connect clients. The apps themselves are our own, written from scratch, with the goal of being better than both KDE Connect and Microsoft Phone Link.
+<p align="center"><strong>Your Android phone and your computer, finally on speaking terms.</strong></p>
 
-> Status: early. The phone and the Mac connect over TLS, pair with a matching code, and phone notifications show on the Mac with reply and dismiss. See [docs/ROADMAP.md](docs/ROADMAP.md).
+<p align="center">For Android, Mac and Windows. Free, open source, and it never leaves your home network.</p>
 
-## Repository layout
+---
 
-| Folder | What it is |
+iPhone owners get a quiet little luxury: their phone and their Mac just work together. A text arrives and they answer it from the laptop. A photo goes from pocket to desktop in a second. The phone rings in the other room and they pick up from where they're sitting.
+
+If you carry an Android phone, you've mostly had to go without. Aproid is our answer to that. Install it on your phone and your computer, pair them once, and from then on they behave like they were made for each other.
+
+![The Aproid panel on a Mac with two phones paired, a call coming in, and the Messages window](web/public/screens/mac-overview.png)
+
+## What it does
+
+**Your notifications, where you're looking.** Phone notifications show up on your computer with the app's own icon. Reply to a chat without picking up the phone, tap an action button, or dismiss it on the computer and watch it clear on the phone too.
+
+**Texts and calls from your desk.** Read and send SMS in a proper Messages window. When the phone rings, a card shows you who it is so you can answer or decline. Start a call from your contacts. On a Mac you can even take the call through the Mac's own speakers and microphone (still experimental).
+
+**Files without the cable.** Drag a file onto the panel, use the Share menu on your Mac or Windows PC, or share from any app on your phone. Big videos keep going if the connection drops and pick up where they left off. Click a received file to open it.
+
+**Your phone's screen, on your screen.** Mirror the phone into a window, sound and all, and use it with your mouse and keyboard. Handy for the apps that only exist on your phone.
+
+**Photos, the moment you take them.** Browse recent photos and screenshots from the computer and pull down the ones you want. On Windows they also appear in File Explorer.
+
+**One clipboard.** Copy on one device and paste on the other. Text, images and files.
+
+**The little things.** Battery level at a glance with a low-battery heads up. Media controls for whatever is playing. Ring your phone when it has slipped between the sofa cushions, and see where it was last seen on a map.
+
+**More than one phone, more than one computer.** Pair a work phone and a personal one, or one phone with your Mac and your PC. Each device gets its own card, and you swipe or click between them.
+
+**Computers, too.** Pair your Mac with your Windows PC, or two of either, to share files, the clipboard and links between them, check each other's battery, ring a misplaced laptop and control music on the other machine.
+
+**Works when the Wi-Fi doesn't.** Hotel network blocking devices? Aproid can find your phone over Bluetooth and connect through your phone's own hotspot instead.
+
+![Swipe between paired devices on Android and the Mac](web/public/screens/android-carousel.png)
+
+## Private by design
+
+Aproid has no servers, no accounts and no analytics. Your phone and your computer talk to each other directly over your local network (or Bluetooth), and every connection is encrypted. Devices only connect after you pair them and confirm the same code on both screens. Your messages, photos and notifications go from your phone to your computer and nowhere else.
+
+It also speaks the [KDE Connect](https://kdeconnect.kde.org/) protocol, so it gets along with KDE Connect on Linux and other devices.
+
+## Get it
+
+Download the latest version for each platform from the [Releases page](https://github.com/toneflix/aproid/releases).
+
+| | Needs | How it installs |
+| --- | --- | --- |
+| **Android** | Android 8.0 or later | APK, Google Play coming soon |
+| **Mac** | macOS 13 Ventura or later | Signed app, updates itself |
+| **Windows** | Windows 10 (1809) or later | Installer, updates itself |
+
+### Setting up
+
+1. Put your phone and computer on the same Wi-Fi (or turn on your phone's hotspot and join it).
+2. Open Aproid on both. Each one shows the other within a few seconds.
+3. Tap **Pair**, check the code matches on both screens, and accept.
+4. On the phone, allow notification access and whichever extras you want (messages, calls, screen control). Aproid explains each one when you turn it on.
+
+Some phones, especially Tecno, Infinix, itel and Xiaomi models, close background apps aggressively. If the connection drops when you put the phone away, let Aproid run in the background in your phone's battery settings.
+
+If KDE Connect is open on the same device it may hold the same network port. Aproid moves to the next free one, but finding devices works best with KDE Connect closed.
+
+## For developers
+
+Aproid is three native apps sharing one protocol.
+
+| Folder | What's inside |
 | --- | --- |
-| `android/protocol` | Shared protocol code in plain Kotlin (packets, identity, pairing, LAN discovery). Tested on any JVM. |
+| `android/protocol` | The protocol in plain Kotlin: packets, identity, pairing, discovery. |
 | `android/app` | The Android app (Kotlin, Jetpack Compose). |
-| `macos/Sources/AproidKit` | The same protocol code in Swift. |
+| `macos/Sources/AproidKit` | The protocol in Swift. |
 | `macos/Sources/Aproid` | The Mac menu bar app (SwiftUI). |
-| `docs/` | Architecture and roadmap. |
+| `windows/src/Aproid.Core` | The protocol in C#. |
+| `windows/src/Aproid` | The Windows tray app (WinUI 3). |
+| `web` | The website (Next.js). |
+| `branding` | The logo and the scripts that generate every app icon. |
+| `docs` | [Architecture](docs/ARCHITECTURE.md) and [roadmap](docs/ROADMAP.md). |
 
-## Building
-
-**Android** (needs JDK 17 and the Android SDK):
+**Android** (JDK 17 and the Android SDK):
 
 ```sh
 cd android
@@ -26,32 +91,37 @@ cd android
 ./gradlew :app:installDebug     # build and install on a connected phone
 ```
 
-**Mac** (needs Xcode 15 or later, macOS 13 or later):
+**Mac** (Xcode 15 or later):
 
 ```sh
 cd macos
 swift test
 ./scripts/bundle.sh             # builds macos/build/Aproid.app
-open build/Aproid.app           # starts the menu bar app
+open build/Aproid.app
 ```
 
-`swift run Aproid` or running from Xcode also works, but without an app bundle macOS won't show notifications or the Share menu entry. The first time the app runs, macOS asks to find devices on the local network and to show notifications. Allow both.
+Run it as a bundle. Without one, macOS won't show notifications or the Share menu entry.
 
-## Trying it
+**Windows** (.NET 8 SDK, and Windows for the app itself):
 
-1. Put the phone and the Mac on the same Wi-Fi.
-2. Start the Mac app. An icon appears in the menu bar.
-3. Open Aproid on the phone and tap **Start**.
-4. Each device should show the other in its list within a few seconds.
-5. Tap **Pair** on one side, check the code matches on both, and accept on the other.
-6. On the phone, tap **Allow access** and turn on notification access for Aproid. New notifications now show on the Mac. Reply from the banner, or dismiss it to clear it on the phone too.
-7. To send something from the Mac, use **Share > Aproid** in Finder, Safari, Photos or any app with a Share menu. If Aproid isn't listed, turn it on in System Settings > General > Login Items & Extensions > Sharing (on macOS 13 and 14: Privacy & Security > Extensions > Sharing).
+```sh
+cd windows
+dotnet test tests/Aproid.Core.Tests    # runs on any OS
+```
 
-If KDE Connect is running on either device it may hold port 1716. Aproid falls back to the next free port, but discovery is most reliable with KDE Connect closed.
+See [windows/README.md](windows/README.md) for building the app and the installer.
 
-## Releasing
+**Website** (Node 20 or later):
 
-Releases run from `.github/workflows/release.yml`. Push a `1.2.3` tag to build and publish all three apps in one release, or `android-1.2.3`, `macos-1.2.3` or `windows-1.2.3` to release just that app. The signing secrets each app needs are listed at the top of the workflow.
+```sh
+cd web
+npm install
+npm run dev
+```
+
+### Releasing
+
+Push a version tag such as `1.2.3` and `.github/workflows/release.yml` builds and publishes all three apps in one release. Use `android-1.2.3`, `macos-1.2.3` or `windows-1.2.3` to release a single app. The signing secrets each app needs are listed at the top of the workflow.
 
 ## License
 
