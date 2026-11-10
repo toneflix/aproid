@@ -3,6 +3,8 @@ package com.toneflix.aproid
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import com.toneflix.aproid.protocol.FlyyDrop
+import com.toneflix.aproid.protocol.NetworkPacket
 import com.toneflix.aproid.protocol.Share
 import com.toneflix.aproid.protocol.TransferProgress
 import java.io.FileNotFoundException
@@ -12,7 +14,7 @@ import java.net.ProtocolException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 
-/** Sends files, links and text from this phone to a paired Mac. */
+/** Sends files, links and text from this phone to a paired Mac, or to any nearby device that accepted a FlyyDrop. */
 object ShareSender {
     data class Item(val uri: Uri, val name: String, val size: Long)
 
@@ -41,11 +43,13 @@ object ShareSender {
     /**
      * Sends [items] one after another. [onProgress] gets readings across all files, about ten
      * times a second, and [onDone] is called once at the end with the first error, if any.
+     * With [flyyDropId] the files belong to an accepted FlyyDrop, which can't be resumed.
      */
     fun sendFiles(
         context: Context,
         deviceId: String,
         items: List<Item>,
+        flyyDropId: String? = null,
         onProgress: (TransferProgress.Snapshot) -> Unit = {},
         onDone: (Throwable?) -> Unit = {},
     ) {
@@ -56,18 +60,23 @@ object ShareSender {
             var failure: Throwable? = null
 
             for (item in items) {
-                val device = DeviceStore.find(deviceId)?.takeIf { it.isPaired }
+                val device = DeviceStore.find(deviceId)?.takeIf { it.isPaired || flyyDropId != null }
                 if (device == null) {
                     failure = ProtocolException("not connected")
                     break
                 }
 
                 val started = Recent.add(RecentItem.Kind.SENDING, item.name, app.getString(R.string.share_sending, device.name))
-                val id = java.util.UUID.randomUUID().toString()
-                offered.values.removeAll { it.expires < System.currentTimeMillis() }
-                offered[id] = Offered(item, device.id, started, System.currentTimeMillis() + KEEP_OFFERS_MS)
+                val packet = if (flyyDropId != null) {
+                    FlyyDrop.file(flyyDropId, FlyyDrop.Item(item.name, item.size))
+                } else {
+                    val id = java.util.UUID.randomUUID().toString()
+                    offered.values.removeAll { it.expires < System.currentTimeMillis() }
+                    offered[id] = Offered(item, device.id, started, System.currentTimeMillis() + KEEP_OFFERS_MS)
+                    Share.file(item.name, item.size, transferId = id)
+                }
 
-                val error = offer(app, device, item, id, 0, started) { bytes -> progress.advance(bytes)?.let(onProgress) }
+                val error = offer(app, device, item, packet, started) { bytes -> progress.advance(bytes)?.let(onProgress) }
                 if (error != null && failure == null) failure = error
             }
 
@@ -83,21 +92,21 @@ object ShareSender {
         queue.execute {
             val resuming = file.recent.copy(kind = RecentItem.Kind.SENDING, detail = app.getString(R.string.share_resuming, device.name))
             Recent.put(resuming)
-            offer(app, device, file.item, id, offset, resuming) {}
+            offer(app, device, file.item, Share.file(file.item.name, file.item.size, transferId = id, offset = offset), resuming) {}
         }
     }
 
-    /** Offers one file from [offset] and waits until the Mac has it. Returns the error, if any. */
+    /** Offers one file with [packet], from the offset it names, and waits until the peer has it. Returns the error, if any. */
     private fun offer(
         app: Context,
         device: com.toneflix.aproid.protocol.Device,
         item: Item,
-        id: String,
-        offset: Long,
+        packet: NetworkPacket,
         recent: RecentItem,
         onRead: (Long) -> Unit,
     ): Throwable? {
-        val start = offset.coerceIn(0, item.size)
+        val id = packet.string("aproid.transferId")
+        val start = (packet.long("aproid.offset") ?: 0).coerceIn(0, item.size)
         val finished = CountDownLatch(1)
         var error: Throwable? = null
         val progress = TransferProgress(item.size, start)
@@ -106,7 +115,6 @@ object ShareSender {
             progress.advance(bytes)?.let { Recent.put(recent.copy(progress = it)) }
         }
 
-        val packet = Share.file(item.name, item.size, transferId = id, offset = start)
         val wasOffered = runCatching {
             device.sendWithPayload(packet, item.size - start, open = {
                 val input = app.contentResolver.openInputStream(item.uri) ?: throw FileNotFoundException(item.name)
@@ -121,11 +129,12 @@ object ShareSender {
         if (wasOffered) finished.await() else error = ProtocolException("could not offer ${item.name}")
 
         val ok = error == null
-        if (ok) offered.remove(id)
+        if (ok && id != null) offered.remove(id)
+        val failed = if (id != null) R.string.share_paused else R.string.share_send_failed
         Recent.put(
             recent.copy(
                 kind = if (ok) RecentItem.Kind.SENT else RecentItem.Kind.FAILED,
-                detail = app.getString(if (ok) R.string.share_sent else R.string.share_paused, device.name),
+                detail = app.getString(if (ok) R.string.share_sent else failed, device.name),
                 time = System.currentTimeMillis(),
                 progress = null,
             ),
@@ -147,13 +156,18 @@ object ShareSender {
         }
     }
 
-    /** Sends a link or some text. Returns false when the Mac is not connected. */
-    fun sendText(context: Context, deviceId: String, text: String): Boolean {
-        val device = DeviceStore.find(deviceId)?.takeIf { it.isPaired } ?: return false
-        val trimmed = text.trim()
+    /** Sends a link or some text, as part of an accepted FlyyDrop when [flyyDropId] is set. Returns false when the device is not connected. */
+    fun sendText(context: Context, deviceId: String, text: String, flyyDropId: String? = null): Boolean {
+        val device = DeviceStore.find(deviceId)?.takeIf { it.isPaired || flyyDropId != null } ?: return false
+        val trimmed = if (flyyDropId != null) text else text.trim()
         val isLink = Uri.parse(trimmed).scheme?.lowercase() in setOf("http", "https") && trimmed.none { it.isWhitespace() }
+        val packet = when {
+            flyyDropId != null -> FlyyDrop.text(flyyDropId, trimmed)
+            isLink -> Share.link(trimmed)
+            else -> Share.text(trimmed)
+        }
 
-        DeviceStore.send(device, if (isLink) Share.link(trimmed) else Share.text(trimmed))
+        DeviceStore.send(device, packet)
 
         val kind = if (isLink) RecentItem.Kind.LINK else RecentItem.Kind.TEXT
         val title = if (isLink) Uri.parse(trimmed).host ?: trimmed else "“${trimmed.lineSequence().first().take(80)}”"

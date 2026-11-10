@@ -11,6 +11,7 @@ import com.toneflix.aproid.protocol.DeviceIdentity
 import com.toneflix.aproid.protocol.DeviceLink
 import com.toneflix.aproid.protocol.DeviceType
 import com.toneflix.aproid.protocol.NetworkPacket
+import com.toneflix.aproid.protocol.PacketType
 import com.toneflix.aproid.protocol.PairState
 import com.toneflix.aproid.protocol.PluginRouter
 import com.toneflix.aproid.protocol.TrustStore
@@ -30,6 +31,8 @@ data class DeviceState(
     val address: String,
     val pairState: PairState,
     val code: String?,
+    /** Runs Aproid with FlyyDrop, so files can go to it without pairing. */
+    val canFlyyDrop: Boolean = false,
 )
 
 /** This phone's identity and certificate, trusted devices, and the devices connected now. */
@@ -43,7 +46,7 @@ object DeviceStore {
 
     private val devices = linkedMapOf<String, Device>()
 
-    private val plugins = PluginRouter(listOf(NotificationPlugin, BatteryPlugin, FindMyPhonePlugin, ClipboardPlugin, SharePlugin, MediaPlugin, SmsPlugin, CallPlugin, CallAudioPlugin, LocationPlugin, PhotosPlugin, ScreenPlugin))
+    private val plugins = PluginRouter(listOf(NotificationPlugin, BatteryPlugin, FindMyPhonePlugin, ClipboardPlugin, SharePlugin, MediaPlugin, SmsPlugin, CallPlugin, CallAudioPlugin, LocationPlugin, PhotosPlugin, ScreenPlugin, FlyyDropPlugin))
 
     /** Network writes must stay off the main thread, so all plugin sends go through here. */
     private val sender = Executors.newSingleThreadExecutor()
@@ -219,6 +222,7 @@ object DeviceStore {
         address = link.address.hostAddress ?: "",
         pairState = pairState,
         code = if (pairState == PairState.REQUESTED || pairState == PairState.REQUESTED_BY_PEER) verificationCode else null,
+        canFlyyDrop = PacketType.FLYYDROP_REQUEST in link.identity.incomingCapabilities,
     )
 
     private class PreferencesTrustStore(context: Context) : TrustStore {
