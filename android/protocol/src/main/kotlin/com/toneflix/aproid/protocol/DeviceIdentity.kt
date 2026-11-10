@@ -10,6 +10,9 @@ enum class DeviceType(val wire: String) {
 
     val isPhone: Boolean get() = this == PHONE || this == TABLET
 
+    /** Phones never pair with each other; they only reach one another through FlyyDrop. */
+    fun pairsWith(other: DeviceType): Boolean = !(isPhone && other.isPhone)
+
     companion object {
         fun fromWire(value: String?): DeviceType = entries.firstOrNull { it.wire == value } ?: DESKTOP
     }

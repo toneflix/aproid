@@ -33,6 +33,8 @@ data class DeviceState(
     val code: String?,
     /** Runs Aproid with FlyyDrop, so files can go to it without pairing. */
     val canFlyyDrop: Boolean = false,
+    /** False for another phone, which is reachable only through FlyyDrop. */
+    val canPair: Boolean = true,
 )
 
 /** This phone's identity and certificate, trusted devices, and the devices connected now. */
@@ -223,6 +225,7 @@ object DeviceStore {
         pairState = pairState,
         code = if (pairState == PairState.REQUESTED || pairState == PairState.REQUESTED_BY_PEER) verificationCode else null,
         canFlyyDrop = PacketType.FLYYDROP_REQUEST in link.identity.incomingCapabilities,
+        canPair = canPair,
     )
 
     private class PreferencesTrustStore(context: Context) : TrustStore {

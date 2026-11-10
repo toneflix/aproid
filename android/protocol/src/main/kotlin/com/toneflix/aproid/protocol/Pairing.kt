@@ -17,14 +17,16 @@ sealed interface PairAction {
 /**
  * Pairing for one peer, following KDE Connect protocol v8: a "kdeconnect.pair" packet with
  * pair=true asks to pair (with a timestamp in seconds), pair=false rejects or unpairs.
- * Time is passed in so the logic can be tested without a clock.
+ * Time is passed in so the logic can be tested without a clock. With [allowed] false, this side never
+ * asks to pair and refuses every request.
  */
 class PairingStateMachine(
     initial: PairState = PairState.NOT_PAIRED,
     private val timeoutSeconds: Long = 30,
     private val maxClockSkewSeconds: Long = 1800,
+    private val allowed: Boolean = true,
 ) {
-    var state: PairState = initial
+    var state: PairState = if (allowed) initial else PairState.NOT_PAIRED
         private set
     private var requestedAt: Long = 0
 
@@ -33,6 +35,7 @@ class PairingStateMachine(
         private set
 
     fun requestPair(nowSeconds: Long): PairAction {
+        if (!allowed) return PairAction.None
         if (state == PairState.PAIRED || state == PairState.REQUESTED) return PairAction.None
         if (state == PairState.REQUESTED_BY_PEER) return accept()
         state = PairState.REQUESTED
@@ -83,8 +86,8 @@ class PairingStateMachine(
             }
             PairState.NOT_PAIRED -> {
                 val ts = packet.long("timestamp")
-                if (ts == null || abs(nowSeconds - ts) > maxClockSkewSeconds) {
-                    // Missing or stale timestamp: refuse, as protocol v8 requires.
+                if (!allowed || ts == null || abs(nowSeconds - ts) > maxClockSkewSeconds) {
+                    // Not allowed, or a missing or stale timestamp: refuse, as protocol v8 requires.
                     PairAction.Send(pairPacket(false, null))
                 } else {
                     state = PairState.REQUESTED_BY_PEER

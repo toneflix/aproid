@@ -20,6 +20,9 @@ public static class DeviceTypes
 
     public static bool IsPhone(this DeviceType type) => type is DeviceType.Phone or DeviceType.Tablet;
 
+    /// Phones never pair with each other; they only reach one another through FlyyDrop.
+    public static bool PairsWith(this DeviceType type, DeviceType other) => !(type.IsPhone() && other.IsPhone());
+
     public static DeviceType Parse(string? name) =>
         Enum.TryParse<DeviceType>(name, ignoreCase: true, out var type) && Enum.IsDefined(type) ? type : DeviceType.Desktop;
 }

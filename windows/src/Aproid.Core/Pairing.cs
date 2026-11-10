@@ -33,18 +33,24 @@ public sealed record PairAction(PairActionKind Kind, NetworkPacket? Packet = nul
 }
 
 /// Pairing for one peer, following KDE Connect protocol v8. Mirrors PairingStateMachine in Kotlin and Swift.
-/// Time is passed in for testing.
-public sealed class PairingStateMachine(PairState state = PairState.NotPaired, long timeoutSeconds = 30, long maxClockSkewSeconds = 1800)
+/// Time is passed in for testing. With `allowed` false, this side never asks to pair and refuses every request.
+public sealed class PairingStateMachine(
+    PairState state = PairState.NotPaired,
+    long timeoutSeconds = 30,
+    long maxClockSkewSeconds = 1800,
+    bool allowed = true)
 {
     private long requestedAt;
 
-    public PairState State { get; private set; } = state;
+    public PairState State { get; private set; } = allowed ? state : PairState.NotPaired;
 
     /// Unix time in seconds of the last pair request. Both sides use it for the verification code.
     public long RequestTimestamp { get; private set; }
 
     public PairAction RequestPair(long now)
     {
+        if (!allowed) return PairAction.None;
+
         switch (State)
         {
             case PairState.Paired:
@@ -116,8 +122,8 @@ public sealed class PairingStateMachine(PairState state = PairState.NotPaired, l
                 State = PairState.Paired;
                 return PairAction.Paired;
             case PairState.NotPaired:
-                // Missing or stale timestamp: refuse, as protocol v8 requires.
-                if (packet.GetLong("timestamp") is not long ts || Math.Abs(now - ts) > maxClockSkewSeconds)
+                // Not allowed, or a missing or stale timestamp: refuse, as protocol v8 requires.
+                if (!allowed || packet.GetLong("timestamp") is not long ts || Math.Abs(now - ts) > maxClockSkewSeconds)
                     return PairAction.Send(PairPacket(false, null));
 
                 State = PairState.RequestedByPeer;

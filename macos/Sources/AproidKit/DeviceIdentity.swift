@@ -7,6 +7,9 @@ public enum DeviceType: String, Sendable {
     public var isComputer: Bool { self == .desktop || self == .laptop }
 
     public var isPhone: Bool { self == .phone || self == .tablet }
+
+    /// Phones never pair with each other; they only reach one another through FlyyDrop.
+    public func pairs(with other: DeviceType) -> Bool { !(isPhone && other.isPhone) }
 }
 
 public struct DeviceIdentity: Equatable, Sendable {

@@ -102,12 +102,15 @@ class LinkService : Service() {
         exec.execute {
             val certificate = DeviceStore.certificate(this)
             val trustStore = DeviceStore.trustStore(this)
-            val ownId = DeviceStore.identity(this).deviceId
+            val own = DeviceStore.identity(this)
             val newLink = LanLink(
                 identityProvider = { DeviceStore.identity(this) },
                 certificate = certificate,
                 trustStore = trustStore,
-                onLink = { DeviceStore.add(Device(it, certificate, trustStore, guests = FlyyDropPlugin.drop), ownId) },
+                onLink = {
+                    val canPair = own.deviceType.pairsWith(it.identity.deviceType)
+                    DeviceStore.add(Device(it, certificate, trustStore, guests = FlyyDropPlugin.drop, canPair = canPair), own.deviceId)
+                },
                 isConnected = { DeviceStore.find(it)?.link?.isOpen == true },
             )
 

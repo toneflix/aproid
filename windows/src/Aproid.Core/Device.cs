@@ -16,6 +16,7 @@ public interface IDeviceDelegate
 
 /// A connected peer: its encrypted link plus pairing. Packets from a device that is not paired are dropped,
 /// except pairing packets and what `guests` lets through. Mirrors Device.kt and Device.swift.
+/// With `canPair` false the peer stays unpaired, so only `guests` traffic gets through.
 public sealed class Device
 {
     /// A link with no packets for this long is treated as dead.
@@ -30,19 +31,26 @@ public sealed class Device
     private readonly object gate = new();
     private long lastReceived;
 
-    public Device(DeviceLink link, DeviceCertificate ownCertificate, ITrustStore trustStore, Func<long>? clock = null, IGuestAccess? guests = null)
+    public Device(DeviceLink link, DeviceCertificate ownCertificate, ITrustStore trustStore, Func<long>? clock = null, IGuestAccess? guests = null, bool canPair = true)
     {
         Link = link;
+        CanPair = canPair;
         this.ownCertificate = ownCertificate;
         this.trustStore = trustStore;
         this.clock = clock ?? (() => DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         this.guests = guests;
-        pairing = new PairingStateMachine(trustStore.IsTrusted(link.Identity.DeviceId) ? PairState.Paired : PairState.NotPaired);
+        pairing = new PairingStateMachine(
+            trustStore.IsTrusted(link.Identity.DeviceId) ? PairState.Paired : PairState.NotPaired,
+            allowed: canPair);
         payloads = new PayloadTransfer(ownCertificate);
         lastReceived = this.clock();
+
+        if (!canPair) trustStore.Forget(link.Identity.DeviceId);
     }
 
     public DeviceLink Link { get; }
+
+    public bool CanPair { get; }
 
     public IDeviceDelegate? Delegate { get; set; }
 

@@ -6,6 +6,7 @@ import java.io.OutputStream
 /**
  * A connected peer: its encrypted link plus pairing. Packets from a device that
  * is not paired are dropped, except pairing packets and what [guests] lets through.
+ * With [canPair] false the peer stays unpaired, so only [guests] traffic gets through.
  */
 class Device(
     val link: DeviceLink,
@@ -13,6 +14,7 @@ class Device(
     private val trustStore: TrustStore,
     private val clock: () -> Long = { System.currentTimeMillis() / 1000 },
     private val guests: GuestAccess? = null,
+    val canPair: Boolean = true,
 ) {
     interface Listener {
         /** The peer asked to pair. Show [code] and call [accept] or [reject]. */
@@ -41,7 +43,12 @@ class Device(
 
     private val pairing = PairingStateMachine(
         if (trustStore.isTrusted(id)) PairState.PAIRED else PairState.NOT_PAIRED,
+        allowed = canPair,
     )
+
+    init {
+        if (!canPair) trustStore.forget(id)
+    }
 
     val pairState: PairState get() = pairing.state
 

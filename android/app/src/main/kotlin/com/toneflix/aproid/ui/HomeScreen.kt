@@ -117,7 +117,7 @@ fun HomeScreen(phoneName: String) {
     val recent by Recent.items.collectAsStateWithLifecycle()
     val macs = devices.filter { it.pairState == PairState.PAIRED }
     val mac = DeviceStore.focused(devices, focusId)
-    val others = devices.filter { it.pairState != PairState.PAIRED }
+    val others = devices.filter { it.pairState != PairState.PAIRED && (it.canPair || it.canFlyyDrop) }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
@@ -140,7 +140,7 @@ fun HomeScreen(phoneName: String) {
                 if (carousel) MacCarousel(macs, mac.id) else ConnectedHero(mac, sharedWithOthers = macs.size > 1)
                 QuickTiles(mac, macCount = macs.size)
             } else {
-                SearchingHero(hasNearby = others.isNotEmpty())
+                SearchingHero(hasNearby = others.any { it.canPair })
             }
 
             SetupCards()
@@ -630,7 +630,7 @@ private fun Nearby(devices: List<DeviceState>) {
                 DeviceArt(device.type, 44.dp)
                 Column(Modifier.weight(1f)) {
                     Text(device.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(nearbyStatus(device), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (device.canPair) Text(nearbyStatus(device), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (device.canFlyyDrop && device.pairState == PairState.NOT_PAIRED) {
                     IconButton(onClick = {
@@ -646,7 +646,7 @@ private fun Nearby(devices: List<DeviceState>) {
                     }
                 }
                 when (device.pairState) {
-                    PairState.NOT_PAIRED -> TextButton(onClick = { withDevice(device.id) { it.requestPair() } }) {
+                    PairState.NOT_PAIRED -> if (device.canPair) TextButton(onClick = { withDevice(device.id) { it.requestPair() } }) {
                         Text(stringResource(R.string.pair), fontWeight = FontWeight.SemiBold)
                     }
                     PairState.REQUESTED -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
