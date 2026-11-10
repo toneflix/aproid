@@ -15,6 +15,11 @@ public static class DeviceTypes
 {
     public static string WireName(this DeviceType type) => type.ToString().ToLowerInvariant();
 
+    /// A Mac or PC rather than a phone, tablet or TV.
+    public static bool IsComputer(this DeviceType type) => type is DeviceType.Desktop or DeviceType.Laptop;
+
+    public static bool IsPhone(this DeviceType type) => type is DeviceType.Phone or DeviceType.Tablet;
+
     public static DeviceType Parse(string? name) =>
         Enum.TryParse<DeviceType>(name, ignoreCase: true, out var type) && Enum.IsDefined(type) ? type : DeviceType.Desktop;
 }

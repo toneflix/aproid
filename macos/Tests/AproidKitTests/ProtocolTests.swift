@@ -55,6 +55,14 @@ final class DeviceIdentityTests: XCTestCase {
         let back = try DeviceIdentity(packet: try NetworkPacket.parse(try id.toPacket().serialize()))
         XCTAssertEqual(back, id)
     }
+
+    func testTellsComputersFromPhones() {
+        XCTAssertTrue(DeviceType.laptop.isComputer)
+        XCTAssertTrue(DeviceType.desktop.isComputer)
+        XCTAssertFalse(DeviceType.phone.isComputer)
+        XCTAssertTrue(DeviceType.tablet.isPhone)
+        XCTAssertFalse(DeviceType.tv.isPhone)
+    }
 }
 
 final class PairingTests: XCTestCase {

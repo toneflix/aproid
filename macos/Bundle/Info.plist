@@ -41,6 +41,8 @@
             </array>
         </dict>
     </array>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Aproid shows what Music or Spotify is playing on your other computers, and lets them pause or skip it.</string>
     <key>NSBluetoothAlwaysUsageDescription</key>
     <string>Aproid finds your phone over Bluetooth when it isn't on the same Wi-Fi, and carries call audio to this Mac.</string>
     <key>NSLocationUsageDescription</key>

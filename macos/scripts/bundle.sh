@@ -122,7 +122,7 @@ sign "$SPARKLE/Updater.app"
 sign "$APP/Contents/Frameworks/Sparkle.framework"
 sign --entitlements Share/Share.entitlements "$SHARE"
 sign --entitlements Widget/Widget.entitlements "$WIDGET"
-sign "$APP"
+sign --entitlements Bundle/Aproid.entitlements "$APP"
 codesign --verify --deep --strict "$APP"
 
 # Tells the Share menu and the widget gallery about the extensions without waiting for macOS to find them.

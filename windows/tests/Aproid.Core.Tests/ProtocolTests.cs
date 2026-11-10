@@ -101,6 +101,16 @@ public class DeviceIdentityTests
 
         Assert.Equal(identity, back);
     }
+
+    [Fact]
+    public void TellsComputersFromPhones()
+    {
+        Assert.True(DeviceType.Laptop.IsComputer());
+        Assert.True(DeviceType.Desktop.IsComputer());
+        Assert.False(DeviceType.Phone.IsComputer());
+        Assert.True(DeviceType.Tablet.IsPhone());
+        Assert.False(DeviceType.Tv.IsPhone());
+    }
 }
 
 public class PairingTests

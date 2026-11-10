@@ -34,6 +34,7 @@ enum Lucide: String, CaseIterable {
     case headphones = "headphones"
     case image = "image"
     case images = "images"
+    case keyboard = "keyboard"
     case laptop = "laptop"
     case link = "link"
     case lock = "lock"
@@ -42,6 +43,8 @@ enum Lucide: String, CaseIterable {
     case messagesSquare = "messages-square"
     case mic = "mic"
     case micOff = "mic-off"
+    case monitor = "monitor"
+    case mousePointer2 = "mouse-pointer-2"
     case music = "music"
     case pause = "pause"
     case phone = "phone"
@@ -49,6 +52,7 @@ enum Lucide: String, CaseIterable {
     case play = "play"
     case radio = "radio"
     case rotateCw = "rotate-cw"
+    case screenShare = "screen-share"
     case settings = "settings"
     case skipBack = "skip-back"
     case skipForward = "skip-forward"
@@ -529,6 +533,33 @@ enum Lucide: String, CaseIterable {
             path.addLine(to: CGPoint(x: 8, y: 4))
             path.addCurve(to: CGPoint(x: 10, y: 2), control1: CGPoint(x: 8, y: 2.895), control2: CGPoint(x: 8.895, y: 2))
             path.closeSubpath()
+        case .keyboard:
+            path.move(to: CGPoint(x: 10, y: 8))
+            path.addLine(to: CGPoint(x: 10.01, y: 8))
+            path.move(to: CGPoint(x: 12, y: 12))
+            path.addLine(to: CGPoint(x: 12.01, y: 12))
+            path.move(to: CGPoint(x: 14, y: 8))
+            path.addLine(to: CGPoint(x: 14.01, y: 8))
+            path.move(to: CGPoint(x: 16, y: 12))
+            path.addLine(to: CGPoint(x: 16.01, y: 12))
+            path.move(to: CGPoint(x: 18, y: 8))
+            path.addLine(to: CGPoint(x: 18.01, y: 8))
+            path.move(to: CGPoint(x: 6, y: 8))
+            path.addLine(to: CGPoint(x: 6.01, y: 8))
+            path.move(to: CGPoint(x: 7, y: 16))
+            path.addLine(to: CGPoint(x: 17, y: 16))
+            path.move(to: CGPoint(x: 8, y: 12))
+            path.addLine(to: CGPoint(x: 8.01, y: 12))
+            path.move(to: CGPoint(x: 4, y: 4))
+            path.addLine(to: CGPoint(x: 20, y: 4))
+            path.addCurve(to: CGPoint(x: 22, y: 6), control1: CGPoint(x: 21.105, y: 4), control2: CGPoint(x: 22, y: 4.895))
+            path.addLine(to: CGPoint(x: 22, y: 18))
+            path.addCurve(to: CGPoint(x: 20, y: 20), control1: CGPoint(x: 22, y: 19.105), control2: CGPoint(x: 21.105, y: 20))
+            path.addLine(to: CGPoint(x: 4, y: 20))
+            path.addCurve(to: CGPoint(x: 2, y: 18), control1: CGPoint(x: 2.895, y: 20), control2: CGPoint(x: 2, y: 19.105))
+            path.addLine(to: CGPoint(x: 2, y: 6))
+            path.addCurve(to: CGPoint(x: 4, y: 4), control1: CGPoint(x: 2, y: 4.895), control2: CGPoint(x: 2.895, y: 4))
+            path.closeSubpath()
         case .laptop:
             path.move(to: CGPoint(x: 18, y: 5))
             path.addCurve(to: CGPoint(x: 20, y: 7), control1: CGPoint(x: 19.105, y: 5), control2: CGPoint(x: 20, y: 5.895))
@@ -665,6 +696,34 @@ enum Lucide: String, CaseIterable {
             path.addLine(to: CGPoint(x: 9, y: 12))
             path.addCurve(to: CGPoint(x: 10.852, y: 14.769), control1: CGPoint(x: 9.001, y: 13.213), control2: CGPoint(x: 9.732, y: 14.305))
             path.addCurve(to: CGPoint(x: 14.12, y: 14.12), control1: CGPoint(x: 11.973, y: 15.233), control2: CGPoint(x: 13.262, y: 14.977))
+        case .monitor:
+            path.move(to: CGPoint(x: 4, y: 3))
+            path.addLine(to: CGPoint(x: 20, y: 3))
+            path.addCurve(to: CGPoint(x: 22, y: 5), control1: CGPoint(x: 21.105, y: 3), control2: CGPoint(x: 22, y: 3.895))
+            path.addLine(to: CGPoint(x: 22, y: 15))
+            path.addCurve(to: CGPoint(x: 20, y: 17), control1: CGPoint(x: 22, y: 16.105), control2: CGPoint(x: 21.105, y: 17))
+            path.addLine(to: CGPoint(x: 4, y: 17))
+            path.addCurve(to: CGPoint(x: 2, y: 15), control1: CGPoint(x: 2.895, y: 17), control2: CGPoint(x: 2, y: 16.105))
+            path.addLine(to: CGPoint(x: 2, y: 5))
+            path.addCurve(to: CGPoint(x: 4, y: 3), control1: CGPoint(x: 2, y: 3.895), control2: CGPoint(x: 2.895, y: 3))
+            path.closeSubpath()
+            path.move(to: CGPoint(x: 8, y: 21))
+            path.addLine(to: CGPoint(x: 16, y: 21))
+            path.move(to: CGPoint(x: 12, y: 17))
+            path.addLine(to: CGPoint(x: 12, y: 21))
+        case .mousePointer2:
+            path.move(to: CGPoint(x: 4.037, y: 4.688))
+            path.addCurve(to: CGPoint(x: 4.141, y: 4.141), control1: CGPoint(x: 3.956, y: 4.502), control2: CGPoint(x: 3.998, y: 4.285))
+            path.addCurve(to: CGPoint(x: 4.688, y: 4.037), control1: CGPoint(x: 4.285, y: 3.998), control2: CGPoint(x: 4.502, y: 3.956))
+            path.addLine(to: CGPoint(x: 20.688, y: 10.537))
+            path.addCurve(to: CGPoint(x: 20.998, y: 11.033), control1: CGPoint(x: 20.888, y: 10.618), control2: CGPoint(x: 21.013, y: 10.818))
+            path.addCurve(to: CGPoint(x: 20.625, y: 11.484), control1: CGPoint(x: 20.984, y: 11.248), control2: CGPoint(x: 20.834, y: 11.43))
+            path.addLine(to: CGPoint(x: 14.501, y: 13.064))
+            path.addCurve(to: CGPoint(x: 13.063, y: 14.499), control1: CGPoint(x: 13.796, y: 13.245), control2: CGPoint(x: 13.246, y: 13.795))
+            path.addLine(to: CGPoint(x: 11.484, y: 20.625))
+            path.addCurve(to: CGPoint(x: 11.033, y: 20.998), control1: CGPoint(x: 11.43, y: 20.834), control2: CGPoint(x: 11.248, y: 20.984))
+            path.addCurve(to: CGPoint(x: 10.537, y: 20.688), control1: CGPoint(x: 10.818, y: 21.013), control2: CGPoint(x: 10.618, y: 20.888))
+            path.closeSubpath()
         case .music:
             path.move(to: CGPoint(x: 21, y: 16))
             path.addLine(to: CGPoint(x: 21, y: 3))
@@ -783,6 +842,24 @@ enum Lucide: String, CaseIterable {
             path.move(to: CGPoint(x: 21, y: 3))
             path.addLine(to: CGPoint(x: 21, y: 8))
             path.addLine(to: CGPoint(x: 16, y: 8))
+        case .screenShare:
+            path.move(to: CGPoint(x: 13, y: 3))
+            path.addLine(to: CGPoint(x: 4, y: 3))
+            path.addCurve(to: CGPoint(x: 2, y: 5), control1: CGPoint(x: 2.895, y: 3), control2: CGPoint(x: 2, y: 3.895))
+            path.addLine(to: CGPoint(x: 2, y: 15))
+            path.addCurve(to: CGPoint(x: 4, y: 17), control1: CGPoint(x: 2, y: 16.105), control2: CGPoint(x: 2.895, y: 17))
+            path.addLine(to: CGPoint(x: 20, y: 17))
+            path.addCurve(to: CGPoint(x: 22, y: 15), control1: CGPoint(x: 21.105, y: 17), control2: CGPoint(x: 22, y: 16.105))
+            path.addLine(to: CGPoint(x: 22, y: 12))
+            path.move(to: CGPoint(x: 8, y: 21))
+            path.addLine(to: CGPoint(x: 16, y: 21))
+            path.move(to: CGPoint(x: 12, y: 17))
+            path.addLine(to: CGPoint(x: 12, y: 21))
+            path.move(to: CGPoint(x: 17, y: 8))
+            path.addLine(to: CGPoint(x: 22, y: 3))
+            path.move(to: CGPoint(x: 17, y: 3))
+            path.addLine(to: CGPoint(x: 22, y: 3))
+            path.addLine(to: CGPoint(x: 22, y: 8))
         case .settings:
             path.move(to: CGPoint(x: 9.671, y: 4.136))
             path.addCurve(to: CGPoint(x: 12, y: 2.017), control1: CGPoint(x: 9.785, y: 2.935), control2: CGPoint(x: 10.794, y: 2.017))

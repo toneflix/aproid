@@ -100,7 +100,7 @@ private struct PhoneChip: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 ZStack(alignment: .bottomTrailing) {
-                    PhoneArt(width: 14, screen: isFocused ? Theme.accent : Theme.screen)
+                    DeviceArt(type: phone.type, width: 14, screen: isFocused ? Theme.accent : Theme.screen)
                     Circle()
                         .fill(Theme.ok)
                         .frame(width: 7, height: 7)

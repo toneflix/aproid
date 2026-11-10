@@ -130,7 +130,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- The paired phone -->
+                <!-- The paired phone or computer -->
                 <StackPanel Spacing="12" Visibility="{x:Bind Model.ShowsPhone, Mode=OneWay}">
                     <!-- In the carousel the next phone's card peeks out at the panel's edge. -->
                     <Grid ColumnSpacing="8" Margin="{x:Bind CarouselBleed(Model.ShowsCarousel), Mode=OneWay}">
@@ -148,9 +148,9 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <views:PhoneArt ArtWidth="40" VerticalAlignment="Center" />
+                            <views:DeviceArt Type="{x:Bind FocusedType(Model.Focused), Mode=OneWay}" ArtWidth="{x:Bind HeroArtWidth(Model.Focused), Mode=OneWay}" VerticalAlignment="Center" />
                             <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
-                                <Button x:Name="PhoneName" Style="{StaticResource AproidPlainButton}" Padding="0" IsEnabled="{x:Bind Model.HasOtherPhones, Mode=OneWay}" ToolTipService.ToolTip="Switch to another phone">
+                                <Button x:Name="PhoneName" Style="{StaticResource AproidPlainButton}" Padding="0" IsEnabled="{x:Bind Model.HasOtherPhones, Mode=OneWay}" ToolTipService.ToolTip="Switch to another device">
                                     <StackPanel Orientation="Horizontal" Spacing="4">
                                         <TextBlock Text="{x:Bind Model.Focused.Name, Mode=OneWay, FallbackValue=''}" FontSize="16" FontWeight="Bold" Foreground="#1B1B1F" TextTrimming="CharacterEllipsis" MaxWidth="150" />
                                         <views:LucideIcon Icon="ChevronDown" Size="11" Foreground="#5A4A10" VerticalAlignment="Center" Visibility="{x:Bind Model.HasOtherPhones, Mode=OneWay}" />
@@ -176,7 +176,7 @@
                                     </Border>
                                 </StackPanel>
                             </StackPanel>
-                            <views:BatteryRing Grid.Column="2" VerticalAlignment="Center" Charge="{x:Bind BatteryCharge(Model.Focused), Mode=OneWay}" IsCharging="{x:Bind Model.Focused.IsCharging, Mode=OneWay, FallbackValue=False}" />
+                            <views:BatteryRing Grid.Column="2" VerticalAlignment="Center" Visibility="{x:Bind ShowsBattery(Model.Focused), Mode=OneWay}" Charge="{x:Bind BatteryCharge(Model.Focused), Mode=OneWay}" IsCharging="{x:Bind Model.Focused.IsCharging, Mode=OneWay, FallbackValue=False}" />
                         </Grid>
                     </Border>
                     <Button Grid.Column="1" Width="22" Padding="0" VerticalAlignment="Stretch" Style="{StaticResource AproidPlainButton}" Visibility="{x:Bind Model.ShowsCarousel, Mode=OneWay}"
@@ -251,7 +251,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Grid ColumnSpacing="10" RowSpacing="10">
+                    <Grid ColumnSpacing="10" RowSpacing="10" Visibility="{x:Bind Model.FocusIsPhone, Mode=OneWay}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
@@ -270,6 +270,22 @@
                         <views:ActionTile Grid.Row="2" Grid.Column="1" Icon="Phone" Title="Call" Subtitle="From your phone" Click="Call_Click" />
                         <views:ActionTile Grid.Row="3" Icon="Cast" Title="Mirror" Subtitle="See &amp; use your phone" Click="Mirror_Click" />
                         <views:ActionTile Grid.Row="3" Grid.Column="1" Icon="Images" Title="Photos" Subtitle="Browse &amp; download" Click="Photos_Click" />
+                    </Grid>
+
+                    <!-- Things to do with another computer -->
+                    <Grid x:Name="ComputerTiles" ColumnSpacing="10" RowSpacing="10" Visibility="{x:Bind Model.FocusIsComputer, Mode=OneWay}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <views:ActionTile Icon="Volume2" Title="Play sound" Subtitle="To find it" Click="Ring_Click" />
+                        <views:ActionTile Grid.Column="1" Icon="FileUp" Title="Send file" Subtitle="To Downloads" Click="SendFiles_Click" />
+                        <views:ActionTile Grid.Row="1" Icon="Clipboard" Title="Clipboard" Subtitle="{x:Bind Model.ClipboardSubtitle, Mode=OneWay}" Click="Clipboard_Click" />
+                        <views:ActionTile Grid.Row="1" Grid.Column="1" Icon="{x:Bind NotificationsIcon(Model.MirrorsNotifications), Mode=OneWay}" Title="Notifications" Subtitle="{x:Bind Model.NotificationsSubtitle, Mode=OneWay}" IsOn="{x:Bind Model.MirrorsNotifications, Mode=OneWay}" Click="Notifications_Click" />
                     </Grid>
 
                     <!-- Drop files to send them -->
@@ -296,7 +312,7 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Border Width="30" Height="30" CornerRadius="8" Background="{ThemeResource AproidTintBrush}">
-                                            <views:LucideIcon Icon="Smartphone" Size="14" Foreground="{ThemeResource AproidAccentBrush}" />
+                                            <views:LucideIcon Icon="{x:Bind views:PanelWindow.RowIcon(Type)}" Size="14" Foreground="{ThemeResource AproidAccentBrush}" />
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBlock Text="{x:Bind Name}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource AproidTextBrush}" />

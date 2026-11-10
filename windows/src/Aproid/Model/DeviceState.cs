@@ -17,6 +17,10 @@ public sealed record DeviceState(
 {
     public bool IsPaired => PairState == PairState.Paired;
 
+    public bool IsComputer => Type.IsComputer();
+
+    private string Other => IsComputer ? "the other computer" : "your phone";
+
     /// We asked to pair and wait for the phone.
     public bool IsOurRequest => PairState == PairState.Requested;
 
@@ -25,8 +29,8 @@ public sealed record DeviceState(
     public string PairingTitle => IsOurRequest ? $"Waiting for {Name}" : $"Pair with {Name}?";
 
     public string PairingHint => IsOurRequest
-        ? "Accept on your phone if it shows the same code."
-        : "Check that the same code shows on your phone. Pairing lets it send notifications, files and your clipboard to this PC.";
+        ? $"Accept on {Other} if it shows the same code."
+        : $"Check that the same code shows on {Other}. Pairing lets it send {(IsComputer ? "files, links" : "notifications, files")} and your clipboard to this PC.";
 
     /// The verification code as separate characters.
     public IReadOnlyList<string> CodeCharacters => (Code ?? "").Where(c => !char.IsWhiteSpace(c)).Select(c => c.ToString()).ToList();
@@ -42,7 +46,7 @@ public sealed record DeviceState(
     public string Subtitle => PairState switch
     {
         PairState.Paired => $"Paired · {Host}",
-        PairState.Requested => "Waiting for the phone…",
+        PairState.Requested => IsComputer ? "Waiting for the computer…" : "Waiting for the phone…",
         PairState.RequestedByPeer => "Wants to pair",
         _ => Host,
     };

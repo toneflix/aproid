@@ -28,6 +28,7 @@ internal sealed class Settings
         public bool UsesShortcuts { get; set; } = true;
         public bool ShowsPhotosInExplorer { get; set; } = true;
         public bool MirrorMuted { get; set; }
+        public bool SharesNotifications { get; set; } = true;
     }
 
     public Settings(string path)
@@ -118,6 +119,17 @@ internal sealed class Settings
         set
         {
             values.MirrorMuted = value;
+            Save();
+        }
+    }
+
+    /// Whether this PC's notifications go to paired computers.
+    public bool SharesNotifications
+    {
+        get => values.SharesNotifications;
+        set
+        {
+            values.SharesNotifications = value;
             Save();
         }
     }
