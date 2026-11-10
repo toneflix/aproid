@@ -8,11 +8,11 @@ using Microsoft.Windows.AppNotifications.Builder;
 namespace Aproid.Shell;
 
 /// Looks for a newer Windows release on GitHub and installs it when the user agrees.
-/// Releases are tagged windows-v1.2.3 and carry Aproid-Setup-1.2.3.exe.
+/// Releases are tagged 1.2.3 (all apps) or windows-1.2.3 and carry Aproid-Setup-1.2.3.exe.
 internal sealed class Updater(ToastCenter toasts)
 {
     private const string Releases = "https://api.github.com/repos/toneflix/aproid/releases?per_page=30";
-    private const string TagPrefix = "windows-v";
+    private static readonly string[] TagPrefixes = ["windows-v", "windows-", "v", ""];
     private static readonly TimeSpan FirstCheck = TimeSpan.FromMinutes(2);
     private static readonly TimeSpan CheckEvery = TimeSpan.FromHours(12);
 
@@ -72,8 +72,8 @@ internal sealed class Updater(ToastCenter toasts)
         var releases = await Http.GetFromJsonAsync<List<GitHubRelease>>(Releases) ?? [];
 
         return releases
-            .Where(r => !r.Draft && !r.Prerelease && r.Tag.StartsWith(TagPrefix, StringComparison.Ordinal))
-            .Select(r => (Release: r, Version: Version.TryParse(r.Tag[TagPrefix.Length..], out var v) ? Trim(v) : null))
+            .Where(r => !r.Draft && !r.Prerelease)
+            .Select(r => (Release: r, Version: ParseTag(r.Tag)))
             .Where(r => r.Version is not null && r.Version > Current)
             .Select(r => (r.Version, Asset: r.Release.Assets.FirstOrDefault(a => a.Name.StartsWith("Aproid-Setup", StringComparison.Ordinal) && a.Name.EndsWith(".exe", StringComparison.Ordinal)), r.Release.Page))
             .Where(r => r.Asset is not null)
@@ -119,6 +119,13 @@ internal sealed class Updater(ToastCenter toasts)
     }
 
     private void Say(string title, string text) => toasts.Show(key => new AppNotificationBuilder().AddText(title).AddText(text), tag: "update", group: "aproid");
+
+    private static Version? ParseTag(string tag)
+    {
+        var prefix = TagPrefixes.FirstOrDefault(p => tag.StartsWith(p, StringComparison.Ordinal));
+
+        return prefix is not null && Version.TryParse(tag[prefix.Length..], out var version) ? Trim(version) : null;
+    }
 
     private static Version Trim(Version version) => new(version.Major, version.Minor, Math.Max(version.Build, 0));
 

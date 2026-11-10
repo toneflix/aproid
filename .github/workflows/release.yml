@@ -1,9 +1,11 @@
 name: Release
 
-# Each app releases on its own tag, and only the matching job runs:
-#   android-v1.2.3  signed Aproid-1.2.3.apk
-#   macos-v1.2.3    signed, notarized Aproid-1.2.3.dmg and update zip
-#   windows-v1.2.3  Aproid-Setup-1.2.3.exe
+# Tag a version as 1.2.3 to build all three apps and publish them together as one GitHub release,
+# or as android-1.2.3, macos-1.2.3 or windows-1.2.3 to release just that app:
+#   Aproid-1.2.3.apk / .aab   signed Android app and Play Store bundle
+#   Aproid-1.2.3.dmg / .zip   signed, notarized Mac app and its update zip
+#   Aproid-Setup-1.2.3.exe    Windows installer
+# Nothing is published unless every app in the release builds.
 #
 # Android secrets: ANDROID_KEYSTORE (base64 .jks), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
 #
@@ -12,17 +14,18 @@ name: Release
 # Mac variable: SPARKLE_PUBLIC_KEY. Without the Sparkle key and variable, the release works but can't auto-update.
 # The Mac app checks the feed in the "macos-appcast" release for updates (Sparkle).
 #
-# The Windows app checks the windows-v* releases for updates.
+# The Windows app checks the 1.2.3 and windows-1.2.3 releases for updates.
+# Digits after the prefix keep the macos-appcast tag from starting a release.
 on:
   push:
-    tags: ["android-v*", "macos-v*", "windows-v*"]
+    tags: ["[0-9]*", "v[0-9]*", "android-[0-9v]*", "macos-[0-9v]*", "windows-[0-9v]*"]
 
 permissions:
   contents: write
 
 jobs:
   android:
-    if: startsWith(github.ref_name, 'android-v')
+    if: ${{ !startsWith(github.ref_name, 'macos-') && !startsWith(github.ref_name, 'windows-') }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -38,7 +41,9 @@ jobs:
         run: ./gradlew :protocol:test
       - name: Read the version from the tag
         id: version
-        run: echo "number=${GITHUB_REF_NAME#android-v}" >> "$GITHUB_OUTPUT"
+        run: |
+          tag="${GITHUB_REF_NAME#android-}"
+          echo "number=${tag#v}" >> "$GITHUB_OUTPUT"
 
       - name: Load the signing key
         env:
@@ -58,20 +63,19 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           VERSION: ${{ steps.version.outputs.number }}
         run: |
-          ./gradlew :app:assembleRelease -PversionName="$VERSION" -PversionCode=${{ github.run_number }}
+          ./gradlew :app:assembleRelease :app:bundleRelease -PversionName="$VERSION" -PversionCode=${{ github.run_number }}
           rm "$ANDROID_KEYSTORE_FILE"
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk "dist/Aproid-$VERSION.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "dist/Aproid-$VERSION.aab"
 
-      - name: Publish release
-        uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
         with:
-          name: Aproid for Android ${{ steps.version.outputs.number }}
-          files: android/dist/Aproid-*.apk
-          generate_release_notes: true
+          name: android
+          path: android/dist/
 
   macos:
-    if: startsWith(github.ref_name, 'macos-v')
+    if: ${{ !startsWith(github.ref_name, 'android-') && !startsWith(github.ref_name, 'windows-') }}
     runs-on: macos-15
     defaults:
       run:
@@ -91,7 +95,9 @@ jobs:
         run: swift test
       - name: Read the version from the tag
         id: version
-        run: echo "number=${GITHUB_REF_NAME#macos-v}" >> "$GITHUB_OUTPUT"
+        run: |
+          tag="${GITHUB_REF_NAME#macos-}"
+          echo "number=${tag#v}" >> "$GITHUB_OUTPUT"
 
       - name: Load the signing certificate
         id: cert
@@ -198,28 +204,13 @@ jobs:
           </rss>
           EOF
 
-      - name: Publish release
-        uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
         with:
-          name: Aproid for Mac ${{ steps.version.outputs.number }}
-          files: |
-            macos/dist/Aproid-*.dmg
-            macos/dist/Aproid-*.zip
-          generate_release_notes: true
-
-      # One fixed release holds the feed, so the app's feed address never changes.
-      - name: Publish update feed
-        if: env.SPARKLE_PRIVATE_KEY != '' && env.SPARKLE_PUBLIC_KEY != ''
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: macos-appcast
-          name: Mac update feed
-          body: Aproid for Mac checks this feed for updates. Don't delete it.
-          prerelease: true
-          files: macos/dist/appcast.xml
+          name: macos
+          path: macos/dist/
 
   windows:
-    if: startsWith(github.ref_name, 'windows-v')
+    if: ${{ !startsWith(github.ref_name, 'android-') && !startsWith(github.ref_name, 'macos-') }}
     runs-on: windows-latest
     defaults:
       run:
@@ -234,12 +225,57 @@ jobs:
       - name: Read the version from the tag
         id: version
         shell: bash
-        run: echo "number=${GITHUB_REF_NAME#windows-v}" >> "$GITHUB_OUTPUT"
+        run: |
+          tag="${GITHUB_REF_NAME#windows-}"
+          echo "number=${tag#v}" >> "$GITHUB_OUTPUT"
       - name: Build app and installer
         run: ./scripts/package.ps1 -Version ${{ steps.version.outputs.number }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: windows/publish/Aproid-Setup-*.exe
+
+  # Skipped apps are fine; a failed or cancelled one stops the release.
+  publish:
+    needs: [android, macos, windows]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Name the release
+        id: name
+        run: |
+          tag="$GITHUB_REF_NAME"
+          case "$tag" in
+            android-*) app=" for Android"; tag="${tag#android-}" ;;
+            macos-*) app=" for Mac"; tag="${tag#macos-}" ;;
+            windows-*) app=" for Windows"; tag="${tag#windows-}" ;;
+          esac
+          echo "title=Aproid$app ${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          name: Aproid for Windows ${{ steps.version.outputs.number }}
-          files: windows/publish/Aproid-Setup-*.exe
+          name: ${{ steps.name.outputs.title }}
+          files: |
+            dist/Aproid-*.apk
+            dist/Aproid-*.aab
+            dist/Aproid-*.dmg
+            dist/Aproid-*.zip
+            dist/Aproid-Setup-*.exe
           generate_release_notes: true
+
+      # One fixed release holds the Mac feed, so the app's feed address never changes.
+      - name: Publish Mac update feed
+        if: hashFiles('dist/appcast.xml') != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: macos-appcast
+          name: Mac update feed
+          body: Aproid for Mac checks this feed for updates. Don't delete it.
+          prerelease: true
+          files: dist/appcast.xml

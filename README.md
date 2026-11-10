@@ -51,7 +51,7 @@ If KDE Connect is running on either device it may hold port 1716. Aproid falls b
 
 ## Releasing
 
-Each app releases on its own tag through `.github/workflows/release.yml`: push `android-v1.2.3`, `macos-v1.2.3` or `windows-v1.2.3` and only that app is built and published. The signing secrets each app needs are listed at the top of the workflow.
+Releases run from `.github/workflows/release.yml`. Push a `1.2.3` tag to build and publish all three apps in one release, or `android-1.2.3`, `macos-1.2.3` or `windows-1.2.3` to release just that app. The signing secrets each app needs are listed at the top of the workflow.
 
 ## License
 
