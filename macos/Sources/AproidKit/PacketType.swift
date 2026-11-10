@@ -80,6 +80,9 @@ public enum PacketType {
 
     /// Keeps the link alive and detects a dead one. Body: {"pong": bool}.
     public static let heartbeat = "aproid.heartbeat"
+
+    /// Keyboard and mouse shared between computers. Body: {"action", ...}; see `RemoteInput`.
+    public static let input = "aproid.input"
 }
 
 public enum Capabilities {
@@ -117,5 +120,6 @@ public enum Capabilities {
         PacketType.callAudioRequest,
         PacketType.callAudio,
         PacketType.heartbeat,
+        PacketType.input,
     ]
 }

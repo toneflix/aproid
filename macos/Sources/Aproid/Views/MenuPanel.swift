@@ -78,7 +78,9 @@ struct MenuPanel: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
             QuickActions(device: device, model: model, messages: model.messages)
-            if !device.isComputer {
+            if device.isComputer {
+                KeyboardMouseCard(device: device, model: model)
+            } else {
                 CallAudioRow(audio: model.callAudio)
             }
             DropZone(deviceId: device.id, model: model)
@@ -107,6 +109,10 @@ private struct PanelHeader: View {
                 Picker("Switch phones with", selection: $model.switcherStyle) {
                     ForEach(PhoneSwitcherStyle.allCases) { Text($0.title).tag($0) }
                 }
+                Toggle("Let my other computers use this Mac", isOn: Binding(
+                    get: { model.allowsRemoteInput },
+                    set: { model.allowsRemoteInput = $0 }
+                ))
                 Toggle("Open at login", isOn: $model.opensAtLogin)
                 Menu("Keyboard shortcuts") {
                     Toggle("Use shortcuts", isOn: $model.usesShortcuts)

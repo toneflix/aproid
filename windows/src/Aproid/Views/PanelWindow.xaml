@@ -288,6 +288,26 @@
                         <views:ActionTile Grid.Row="1" Grid.Column="1" Icon="{x:Bind NotificationsIcon(Model.MirrorsNotifications), Mode=OneWay}" Title="Notifications" Subtitle="{x:Bind Model.NotificationsSubtitle, Mode=OneWay}" IsOn="{x:Bind Model.MirrorsNotifications, Mode=OneWay}" Click="Notifications_Click" />
                     </Grid>
 
+                    <!-- Where the other computer sits, so the keyboard and mouse move across to it -->
+                    <Border Style="{StaticResource AproidCard}" Padding="12" Visibility="{x:Bind Model.FocusIsComputer, Mode=OneWay}">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border Width="34" Height="34" CornerRadius="9" Background="{x:Bind InputChip(Model.InputActive), Mode=OneWay}">
+                                    <views:LucideIcon Icon="MousePointer2" Size="14" Foreground="{x:Bind InputGlyph(Model.InputActive), Mode=OneWay}" />
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                    <TextBlock Text="Keyboard and mouse" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource AproidTextBrush}" />
+                                    <TextBlock Text="{x:Bind Model.InputStatus, Mode=OneWay}" Style="{StaticResource AproidCaption}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid x:Name="EdgePicker" ColumnSpacing="4" />
+                        </StackPanel>
+                    </Border>
+
                     <!-- Drop files to send them -->
                     <Grid x:Name="DropZone" Height="64" AllowDrop="True" DragOver="DropZone_DragOver" DragLeave="DropZone_DragLeave" Drop="DropZone_Drop" Background="Transparent">
                         <Rectangle x:Name="DropOutline" RadiusX="14" RadiusY="14" StrokeThickness="1.5" StrokeDashArray="4,3" Stroke="{ThemeResource AproidDashBrush}" />

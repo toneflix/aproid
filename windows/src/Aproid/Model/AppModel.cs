@@ -33,6 +33,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private readonly FindPlugin find;
     private readonly MediaHostPlugin mediaHost;
     private readonly NotificationSharePlugin notificationShare;
+    private readonly InputSharePlugin inputShare;
     private LanLink? link;
     private DispatcherQueueTimer? timer;
     private DateOnly notificationsDay = DateOnly.FromDateTime(DateTime.Now);
@@ -141,7 +142,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
         find = new FindPlugin(toasts);
         mediaHost = new MediaHostPlugin(connected);
         notificationShare = new NotificationSharePlugin(connected) { IsEnabled = settings.SharesNotifications };
-        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find, mediaHost, notificationShare]);
+        inputShare = new InputSharePlugin(connected, settings) { OnChange = () => ui.TryEnqueue(InputChanged) };
+        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find, mediaHost, notificationShare, inputShare]);
 
         updater = new Updater(toasts) { OnInstalling = () => ui.TryEnqueue(() => UpdateInstalling?.Invoke()) };
         hotspot = new PhoneHotspot(() => settings.PhoneHotspots, settings.RememberHotspot);
@@ -215,6 +217,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
             Raise(nameof(ShowsPhone));
             Raise(nameof(FocusIsPhone));
             Raise(nameof(FocusIsComputer));
+            Raise(nameof(InputStatus));
+            Raise(nameof(InputActive));
             Raise(nameof(Found));
         }
     }
@@ -280,6 +284,41 @@ public sealed class AppModel : Observable, IDeviceDelegate
             notificationShare.IsEnabled = value;
             Raise();
         }
+    }
+
+    // Keyboard and mouse
+
+    /// The computer this PC's keyboard and mouse work now, or null.
+    public string? InputTarget => inputShare.Capture.RemoteId;
+
+    /// The computer working this PC now, or null.
+    public string? InputController => inputShare.Injector.ControllerId;
+
+    public bool AllowsRemoteInput
+    {
+        get => inputShare.AllowsControl;
+        set => inputShare.AllowsControl = value;
+    }
+
+    public ScreenEdge? InputEdge(string id) => inputShare.Edge(id);
+
+    public void SetInputEdge(ScreenEdge? edge, string id) => inputShare.SetEdge(edge, id);
+
+    /// What the keyboard and mouse card says about the computer the panel shows.
+    public string InputStatus => Focused is not { IsComputer: true } device ? ""
+        : InputTarget == device.Id ? $"Working {device.Name} now. Press Esc three times to come back."
+        : InputController == device.Id ? $"{device.Name} is working this PC."
+        : InputEdge(device.Id) is ScreenEdge edge ? $"Move the pointer off the {edge.WireName()} edge to use {device.Name}."
+        : $"Choose which side of this PC {device.Name} sits on.";
+
+    public bool InputActive => Focused is { } device && (InputTarget == device.Id || InputController == device.Id);
+
+    private void InputChanged()
+    {
+        Raise(nameof(InputTarget));
+        Raise(nameof(InputController));
+        Raise(nameof(InputStatus));
+        Raise(nameof(InputActive));
     }
 
     /// Windows lets only packaged apps read notifications, so sharing them may not be possible.
@@ -839,6 +878,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         if (!connected.Remove(device)) return;
 
         media.Forget(device.Id);
+        inputShare.Forget(device.Id);
         Mirror.Ended(device.Id);
         if (Call?.DeviceId == device.Id) EndCall();
 
