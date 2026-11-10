@@ -44,6 +44,25 @@ final class DeviceIdentityTests: XCTestCase {
         XCTAssertFalse(DeviceIdentity.isValidDeviceId("short"))
     }
 
+    func testAnnouncementFitsInOnePacket() throws {
+        let identity = DeviceIdentity(
+            deviceId: DeviceIdentity.newDeviceId(),
+            deviceName: String(repeating: "x", count: 32),
+            deviceType: .laptop,
+            incomingCapabilities: Set((0..<120).map { "aproid.capability.\($0)" }),
+            outgoingCapabilities: Set((0..<120).map { "aproid.capability.\($0)" }),
+            tcpPort: 1716
+        )
+
+        let data = try identity.announcement().serialize()
+        let heard = try DeviceIdentity(packet: try NetworkPacket.parse(data))
+
+        XCTAssertLessThan(data.count, 1200)
+        XCTAssertEqual(heard.deviceId, identity.deviceId)
+        XCTAssertEqual(heard.tcpPort, 1716)
+        XCTAssertTrue(heard.incomingCapabilities.isEmpty)
+    }
+
     func testSanitizesNames() {
         XCTAssertEqual(DeviceIdentity.sanitizeName("Obi's MacBook!"), "Obis MacBook")
         XCTAssertEqual(DeviceIdentity.sanitizeName("..."), "Mac")

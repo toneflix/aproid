@@ -75,7 +75,7 @@ public sealed class LanLink(
     /// since Windows sends the global one out of a single adapter.
     public void BroadcastIdentity(string? address = null)
     {
-        var data = CurrentIdentity().ToPacket().Serialize();
+        var data = CurrentIdentity().Announcement().Serialize();
         var targets = address is null ? BroadcastAddresses() : [IPAddress.Parse(address)];
 
         using var udp = new UdpClient(AddressFamily.InterNetwork) { EnableBroadcast = true };

@@ -24,6 +24,12 @@ data class DeviceIdentity(
     val outgoingCapabilities: Set<String> = Capabilities.mvp,
     val tcpPort: Int? = null,
 ) {
+    /**
+     * The identity sent over UDP. Capabilities follow over TLS, and leaving them out keeps the datagram
+     * under one MTU: macOS refuses to send a broadcast that would need fragmenting.
+     */
+    fun announcement(): NetworkPacket = copy(incomingCapabilities = emptySet(), outgoingCapabilities = emptySet()).toPacket()
+
     fun toPacket(): NetworkPacket = NetworkPacket(
         type = PacketType.IDENTITY,
         body = NetworkPacket.body(

@@ -12,6 +12,22 @@ class DeviceIdentityTest {
         assertFalse(DeviceIdentity.isValidDeviceId("has-dashes-0000000000000000000000000"))
     }
 
+    @Test fun announcementFitsInOnePacket() {
+        val capabilities = (0 until 120).map { "aproid.capability.$it" }.toSet()
+        val identity = DeviceIdentity(
+            DeviceIdentity.newDeviceId(), "x".repeat(32), DeviceType.PHONE,
+            incomingCapabilities = capabilities, outgoingCapabilities = capabilities, tcpPort = 1716,
+        )
+
+        val data = identity.announcement().serialize()
+        val heard = DeviceIdentity.fromPacket(NetworkPacket.parse(data))
+
+        assertTrue(data.toByteArray().size < 1200)
+        assertEquals(identity.deviceId, heard.deviceId)
+        assertEquals(1716, heard.tcpPort)
+        assertTrue(heard.incomingCapabilities.isEmpty())
+    }
+
     @Test fun sanitizesNames() {
         assertEquals("Obis Pixel", DeviceIdentity.sanitizeName("Obi's Pixel!"))
         assertEquals("Android", DeviceIdentity.sanitizeName("..."))

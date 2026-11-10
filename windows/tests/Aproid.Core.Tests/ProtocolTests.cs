@@ -85,6 +85,29 @@ public class DeviceIdentityTests
     }
 
     [Fact]
+    public void AnnouncementFitsInOnePacket()
+    {
+        var capabilities = Enumerable.Range(0, 120).Select(i => $"aproid.capability.{i}").ToHashSet();
+        var identity = new DeviceIdentity
+        {
+            DeviceId = DeviceIdentity.NewDeviceId(),
+            DeviceName = new string('x', 32),
+            DeviceType = DeviceType.Laptop,
+            IncomingCapabilities = capabilities,
+            OutgoingCapabilities = capabilities,
+            TcpPort = 1716,
+        };
+
+        var data = identity.Announcement().Serialize();
+        var heard = DeviceIdentity.FromPacket(NetworkPacket.Parse(data));
+
+        Assert.True(data.Length < 1200);
+        Assert.Equal(identity.DeviceId, heard.DeviceId);
+        Assert.Equal(1716, heard.TcpPort);
+        Assert.Empty(heard.IncomingCapabilities);
+    }
+
+    [Fact]
     public void SanitizesNames()
     {
         Assert.Equal("Obis Laptop", DeviceIdentity.SanitizeName("Obi's Laptop!"));

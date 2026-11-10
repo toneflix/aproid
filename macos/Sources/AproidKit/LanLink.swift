@@ -108,7 +108,7 @@ public final class LanLink {
     /// A plain BSD socket keeps this independent of the event loops.
     @discardableResult
     public func broadcastIdentity(to address: String? = nil) -> BroadcastResult {
-        guard let data = try? currentIdentity().toPacket().serialize() else { return .failed }
+        guard let data = try? currentIdentity().announcement().serialize() else { return .failed }
 
         let fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
         guard fd >= 0 else { return .failed }
