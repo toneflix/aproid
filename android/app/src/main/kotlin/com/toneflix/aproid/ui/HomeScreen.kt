@@ -496,6 +496,7 @@ private fun SetupCards() {
     }
 
     var control by remember { mutableStateOf(ScreenControlService.status(context)) }
+    var controlDisclosure by remember { mutableStateOf(false) }
     var nearby by remember { mutableStateOf(NearbyBeacon.hasPermission(context)) }
     val askNearby = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         nearby = NearbyBeacon.hasPermission(context)
@@ -566,7 +567,17 @@ private fun SetupCards() {
             R.drawable.lucide_pointer,
             stringResource(if (stopped) R.string.setup_control_stopped else R.string.setup_control),
             stringResource(if (stopped) R.string.setup_control_stopped_hint else R.string.setup_control_hint),
-        ) { context.startActivity(ScreenControlService.settingsIntent()) }
+        ) { controlDisclosure = true }
+    }
+
+    if (controlDisclosure) {
+        ControlDisclosureSheet(
+            onAccept = {
+                controlDisclosure = false
+                context.startActivity(ScreenControlService.settingsIntent())
+            },
+            onDecline = { controlDisclosure = false },
+        )
     }
 }
 
