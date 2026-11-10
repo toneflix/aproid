@@ -31,7 +31,12 @@ let package = Package(
             ]
         ),
         // The menu bar app.
-        .executableTarget(name: "Aproid", dependencies: ["AproidKit"]),
+        .executableTarget(
+            name: "Aproid",
+            dependencies: ["AproidKit"],
+            // Linked by name so Shortcuts' metadata tool sees the app uses App Intents.
+            linkerSettings: [.linkedFramework("AppIntents")]
+        ),
         .testTarget(name: "AproidKitTests", dependencies: ["AproidKit"]),
     ]
 )
