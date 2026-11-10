@@ -1,5 +1,11 @@
 // swift-tools-version:5.9
+import Foundation
 import PackageDescription
+
+// Shortcuts finds the app's actions through metadata built from compiler output Xcode normally asks for.
+// These flags ask SwiftPM's compiler and linker for the same files; bundle.sh hands them to Apple's tool.
+let packageDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path
+let intentsFlags = ["-emit-const-values", "-Xfrontend", "-const-gather-protocols-file", "-Xfrontend", "\(packageDir)/AppIntentsProtocols.json"]
 
 let package = Package(
     name: "Aproid",
@@ -35,11 +41,14 @@ let package = Package(
         .executableTarget(
             name: "Aproid",
             dependencies: ["AproidKit", .product(name: "Sparkle", package: "Sparkle")],
+            swiftSettings: [.unsafeFlags(intentsFlags)],
             linkerSettings: [
-                // Linked by name so Shortcuts' metadata tool sees the app uses App Intents.
                 .linkedFramework("AppIntents"),
-                // Sparkle.framework is copied into Contents/Frameworks by bundle.sh.
-                .unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"]),
+                .unsafeFlags([
+                    "-Xlinker", "-dependency_info", "-Xlinker", "\(packageDir)/.build/Aproid_dependency_info.dat",
+                    // Sparkle.framework is copied into Contents/Frameworks by bundle.sh.
+                    "-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks",
+                ]),
             ]
         ),
         .testTarget(name: "AproidKitTests", dependencies: ["AproidKit"]),
