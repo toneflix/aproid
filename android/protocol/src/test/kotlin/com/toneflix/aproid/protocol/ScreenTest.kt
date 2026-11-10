@@ -16,6 +16,16 @@ class ScreenTest {
         assertEquals(false, Screen.info(wire(Screen.stopped()))?.running)
     }
 
+    @Test fun soundIsAskedForAndAnnounced() {
+        assertEquals(false, Screen.request(wire(Screen.start()))?.audio)
+        assertEquals(true, Screen.request(wire(Screen.start(audio = true)))?.audio)
+        assertEquals(false, Screen.info(wire(Screen.started(1080, 2400)))?.hasAudio)
+
+        val info = Screen.info(wire(Screen.started(1080, 2400, audio = true)))
+        assertEquals(Screen.Info(1080, 2400, true, Screen.AUDIO_RATE, Screen.AUDIO_CHANNELS), info)
+        assertTrue(info!!.hasAudio)
+    }
+
     @Test fun inputRoundTripsAndRejectsNonsense() {
         val inputs = listOf(
             ScreenInput.Tap(0.5, 0.25),
@@ -35,6 +45,7 @@ class ScreenTest {
             ScreenFrame(byteArrayOf(0, 0, 0, 1, 0x67), 0, ScreenFrame.CONFIG),
             ScreenFrame(ByteArray(5000) { it.toByte() }, 33_333, ScreenFrame.KEY),
             ScreenFrame(byteArrayOf(9, 9), 50_000, 0),
+            ScreenFrame(ByteArray(3840) { (it * 3).toByte() }, 60_000, ScreenFrame.AUDIO),
         )
         val stream = frames.fold(ByteArray(0)) { all, frame -> all + frame.header() + frame.data }
         val reader = ScreenFrame.Reader()
@@ -42,6 +53,6 @@ class ScreenTest {
         val out = stream.toList().chunked(7).flatMap { reader.feed(it.toByteArray()) }
 
         assertEquals(frames, out)
-        assertTrue(out[0].isConfig && out[1].isKey)
+        assertTrue(out[0].isConfig && out[1].isKey && out[3].isAudio && !out[1].isAudio)
     }
 }

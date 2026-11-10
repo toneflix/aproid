@@ -60,6 +60,9 @@ internal sealed class ScreenVideo
 
     public void Push(ScreenFrame frame)
     {
+        // This app doesn't ask for sound, but a phone could still send it.
+        if (frame.IsAudio) return;
+
         lock (gate)
         {
             if (frame.IsConfig)
