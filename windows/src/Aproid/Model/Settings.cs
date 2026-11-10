@@ -29,6 +29,8 @@ internal sealed class Settings
         public bool ShowsPhotosInExplorer { get; set; } = true;
         public bool MirrorMuted { get; set; }
         public bool SharesNotifications { get; set; } = true;
+        public Dictionary<string, string> InputEdges { get; set; } = new();
+        public bool AllowsRemoteInput { get; set; } = true;
     }
 
     public Settings(string path)
@@ -130,6 +132,28 @@ internal sealed class Settings
         set
         {
             values.SharesNotifications = value;
+            Save();
+        }
+    }
+
+    /// The edge of this PC each paired computer sits beyond, by device id.
+    public IReadOnlyDictionary<string, string> InputEdges => values.InputEdges;
+
+    public void SetInputEdge(string deviceId, string? edge)
+    {
+        if (edge is null) values.InputEdges.Remove(deviceId);
+        else values.InputEdges[deviceId] = edge;
+
+        Save();
+    }
+
+    /// Whether paired computers may work this PC's keyboard and mouse.
+    public bool AllowsRemoteInput
+    {
+        get => values.AllowsRemoteInput;
+        set
+        {
+            values.AllowsRemoteInput = value;
             Save();
         }
     }

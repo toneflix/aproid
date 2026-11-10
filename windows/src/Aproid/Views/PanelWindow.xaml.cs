@@ -7,6 +7,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -81,6 +82,7 @@ public sealed partial class PanelWindow : Window
         Model.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(AppModel.Focused)) ShowProgress();
+            if (args.PropertyName is nameof(AppModel.Focused) or nameof(AppModel.InputStatus)) ShowEdges();
             if (args.PropertyName == nameof(AppModel.Found)) ShowMap(Model.Found);
         };
 
@@ -246,6 +248,45 @@ public sealed partial class PanelWindow : Window
 
     /// Desktops have no battery, so their card leaves the ring out.
     public Visibility ShowsBattery(DeviceState? device) => Shown(device is { IsComputer: false } || device?.Battery is not null);
+
+    public Brush InputChip(bool active) => (Brush)Application.Current.Resources[active ? "AproidAccentBrush" : "AproidTintBrush"];
+
+    public Brush InputGlyph(bool active) => active ? new SolidColorBrush(Microsoft.UI.Colors.White) : (Brush)Application.Current.Resources["AproidAccentBrush"];
+
+    private static readonly (ScreenEdge? Edge, string Title)[] Placements =
+        [(null, "Off"), (ScreenEdge.Left, "Left"), (ScreenEdge.Right, "Right"), (ScreenEdge.Top, "Above"), (ScreenEdge.Bottom, "Below")];
+
+    /// The segmented row that picks which side of this PC the shown computer sits on.
+    private void ShowEdges()
+    {
+        EdgePicker.Children.Clear();
+        EdgePicker.ColumnDefinitions.Clear();
+        if (Model.Focused is not { IsComputer: true, IsPaired: true } device) return;
+
+        var current = Model.InputEdge(device.Id);
+        for (var index = 0; index < Placements.Length; index++)
+        {
+            var (edge, title) = Placements[index];
+            var button = new ToggleButton
+            {
+                Content = title,
+                IsChecked = edge == current,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Padding = new Thickness(0, 5, 0, 5),
+                CornerRadius = new CornerRadius(8),
+                FontSize = 12,
+            };
+            button.Click += (_, _) =>
+            {
+                Model.SetInputEdge(edge, device.Id);
+                ShowEdges();
+            };
+
+            EdgePicker.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            Grid.SetColumn(button, index);
+            EdgePicker.Children.Add(button);
+        }
+    }
 
     public Lucide NotificationsIcon(bool on) => on ? Lucide.BellRing : Lucide.BellOff;
 
@@ -533,6 +574,10 @@ public sealed partial class PanelWindow : Window
             share.Click += (_, _) => Model.SharesNotifications = share.IsChecked;
             SettingsMenu.Items.Add(share);
         }
+
+        var remote = new ToggleMenuFlyoutItem { Text = "Let my other computers use this PC", IsChecked = Model.AllowsRemoteInput };
+        remote.Click += (_, _) => Model.AllowsRemoteInput = remote.IsChecked;
+        SettingsMenu.Items.Add(remote);
 
         var startup = new ToggleMenuFlyoutItem { Text = "Start with Windows", IsChecked = Model.StartsWithWindows };
         startup.Click += (_, _) => Model.StartsWithWindows = startup.IsChecked;
