@@ -61,7 +61,20 @@
     <string name="screen_mirroring_hint">Your Mac can see your screen</string>
     <string name="screen_stop">Stop</string>
     <string name="screen_control_label">Aproid Mac control</string>
-    <string name="screen_control_description">Lets your Mac tap, swipe and type on this phone while you mirror its screen. Aproid only acts on what you do in the mirror window.</string>
+    <string name="screen_control_description">Lets your paired Mac or PC tap, swipe and type on this phone while you mirror its screen. It only acts on what you do in the mirror window and only while mirroring is on. It reads nothing else on your screen, and Aproid does not collect, store or share any data through it.</string>
+
+    <string name="control_disclosure_title">Control your phone from your computer</string>
+    <string name="control_disclosure_intro">Aproid uses Android\'s accessibility service, called "Aproid Mac control", so the mouse and keyboard on your paired Mac or PC can work your phone while you mirror its screen.</string>
+    <string name="control_disclosure_does">What it does</string>
+    <string name="control_disclosure_taps">Taps, swipes and presses Back, Home, Recents and the notification shade where you click in the mirror window</string>
+    <string name="control_disclosure_typing">Types what you type on your computer into the text field you have selected on the phone. It reads only that field, to put your typing in the right place</string>
+    <string name="control_disclosure_only">Works only while you are mirroring your screen to a computer you paired yourself</string>
+    <string name="control_disclosure_data">Your data</string>
+    <string name="control_disclosure_private">It doesn\'t read, record or keep anything else on your screen</string>
+    <string name="control_disclosure_local">Aproid does not collect or share any personal data through this service. Your clicks and typing travel only between your own devices, over an encrypted local connection</string>
+    <string name="control_disclosure_settings">Next, Android opens Accessibility settings. Find "Aproid Mac control" under installed apps and turn it on. You can turn it off there at any time.</string>
+    <string name="control_disclosure_accept">Agree and continue</string>
+    <string name="control_disclosure_decline">No thanks</string>
     <string name="setup_control">Control your phone from the Mac</string>
     <string name="setup_control_hint">Turn on "Aproid Mac control" so clicks in the mirror window reach your phone</string>
     <string name="setup_control_stopped">Mac control stopped working</string>

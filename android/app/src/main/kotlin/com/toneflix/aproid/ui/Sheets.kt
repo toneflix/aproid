@@ -1,8 +1,11 @@
 package com.toneflix.aproid.ui
 
 import android.widget.Toast
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -135,4 +141,123 @@ fun LinkDialog(mac: DeviceState, initial: String, onDismiss: () -> Unit) {
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
+}
+
+/**
+ * Google Play's prominent disclosure for the accessibility service: says what it does and what it reads
+ * before Android's Accessibility settings open. Only [onAccept] leads there.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ControlDisclosureSheet(onAccept: () -> Unit, onDecline: () -> Unit) {
+    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDecline,
+        sheetState = state,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            Column(
+                Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Box(
+                    Modifier.size(64.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(20.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painterResource(R.drawable.lucide_pointer),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(30.dp),
+                    )
+                }
+                Text(
+                    stringResource(R.string.control_disclosure_title),
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.4).sp,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    stringResource(R.string.control_disclosure_intro),
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            DisclosureGroup(stringResource(R.string.control_disclosure_does)) {
+                DisclosurePoint(R.drawable.lucide_pointer, stringResource(R.string.control_disclosure_taps))
+                DisclosurePoint(R.drawable.lucide_keyboard, stringResource(R.string.control_disclosure_typing))
+                DisclosurePoint(R.drawable.lucide_cast, stringResource(R.string.control_disclosure_only))
+            }
+
+            DisclosureGroup(stringResource(R.string.control_disclosure_data)) {
+                DisclosurePoint(R.drawable.lucide_eye_off, stringResource(R.string.control_disclosure_private))
+                DisclosurePoint(R.drawable.lucide_lock, stringResource(R.string.control_disclosure_local))
+            }
+
+            Text(
+                stringResource(R.string.control_disclosure_settings),
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Button(
+                    onClick = onAccept,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                ) { Text(stringResource(R.string.control_disclosure_accept), fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
+                OutlinedButton(
+                    onClick = onDecline,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                ) {
+                    Text(
+                        stringResource(R.string.control_disclosure_decline),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DisclosureGroup(title: String, points: @Composable () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        points()
+    }
+}
+
+@Composable
+private fun DisclosurePoint(@DrawableRes icon: Int, text: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(
+            painterResource(icon),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 1.dp).size(18.dp),
+        )
+        Text(text, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+    }
 }
