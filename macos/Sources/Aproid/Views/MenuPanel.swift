@@ -79,6 +79,7 @@ struct MenuPanel: View {
             }
             QuickActions(device: device, model: model, messages: model.messages)
             if device.isComputer {
+                ScreenShareCard(device: device, model: model)
                 KeyboardMouseCard(device: device, model: model)
             } else {
                 CallAudioRow(audio: model.callAudio)
@@ -109,7 +110,7 @@ private struct PanelHeader: View {
                 Picker("Switch phones with", selection: $model.switcherStyle) {
                     ForEach(PhoneSwitcherStyle.allCases) { Text($0.title).tag($0) }
                 }
-                Toggle("Let my other computers use this Mac", isOn: Binding(
+                Toggle("Let my other computers see and use this Mac", isOn: Binding(
                     get: { model.allowsRemoteInput },
                     set: { model.allowsRemoteInput = $0 }
                 ))

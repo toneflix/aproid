@@ -126,6 +126,7 @@ final class AppModel: ObservableObject {
     private let find = FindPlugin()
     private let mediaHost: MediaHostPlugin
     private let inputShare: InputSharePlugin
+    private let screenHost = ScreenHostPlugin()
     /// Carries call audio over Bluetooth, with this Mac as the phone's hands-free device.
     let callAudio = HandsFreeAudio()
     private let callPanel = CallPanel()
@@ -138,6 +139,9 @@ final class AppModel: ObservableObject {
     private let screenPlugin: ScreenPlugin
     private let screenWindow: ScreenWindowController
     private var screenSize: AnyCancellable?
+    let desktop = RemoteDesktop()
+    private let desktopWindow: RemoteDesktopWindowController
+    private var desktopSize: AnyCancellable?
     private let nearby: NearbyFinder
     private let hotspot = PhoneHotspot()
     private var lastNearbySearch = Date.distantPast
@@ -171,10 +175,11 @@ final class AppModel: ObservableObject {
         nearby = NearbyFinder(ownId: identity.deviceId)
         let screen = ScreenMirror()
         self.screen = screen
-        screenPlugin = ScreenPlugin(decoder: screen.decoder, audio: screen.audio)
+        screenPlugin = ScreenPlugin(decoder: screen.decoder, audio: screen.audio, desktop: desktop.feed)
         screenWindow = ScreenWindowController(mirror: screen)
+        desktopWindow = RemoteDesktopWindowController(desktop: desktop)
         notifications = NotificationPlugin(devices: connected)
-        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin, find, mediaHost, inputShare])
+        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin, find, mediaHost, inputShare, screenHost])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
         switcherStyle = UserDefaults.standard.string(forKey: "switcherStyle").flatMap(PhoneSwitcherStyle.init(rawValue:)) ?? .carousel
         opensAtLogin = LoginItem.isEnabled
@@ -183,6 +188,9 @@ final class AppModel: ObservableObject {
 
         battery.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         inputShare.onChange = { [weak self] in Task { @MainActor in self?.inputChanged() } }
+        let inputShare = inputShare
+        screenHost.allows = { [weak inputShare] in inputShare?.allowsControl ?? false }
+        screenHost.onChange = { [weak self] viewer in Task { @MainActor in self?.screenViewer = viewer } }
         mediaPlugin.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         locations.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         sms.onMessages = { [weak self] messages, deviceId in Task { @MainActor in self?.messages.ingest(messages, from: deviceId) } }
@@ -199,16 +207,31 @@ final class AppModel: ObservableObject {
         nearby.onNearby = { [weak self] found in Task { @MainActor in self?.nearbyChanged(found) } }
         nearby.onAnswer = { [weak self] answer in Task { @MainActor in self?.reach(answer) } }
         screen.send = { [weak self] id, packet in self?.connected[id]?.send(packet) ?? false }
-        screenPlugin.onStarted = { [weak self] device in
+        screenPlugin.onStarted = { [weak self] device, info in
             let deviceId = device.id
             let deviceName = device.name
             Task { @MainActor in
-                self?.screen.started(deviceId: deviceId, name: deviceName)
-                self?.screenWindow.show()
+                if info.codec == Screen.jpeg {
+                    self?.desktop.started(deviceId: deviceId, name: deviceName, platform: info.platform)
+                    self?.desktopWindow.show()
+                } else {
+                    self?.screen.started(deviceId: deviceId, name: deviceName)
+                    self?.screenWindow.show()
+                }
             }
         }
-        screenPlugin.onEnded = { [weak self] deviceId in Task { @MainActor in self?.screen.ended(deviceId: deviceId) } }
+        screenPlugin.onEnded = { [weak self] deviceId in
+            Task { @MainActor in
+                self?.screen.ended(deviceId: deviceId)
+                self?.desktop.ended(deviceId: deviceId)
+            }
+        }
         screenSize = screen.$videoSize.sink { [weak self] size in Task { @MainActor in self?.screenWindow.fit(size) } }
+        desktop.send = { [weak self] id, packet in self?.connected[id]?.send(packet) ?? false }
+        desktopSize = desktop.$picture
+            .map { CGSize(width: $0?.width ?? 0, height: $0?.height ?? 0) }
+            .removeDuplicates()
+            .sink { [weak self] size in Task { @MainActor in self?.desktopWindow.fit(size) } }
         photosPlugin.onPage = { [weak self] page, deviceId in Task { @MainActor in self?.photos.ingest(page, from: deviceId) } }
         photosPlugin.onPreview = { [weak self] id, url, deviceId in
             Task { @MainActor in self?.photos.ingestPreview(id, url: url, from: deviceId) }
@@ -266,13 +289,25 @@ final class AppModel: ObservableObject {
         finding = id
     }
 
-    /// Asks the phone to share its screen and opens the window that shows it.
+    /// Asks the phone or computer to share its screen and opens the window that shows it.
     func mirror(_ id: String) {
-        guard let device = connected[id], device.isPaired, !device.link.identity.deviceType.isComputer else { return }
+        guard let device = connected[id], device.isPaired else { return }
+
+        if device.link.identity.deviceType.isComputer {
+            desktop.begin(deviceId: id, name: device.name)
+            desktopWindow.show()
+            return
+        }
 
         screen.begin(deviceId: id, name: device.name)
         screenWindow.show()
     }
+
+    /// The computer watching this Mac's screen now, or nil.
+    @Published private(set) var screenViewer: String?
+
+    /// Stops showing this Mac's screen to whoever is watching.
+    func stopScreenShare() { screenHost.stop() }
 
     // MARK: Keyboard and mouse
 
@@ -289,7 +324,10 @@ final class AppModel: ObservableObject {
 
     var allowsRemoteInput: Bool {
         get { inputShare.allowsControl }
-        set { inputShare.allowsControl = newValue }
+        set {
+            inputShare.allowsControl = newValue
+            if !newValue { screenHost.stop() }
+        }
     }
 
     func inputEdge(for id: String) -> ScreenEdge? { inputShare.edge(for: id) }
@@ -633,7 +671,9 @@ final class AppModel: ObservableObject {
 
         mediaPlugin.forget(device.id)
         inputShare.forget(device.id)
+        screenHost.stop(device.id)
         screen.ended(deviceId: device.id)
+        desktop.ended(deviceId: device.id)
 
         log.info("Disconnected from \(device.name, privacy: .public): \(device.link.closeReason ?? "unknown", privacy: .public)")
 
