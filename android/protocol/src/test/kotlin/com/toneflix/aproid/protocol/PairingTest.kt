@@ -27,6 +27,16 @@ class PairingTest {
         assertEquals(PairState.PAIRED, sm.state)
     }
 
+    @Test fun refusesEveryRequestWhenNotAllowed() {
+        val sm = PairingStateMachine(PairState.PAIRED, allowed = false)
+        assertEquals(PairState.NOT_PAIRED, sm.state)
+        assertEquals(PairAction.None, sm.requestPair(1000))
+
+        val a = sm.onPacket(pair(true, 1000), 1001) as PairAction.Send
+        assertEquals(false, a.packet.bool("pair"))
+        assertEquals(PairState.NOT_PAIRED, sm.state)
+    }
+
     @Test fun staleTimestampIsRefused() {
         val sm = PairingStateMachine()
         val a = sm.onPacket(pair(true, 0), 100_000) as PairAction.Send

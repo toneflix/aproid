@@ -18,8 +18,10 @@ public extension DeviceDelegate {
 
 /// A connected peer: its encrypted link plus pairing. Packets from a device that
 /// is not paired are dropped, except pairing packets and what `guests` lets through. Mirrors Device.kt.
+/// With `canPair` false the peer stays unpaired, so only `guests` traffic gets through.
 public final class Device {
     public let link: DeviceLink
+    public let canPair: Bool
     public weak var delegate: DeviceDelegate?
 
     private let ownCertificate: DeviceCertificate
@@ -39,15 +41,22 @@ public final class Device {
         ownCertificate: DeviceCertificate,
         trustStore: TrustStore,
         clock: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970) },
-        guests: GuestAccess? = nil
+        guests: GuestAccess? = nil,
+        canPair: Bool = true
     ) {
         self.link = link
+        self.canPair = canPair
         self.guests = guests
         self.ownCertificate = ownCertificate
         self.trustStore = trustStore
         self.clock = clock
-        self.pairing = PairingStateMachine(state: trustStore.isTrusted(link.identity.deviceId) ? .paired : .notPaired)
+        self.pairing = PairingStateMachine(
+            state: trustStore.isTrusted(link.identity.deviceId) ? .paired : .notPaired,
+            allowed: canPair
+        )
         self.lastReceived = clock()
+
+        if !canPair { trustStore.forget(link.identity.deviceId) }
     }
 
     public var id: String { link.identity.deviceId }

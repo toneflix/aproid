@@ -134,6 +134,14 @@ public class DeviceIdentityTests
         Assert.True(DeviceType.Tablet.IsPhone());
         Assert.False(DeviceType.Tv.IsPhone());
     }
+
+    [Fact]
+    public void PhonesNeverPairWithPhones()
+    {
+        Assert.False(DeviceType.Phone.PairsWith(DeviceType.Tablet));
+        Assert.True(DeviceType.Phone.PairsWith(DeviceType.Laptop));
+        Assert.True(DeviceType.Desktop.PairsWith(DeviceType.Laptop));
+    }
 }
 
 public class PairingTests
@@ -169,6 +177,20 @@ public class PairingTests
         var accept = machine.Accept();
         Assert.True(accept.Packet!.GetBool("pair"));
         Assert.Equal(PairState.Paired, machine.State);
+    }
+
+    [Fact]
+    public void RefusesEveryRequestWhenNotAllowed()
+    {
+        var machine = new PairingStateMachine(PairState.Paired, allowed: false);
+
+        Assert.Equal(PairState.NotPaired, machine.State);
+        Assert.Equal(PairAction.None, machine.RequestPair(1000));
+
+        var answer = machine.Handle(Pair(true, 1000), 1001);
+
+        Assert.False(answer.Packet!.GetBool("pair"));
+        Assert.Equal(PairState.NotPaired, machine.State);
     }
 
     [Fact]

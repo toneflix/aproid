@@ -16,6 +16,7 @@ public enum PairAction: Equatable, Sendable {
 
 /// Pairing for one peer, following KDE Connect protocol v8. Mirrors the Kotlin
 /// PairingStateMachine so both apps behave the same. Time is passed in for testing.
+/// With `allowed` false, this side never asks to pair and refuses every request.
 public final class PairingStateMachine {
     public private(set) var state: PairState
     /// Unix time in seconds of the last pair request. Both sides use it for the verification code.
@@ -23,14 +24,18 @@ public final class PairingStateMachine {
     private var requestedAt: Int64 = 0
     private let timeoutSeconds: Int64
     private let maxClockSkewSeconds: Int64
+    private let allowed: Bool
 
-    public init(state: PairState = .notPaired, timeoutSeconds: Int64 = 30, maxClockSkewSeconds: Int64 = 1800) {
-        self.state = state
+    public init(state: PairState = .notPaired, timeoutSeconds: Int64 = 30, maxClockSkewSeconds: Int64 = 1800, allowed: Bool = true) {
+        self.state = allowed ? state : .notPaired
         self.timeoutSeconds = timeoutSeconds
         self.maxClockSkewSeconds = maxClockSkewSeconds
+        self.allowed = allowed
     }
 
     public func requestPair(now: Int64) -> PairAction {
+        guard allowed else { return .none }
+
         switch state {
         case .paired, .requested: return .none
         case .requestedByPeer: return accept()
@@ -81,8 +86,8 @@ public final class PairingStateMachine {
             state = .paired
             return .paired
         case .notPaired:
-            guard let ts = packet.int("timestamp"), abs(now - ts) <= maxClockSkewSeconds else {
-                // Missing or stale timestamp: refuse, as protocol v8 requires.
+            guard allowed, let ts = packet.int("timestamp"), abs(now - ts) <= maxClockSkewSeconds else {
+                // Not allowed, or a missing or stale timestamp: refuse, as protocol v8 requires.
                 return .send(Self.pairPacket(false, timestamp: nil))
             }
             state = .requestedByPeer

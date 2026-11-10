@@ -82,6 +82,12 @@ final class DeviceIdentityTests: XCTestCase {
         XCTAssertTrue(DeviceType.tablet.isPhone)
         XCTAssertFalse(DeviceType.tv.isPhone)
     }
+
+    func testPhonesNeverPairWithPhones() {
+        XCTAssertFalse(DeviceType.phone.pairs(with: .tablet))
+        XCTAssertTrue(DeviceType.phone.pairs(with: .laptop))
+        XCTAssertTrue(DeviceType.desktop.pairs(with: .laptop))
+    }
 }
 
 final class PairingTests: XCTestCase {
@@ -105,6 +111,16 @@ final class PairingTests: XCTestCase {
         guard case .send(let p) = sm.accept() else { return XCTFail() }
         XCTAssertEqual(p.bool("pair"), true)
         XCTAssertEqual(sm.state, .paired)
+    }
+
+    func testRefusesEveryRequestWhenNotAllowed() {
+        let sm = PairingStateMachine(state: .paired, allowed: false)
+        XCTAssertEqual(sm.state, .notPaired)
+        XCTAssertEqual(sm.requestPair(now: 1000), .none)
+
+        guard case .send(let p) = sm.handle(pair(true, 1000), now: 1001) else { return XCTFail() }
+        XCTAssertEqual(p.bool("pair"), false)
+        XCTAssertEqual(sm.state, .notPaired)
     }
 
     func testStaleTimestampIsRefused() {

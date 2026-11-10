@@ -55,4 +55,10 @@ class DeviceIdentityTest {
         assertTrue(DeviceType.TABLET.isPhone)
         assertFalse(DeviceType.TV.isPhone)
     }
+
+    @Test fun phonesNeverPairWithPhones() {
+        assertFalse(DeviceType.PHONE.pairsWith(DeviceType.TABLET))
+        assertTrue(DeviceType.PHONE.pairsWith(DeviceType.LAPTOP))
+        assertTrue(DeviceType.DESKTOP.pairsWith(DeviceType.LAPTOP))
+    }
 }
