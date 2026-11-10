@@ -624,6 +624,7 @@ final class AppModel: ObservableObject {
 
     func clearRecent() {
         recent.removeAll { !$0.isInProgress }
+        share.forgetUnfinished()
     }
 
     private func record(_ activity: Activity) {
