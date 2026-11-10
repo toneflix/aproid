@@ -30,6 +30,25 @@ internal sealed class SharePlugin(string folder, TransferStore store, ToastCente
             Report(id, new Activity(ActivityKind.Failed, Path.GetFileName(file.Path), $"Stopped · resumes when {file.DeviceName} reconnects"));
     }
 
+    /// Gives up on every transfer that isn't moving right now, so it no longer waits to resume or comes back after a restart.
+    public void ForgetUnfinished()
+    {
+        HashSet<string> moving;
+        lock (gate) moving = activities.Where(pair => pair.Value.IsInProgress).Select(pair => pair.Key).ToHashSet();
+
+        foreach (var (id, file) in store.PartialFiles.Where(pair => !moving.Contains(pair.Key)).ToList())
+        {
+            store.SetPartial(id, null);
+            TryDelete(file.Path);
+        }
+        foreach (var id in store.OfferedFiles.Keys.Where(id => !moving.Contains(id)).ToList()) store.SetOffered(id, null);
+
+        lock (gate)
+        {
+            foreach (var id in activities.Keys.Where(id => !moving.Contains(id)).ToList()) activities.Remove(id);
+        }
+    }
+
     public void OnPaired(Device device)
     {
         foreach (var (id, file) in store.PartialFiles.Where(pair => pair.Value.DeviceId == device.Id))

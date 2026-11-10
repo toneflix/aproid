@@ -40,6 +40,21 @@ final class SharePlugin: Plugin {
         }
     }
 
+    /// Gives up on every transfer that isn't moving right now, so it no longer waits to resume or comes back after a restart.
+    func forgetUnfinished() {
+        let moving = lock.withLock { Set(activities.filter { $0.value.isInProgress }.keys) }
+
+        for (id, file) in store.partial where !moving.contains(id) {
+            store.setPartial(id, nil)
+            try? files.removeItem(atPath: file.path)
+        }
+        for id in store.offered.keys where !moving.contains(id) {
+            store.setOffered(id, nil)
+        }
+
+        lock.withLock { activities = activities.filter { moving.contains($0.key) } }
+    }
+
     func onPaired(_ device: Device) {
         for (id, file) in store.partial where file.deviceId == device.id {
             let have = (try? files.attributesOfItem(atPath: file.path)[.size] as? NSNumber)?.int64Value ?? 0

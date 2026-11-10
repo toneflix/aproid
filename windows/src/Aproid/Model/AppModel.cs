@@ -949,6 +949,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public void ClearRecent()
     {
         foreach (var done in Recent.Where(a => !a.IsInProgress).ToList()) Recent.Remove(done);
+        share.ForgetUnfinished();
 
         Raise(nameof(HasRecent));
     }
