@@ -75,6 +75,15 @@ internal sealed class SharePlugin(string folder, TransferStore store, ToastCente
         Offer(path, id, 0, device, activity);
     }
 
+    /// Sends a file the other device accepted through FlyyDrop. It can't resume, so nothing is kept for later.
+    public void Send(string path, Device device, string flyyDropId, Action<long> onBytes, Action<Exception?> onDone)
+    {
+        var id = Guid.NewGuid().ToString();
+        var activity = Report(id, new Activity(ActivityKind.Sending, Path.GetFileName(path), $"FlyyDropping to {device.Name}"));
+
+        Offer(path, id, 0, device, activity, flyyDropId, onBytes, onDone);
+    }
+
     private void Resume(string id, long offset, Device device)
     {
         if (!store.OfferedFiles.TryGetValue(id, out var file) || file.DeviceId != device.Id) return;
@@ -92,19 +101,23 @@ internal sealed class SharePlugin(string folder, TransferStore store, ToastCente
         Task.Run(() => Offer(file.Path, id, offset, device, activity));
     }
 
-    private void Offer(string path, string id, long offset, Device device, Activity activity)
+    private void Offer(string path, string id, long offset, Device device, Activity activity,
+        string? flyyDropId = null, Action<long>? onBytes = null, Action<Exception?>? onDone = null)
     {
         void Finish(Exception? error)
         {
-            if (error is null) store.SetOffered(id, null);
+            if (error is null && flyyDropId is null) store.SetOffered(id, null);
 
             Report(id, activity with
             {
                 Date = DateTimeOffset.Now,
                 Progress = null,
                 Kind = error is null ? ActivityKind.Sent : ActivityKind.Failed,
-                Detail = error is null ? $"Sent to {device.Name}" : $"Stopped · resumes when {device.Name} reconnects",
-            }, finished: error is null);
+                Detail = error is null ? $"Sent to {device.Name}"
+                    : flyyDropId is null ? $"Stopped · resumes when {device.Name} reconnects"
+                    : $"Transfer to {device.Name} stopped",
+            }, finished: error is null || flyyDropId is not null);
+            onDone?.Invoke(error);
         }
 
         FileStream source;
@@ -125,11 +138,14 @@ internal sealed class SharePlugin(string folder, TransferStore store, ToastCente
         source.Seek(start, SeekOrigin.Begin);
 
         var modified = new DateTimeOffset(info.LastWriteTimeUtc).ToUnixTimeMilliseconds();
-        var packet = Share.FilePacket(info.Name, size, modified, id, start);
+        var packet = flyyDropId is null
+            ? Share.FilePacket(info.Name, size, modified, id, start)
+            : FlyyDrop.File(flyyDropId, new FlyyDrop.Item(info.Name, size));
         var progress = new TransferProgress(size, start);
 
         void Progress(long bytes)
         {
+            onBytes?.Invoke(bytes);
             if (progress.Advance(bytes) is { } reading) Report(id, activity with { Progress = reading });
         }
 

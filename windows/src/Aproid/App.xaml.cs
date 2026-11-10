@@ -51,6 +51,7 @@ public partial class App : Application
             if (change.PropertyName == nameof(AppModel.Focused)) ShowPhoneOnTray();
         };
         model.PairRequested += () => panel.ShowNear(tray.Bounds);
+        model.FlyyDropRequested += () => panel.ShowNear(tray.Bounds);
         panel.QuitRequested += Quit;
         model.UpdateInstalling += Quit;
         call = new CallWindow(model);

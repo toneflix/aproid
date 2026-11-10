@@ -222,6 +222,17 @@ public sealed partial class PanelWindow : Window
         Ring(PulseOneScale, PulseOne, 0);
         Ring(PulseTwoScale, PulseTwo, 1);
         storyboard.Begin();
+
+        // The FlyyDrop request's device breathes gently while it waits for an answer.
+        var breathe = new Storyboard { RepeatBehavior = RepeatBehavior.Forever };
+        foreach (var property in new[] { "ScaleX", "ScaleY" })
+        {
+            var grow = new DoubleAnimation { From = 0.9, To = 1.05, Duration = new Duration(TimeSpan.FromSeconds(1.2)), AutoReverse = true, EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut } };
+            Storyboard.SetTarget(grow, FlyyDropPulseScale);
+            Storyboard.SetTargetProperty(grow, property);
+            breathe.Children.Add(grow);
+        }
+        breathe.Begin();
     }
 
     private void StepDots()
@@ -351,6 +362,10 @@ public sealed partial class PanelWindow : Window
         Core.DeviceType.Desktop => Lucide.Monitor,
         _ => Lucide.Smartphone,
     };
+
+    public Core.DeviceType AskType(FlyyDropAsk? ask) => ask?.DeviceType ?? Core.DeviceType.Phone;
+
+    public Lucide AskIcon(FlyyDropAsk? ask) => ask?.Icon ?? Lucide.File;
 
     public static string RowAction(PairState state) => state switch
     {
@@ -500,11 +515,93 @@ public sealed partial class PanelWindow : Window
         try
         {
             var files = await picker.PickMultipleFilesAsync();
-            if (files is { Count: > 0 }) Model.SendFiles(files.Select(f => f.Path), id);
+            if (files is { Count: > 0 }) SendFiles(files.Select(f => f.Path), id);
         }
         finally
         {
             keepOpen = false;
+        }
+    }
+
+    /// Sends to a paired device, or asks an unpaired one with FlyyDrop.
+    private void SendFiles(IEnumerable<string> paths, string id)
+    {
+        if (Model.Devices.FirstOrDefault(d => d.Id == id) is { ShowsFlyyDrop: true }) Model.FlyyDropFiles(paths, id);
+        else Model.SendFiles(paths, id);
+    }
+
+    private void SendText(string text, string id)
+    {
+        if (Model.Devices.FirstOrDefault(d => d.Id == id) is { ShowsFlyyDrop: true }) Model.FlyyDropText(text, id);
+        else Model.SendText(text, id);
+    }
+
+    // FlyyDrop
+
+    private void AcceptFlyyDrop_Click(object sender, RoutedEventArgs e)
+    {
+        if (Model.FlyyDropAsk is { } ask) Model.AcceptFlyyDrop(ask.Id);
+    }
+
+    private void DeclineFlyyDrop_Click(object sender, RoutedEventArgs e)
+    {
+        if (Model.FlyyDropAsk is { } ask) Model.DeclineFlyyDrop(ask.Id);
+    }
+
+    private void StopFlyyDropReceiving_Click(object sender, RoutedEventArgs e) => Model.FlyyDropReceiving = Core.FlyyDrop.Receiving.Off;
+
+    private void FlyyDrop_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string id } || Model.Devices.FirstOrDefault(d => d.Id == id) is not DeviceState device) return;
+
+        if (device.IsFlyyDropWaiting) Model.CancelFlyyDrop(id);
+        else ChooseFiles(id);
+    }
+
+    /// The device a nearby row stands for, when files can go to it.
+    private DeviceState? DropTarget(object row) =>
+        row is FrameworkElement { Tag: string id } && Model.Devices.FirstOrDefault(d => d.Id == id) is { } device && (device.IsPaired || device.ShowsFlyyDrop) ? device : null;
+
+    private void Row_DragOver(object sender, DragEventArgs e)
+    {
+        if (DropTarget(sender) is not DeviceState device || sender is not Grid row) return;
+        if (!e.DataView.Contains(StandardDataFormats.StorageItems) && !e.DataView.Contains(StandardDataFormats.Text) && !e.DataView.Contains(StandardDataFormats.WebLink)) return;
+
+        e.AcceptedOperation = DataPackageOperation.Copy;
+        e.DragUIOverride.Caption = device.IsPaired ? $"Send to {device.Name}" : $"FlyyDrop to {device.Name}";
+        row.Background = (Brush)Application.Current.Resources["AproidTintBrush"];
+    }
+
+    private void Row_DragLeave(object sender, DragEventArgs e)
+    {
+        if (sender is Grid row) row.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+    }
+
+    private async void Row_Drop(object sender, DragEventArgs e)
+    {
+        Row_DragLeave(sender, e);
+        if (DropTarget(sender) is not DeviceState device) return;
+
+        var deferral = e.GetDeferral();
+        try
+        {
+            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                var items = await e.DataView.GetStorageItemsAsync();
+                SendFiles(items.OfType<StorageFile>().Select(f => f.Path), device.Id);
+            }
+            else if (e.DataView.Contains(StandardDataFormats.WebLink))
+            {
+                SendText((await e.DataView.GetWebLinkAsync()).AbsoluteUri, device.Id);
+            }
+            else if (e.DataView.Contains(StandardDataFormats.Text))
+            {
+                SendText(await e.DataView.GetTextAsync(), device.Id);
+            }
+        }
+        finally
+        {
+            deferral.Complete();
         }
     }
 
@@ -616,6 +713,20 @@ public sealed partial class PanelWindow : Window
             switcher.Items.Add(item);
         }
         SettingsMenu.Items.Add(switcher);
+
+        var flyyDrop = new MenuFlyoutSubItem { Text = "FlyyDrop: who can send to this PC" };
+        foreach (var (mode, label) in new[]
+        {
+            (Core.FlyyDrop.Receiving.Off, "Paired devices only"),
+            (Core.FlyyDrop.Receiving.EveryoneFor10Minutes, "Everyone for 10 minutes"),
+            (Core.FlyyDrop.Receiving.Everyone, "Everyone"),
+        })
+        {
+            var item = new RadioMenuFlyoutItem { Text = label, GroupName = "flyydrop", IsChecked = Model.FlyyDropReceiving == mode };
+            item.Click += (_, _) => Model.FlyyDropReceiving = mode;
+            flyyDrop.Items.Add(item);
+        }
+        SettingsMenu.Items.Add(flyyDrop);
 
         var updates = new MenuFlyoutItem { Text = $"Check for updates (you have {Model.VersionText})" };
         updates.Click += (_, _) => Model.CheckForUpdates();

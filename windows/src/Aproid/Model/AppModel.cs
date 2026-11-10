@@ -36,6 +36,9 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private readonly InputSharePlugin inputShare;
     private readonly ScreenHostPlugin screenHost = new();
     private readonly PhoneRelayPlugin relay;
+    private readonly FlyyDropPlugin flyyDrop;
+    private readonly Dictionary<string, FlyyDropSend> flyyDropSends = [];
+    private IReadOnlyList<FlyyDropAsk> flyyDropAsks = [];
     private LanLink? link;
     private DispatcherQueueTimer? timer;
     private DateOnly notificationsDay = DateOnly.FromDateTime(DateTime.Now);
@@ -181,7 +184,16 @@ public sealed class AppModel : Observable, IDeviceDelegate
         notifications.Send = SendToPhone;
         screenHost.Allows = () => inputShare.AllowsControl;
         screenHost.OnChange = _ => ui.TryEnqueue(ScreenViewerChanged);
-        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find, mediaHost, notificationShare, inputShare, screenHost, relay]);
+        flyyDrop = new FlyyDropPlugin(share, connected)
+        {
+            OnAsk = ask => ui.TryEnqueue(() => FlyyDropAsked(ask)),
+            OnAskEnded = id => ui.TryEnqueue(() => FlyyDropAskEnded(id)),
+            OnSend = (deviceId, send) => ui.TryEnqueue(() => FlyyDropMoved(deviceId, send)),
+            OnActivity = activity => ui.TryEnqueue(() => Record(activity)),
+        };
+        var (receiving, until) = settings.FlyyDropReceiving;
+        flyyDrop.Drop.Restore(receiving, until);
+        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find, mediaHost, notificationShare, inputShare, screenHost, relay, flyyDrop]);
 
         updater = new Updater(toasts) { OnInstalling = () => ui.TryEnqueue(() => UpdateInstalling?.Invoke()) };
         hotspot = new PhoneHotspot(() => settings.PhoneHotspots, settings.RememberHotspot);
@@ -555,7 +567,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
                 var lan = new LanLink(() => me, certificate, trustStore, deviceLink =>
                 {
                     // Created right away on the network thread so no early packet is missed.
-                    var device = new Device(deviceLink, certificate, trustStore) { Delegate = this };
+                    var device = new Device(deviceLink, certificate, trustStore, guests: flyyDrop.Drop) { Delegate = this };
                     device.Start();
                     ui.TryEnqueue(() => Add(device));
                 }, id => connected[id]?.Link.IsOpen == true);
@@ -747,6 +759,142 @@ public sealed class AppModel : Observable, IDeviceDelegate
         Task.Run(() => files.ForEach(path => share.Send(path, device)));
     }
 
+    // FlyyDrop
+
+    /// The oldest FlyyDrop waiting for the user to answer.
+    public FlyyDropAsk? FlyyDropAsk => flyyDropAsks.FirstOrDefault();
+
+    public bool ShowsFlyyDropAsk => FlyyDropAsk is not null;
+
+    /// Who may FlyyDrop to this PC without being paired. "Everyone for 10 minutes" turns itself off.
+    public FlyyDrop.Receiving FlyyDropReceiving
+    {
+        get => flyyDrop.Drop.ReceivingMode;
+        set
+        {
+            flyyDrop.Drop.ReceivingMode = value;
+            settings.FlyyDropReceiving = (value, flyyDrop.Drop.ReceivingUntil ?? 0);
+            RaiseFlyyDropReceiving();
+        }
+    }
+
+    public bool ShowsFlyyDropBanner => FlyyDropReceiving != FlyyDrop.Receiving.Off;
+
+    public string FlyyDropBannerText => flyyDrop.Drop.ReceivingUntil is long until
+        ? $"Everyone nearby can FlyyDrop to this PC · {Math.Max(1, (int)Math.Ceiling((until - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 60_000.0))} min left"
+        : "Everyone nearby can FlyyDrop to this PC";
+
+    /// Asks the unpaired device `id` to take these files.
+    public void FlyyDropFiles(IEnumerable<string> paths, string id)
+    {
+        if (connected[id] is not Device device) return;
+
+        var files = paths.ToList();
+        Task.Run(() => flyyDrop.Send(files, null, device));
+    }
+
+    /// Asks the unpaired device `id` to take a link or some text.
+    public void FlyyDropText(string text, string id)
+    {
+        if (connected[id] is not Device device || text.Trim() is not { Length: > 0 } trimmed) return;
+
+        Task.Run(() => flyyDrop.Send([], trimmed, device));
+    }
+
+    /// Stops waiting for device `id` to answer.
+    public void CancelFlyyDrop(string id)
+    {
+        if (flyyDropSends.GetValueOrDefault(id) is not { Stage: FlyyDropStage.Waiting } send) return;
+
+        flyyDrop.Cancel(send.Id, id);
+        flyyDropSends.Remove(id);
+        ShowFlyyDropSends();
+    }
+
+    public void AcceptFlyyDrop(string id) => flyyDrop.Accept(id);
+
+    public void DeclineFlyyDrop(string id) => flyyDrop.Decline(id);
+
+    /// Someone nearby asked to FlyyDrop, so the panel should open.
+    public event Action? FlyyDropRequested;
+
+    private void FlyyDropAsked(FlyyDropAsk ask)
+    {
+        flyyDropAsks = [.. flyyDropAsks, ask];
+        RaiseFlyyDropAsk();
+
+        toasts.Show(key => new AppNotificationBuilder()
+            .AddText(ask.Title)
+            .AddText(ask.Summary)
+            .AddButton(ToastCenter.Button("Decline", "decline", key))
+            .AddButton(ToastCenter.Button("Accept", "accept", key)),
+            (action, _) => ui.TryEnqueue(() =>
+            {
+                if (action == "accept") AcceptFlyyDrop(ask.Id);
+                else if (action == "decline") DeclineFlyyDrop(ask.Id);
+                else FlyyDropRequested?.Invoke();
+            }),
+            tag: FlyyDropTag(ask.Id), group: FlyyDropGroup);
+        FlyyDropRequested?.Invoke();
+    }
+
+    private void FlyyDropAskEnded(string id)
+    {
+        flyyDropAsks = flyyDropAsks.Where(ask => ask.Id != id).ToList();
+        RaiseFlyyDropAsk();
+        toasts.Remove(FlyyDropTag(id), FlyyDropGroup);
+    }
+
+    private void FlyyDropMoved(string deviceId, FlyyDropSend send)
+    {
+        // Updates for a request the user has since replaced or cancelled are dropped.
+        if (send.Stage != FlyyDropStage.Waiting && flyyDropSends.GetValueOrDefault(deviceId)?.Id != send.Id) return;
+
+        flyyDropSends[deviceId] = send;
+        ShowFlyyDropSends();
+
+        if (!send.IsFinished) return;
+
+        // The result stays on the device's row for a few seconds.
+        var forget = ui.CreateTimer();
+        forget.Interval = TimeSpan.FromSeconds(8);
+        forget.IsRepeating = false;
+        forget.Tick += (_, _) =>
+        {
+            if (flyyDropSends.GetValueOrDefault(deviceId) != send) return;
+
+            flyyDropSends.Remove(deviceId);
+            ShowFlyyDropSends();
+        };
+        forget.Start();
+    }
+
+    /// Puts the latest FlyyDrop progress on the device rows without rebuilding everything else.
+    private void ShowFlyyDropSends()
+    {
+        Devices = Devices.Select(d => d with { Outgoing = flyyDropSends.GetValueOrDefault(d.Id) }).ToList();
+        Focused = Focused is { } focus ? Devices.FirstOrDefault(d => d.Id == focus.Id) : null;
+        Others = Devices.Where(d => d.Id != Focused?.Id).ToList();
+    }
+
+    private void RaiseFlyyDropAsk()
+    {
+        Raise(nameof(FlyyDropAsk));
+        Raise(nameof(ShowsFlyyDropAsk));
+    }
+
+    private void RaiseFlyyDropReceiving()
+    {
+        Raise(nameof(FlyyDropReceiving));
+        Raise(nameof(ShowsFlyyDropBanner));
+        Raise(nameof(FlyyDropBannerText));
+    }
+
+    private const string FlyyDropGroup = "flyydrop";
+
+    /// A short notification tag for a request; the id comes from the other device, so it isn't used as is.
+    private static string FlyyDropTag(string id) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(id)))[..16];
+
     /// Sends a web link to open on the phone, or other text to put on its clipboard.
     public void SendText(string text, string id)
     {
@@ -844,6 +992,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
             SendWaiting();
             SearchNearbyIfLost();
             FillPhoneFolder();
+            flyyDrop.Tick();
+            RaiseFlyyDropReceiving();
             Raise(nameof(ClipboardSubtitle));
         };
         timer.Start();
@@ -992,7 +1142,9 @@ public sealed class AppModel : Observable, IDeviceDelegate
                     showsCode ? device.VerificationCode : null,
                     battery.Status(device.Id),
                     media.NowPlaying(device.Id),
-                    locations.Location(device.Id));
+                    locations.Location(device.Id),
+                    device.Link.Identity.IncomingCapabilities.Contains(PacketType.FlyyDropRequest),
+                    flyyDropSends.GetValueOrDefault(device.Id));
             })
             .OrderBy(d => d.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
