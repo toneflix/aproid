@@ -48,6 +48,12 @@ export default function PrivacyPage() {
         creates for itself. Devices you have not paired cannot read anything Aproid sends.
       </p>
       <p>
+        With FlyyDrop you can also send files or links to a nearby device you have not paired. That device is asked
+        first and receives only what its owner accepts. You choose whether others can FlyyDrop to you: only your
+        paired devices (the default), everyone for 10 minutes, or everyone. To be found, every Aproid device shows its
+        name to other Aproid devices on the same network.
+      </p>
+      <p>
         Nothing passes through servers run by us or by anyone else. Aproid does not need, and does not have, an
         account system.
       </p>
@@ -80,7 +86,8 @@ export default function PrivacyPage() {
       <p>
         Information accessed through these permissions is sent only to the devices you have paired with Aproid, over
         an encrypted connection, so they can show it to you. It is not sent to us, sold, shared with third parties, or
-        used for advertising, profiling or any purpose other than the feature you are using.
+        used for advertising, profiling or any purpose other than the feature you are using. When you FlyyDrop, only the
+        files or links you pick go to the one device you choose, after its owner accepts them.
       </p>
       <p>Aproid also speaks the open KDE Connect protocol, so you can pair it with KDE Connect on other devices. Anything you share with a device you pair is handled by the app on that device.</p>
 

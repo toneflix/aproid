@@ -10,6 +10,7 @@ import {
   MonitorSmartphone,
   Music,
   Phone,
+  Radar,
   Smartphone,
   Wifi,
 } from "lucide-react";
@@ -40,6 +41,11 @@ export const features: Feature[] = [
     icon: FolderUp,
     title: "Files",
     body: "Drop a file on Aproid, use the Share menu, or share from any app on your phone. A big video that gets cut off carries on where it stopped.",
+  },
+  {
+    icon: Radar,
+    title: "FlyyDrop",
+    body: "Send photos and files to anyone nearby with Aproid, no pairing needed. They tap Accept and it's there.",
   },
   {
     icon: MonitorSmartphone,

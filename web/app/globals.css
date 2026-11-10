@@ -350,9 +350,19 @@ h3 {
 }
 
 .showcase-media img.tall {
-  max-width: 340px;
+  max-width: min(340px, 100%);
   margin-inline: auto;
   filter: drop-shadow(0 24px 40px rgb(0 0 0 / 0.28));
+}
+
+.showcase-media:has(img.bleed) {
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+.showcase-media img.bleed {
+  max-width: min(380px, 100%);
+  margin-inline: auto;
 }
 
 .showcase-media.gold {
