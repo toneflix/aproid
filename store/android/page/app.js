@@ -48,7 +48,7 @@ class AndroidApp {
   }
 
   carousel(names) {
-    const text = 'Notifications and clipboard go to all your Macs';
+    const text = 'Notifications and clipboard go to all your computers';
 
     return `<div class="carousel">${this.hero(names[0], text)}${this.hero(names[1], text, 'peek')}</div>`;
   }
@@ -110,7 +110,7 @@ class AndroidApp {
 
     return this.sheet(`<div class="pair">
       ${this.laptop(150)}
-      <div><div class="title">Pair with ${name}?</div><div class="hint">Make sure your Mac shows the same code.</div></div>
+      <div><div class="title">Pair with ${name}?</div><div class="hint">Make sure your computer shows the same code.</div></div>
       <div class="digits">${digits}</div>
       <div class="buttons"><div class="filled">Pair</div><div class="outlined">Not now</div></div>
       <div class="private">${this.icon('lock')}Encrypted, and never leaves your network</div>
