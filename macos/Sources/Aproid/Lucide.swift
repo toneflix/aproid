@@ -58,7 +58,6 @@ enum Lucide: String, CaseIterable {
     case unplug = "unplug"
     case video = "video"
     case volume2 = "volume-2"
-    case volumeX = "volume-x"
     case wifi = "wifi"
     case x = "x"
     case zap = "zap"
@@ -956,26 +955,6 @@ enum Lucide: String, CaseIterable {
             path.move(to: CGPoint(x: 19.364, y: 18.364))
             path.addCurve(to: CGPoint(x: 22, y: 12), control1: CGPoint(x: 21.052, y: 16.676), control2: CGPoint(x: 22, y: 14.387))
             path.addCurve(to: CGPoint(x: 19.364, y: 5.636), control1: CGPoint(x: 22, y: 9.613), control2: CGPoint(x: 21.052, y: 7.324))
-        case .volumeX:
-            path.move(to: CGPoint(x: 11, y: 4.702))
-            path.addCurve(to: CGPoint(x: 10.568, y: 4.044), control1: CGPoint(x: 11.005, y: 4.415), control2: CGPoint(x: 10.833, y: 4.154))
-            path.addCurve(to: CGPoint(x: 9.797, y: 4.204), control1: CGPoint(x: 10.302, y: 3.934), control2: CGPoint(x: 9.997, y: 3.998))
-            path.addLine(to: CGPoint(x: 6.413, y: 7.587))
-            path.addCurve(to: CGPoint(x: 5.416, y: 8), control1: CGPoint(x: 6.149, y: 7.852), control2: CGPoint(x: 5.79, y: 8.001))
-            path.addLine(to: CGPoint(x: 3, y: 8))
-            path.addCurve(to: CGPoint(x: 2, y: 9), control1: CGPoint(x: 2.448, y: 8), control2: CGPoint(x: 2, y: 8.448))
-            path.addLine(to: CGPoint(x: 2, y: 15))
-            path.addCurve(to: CGPoint(x: 3, y: 16), control1: CGPoint(x: 2, y: 15.552), control2: CGPoint(x: 2.448, y: 16))
-            path.addLine(to: CGPoint(x: 5.416, y: 16))
-            path.addCurve(to: CGPoint(x: 6.413, y: 16.413), control1: CGPoint(x: 5.79, y: 15.999), control2: CGPoint(x: 6.149, y: 16.148))
-            path.addLine(to: CGPoint(x: 9.796, y: 19.797))
-            path.addCurve(to: CGPoint(x: 10.568, y: 19.958), control1: CGPoint(x: 9.996, y: 20.004), control2: CGPoint(x: 10.302, y: 20.068))
-            path.addCurve(to: CGPoint(x: 11, y: 19.298), control1: CGPoint(x: 10.834, y: 19.848), control2: CGPoint(x: 11.005, y: 19.586))
-            path.closeSubpath()
-            path.move(to: CGPoint(x: 16.5, y: 14.5))
-            path.addLine(to: CGPoint(x: 21.5, y: 9.5))
-            path.move(to: CGPoint(x: 16.5, y: 9.5))
-            path.addLine(to: CGPoint(x: 21.5, y: 14.5))
         case .wifi:
             path.move(to: CGPoint(x: 12, y: 20))
             path.addLine(to: CGPoint(x: 12.01, y: 20))
