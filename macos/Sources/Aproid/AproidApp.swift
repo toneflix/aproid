@@ -35,7 +35,8 @@ struct AproidApp: App {
     static let callAudioWindow = "callAudio"
 }
 
-/// Opens links handed to the app: aproid://share from the Share menu, and tel: numbers, such as one clicked in Safari.
+/// Opens links handed to the app: aproid://share from the Share menu, aproid://open from the widget,
+/// aproid://ring and aproid://mirror for scripts, and tel: numbers, such as one clicked in Safari.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func application(_ application: NSApplication, open urls: [URL]) {
         Task { @MainActor in
@@ -44,7 +45,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             for url in urls {
                 switch url.scheme?.lowercased() {
                 case ShareRequest.scheme:
-                    model.shareInbox.open(url)
+                    switch url.host?.lowercased() {
+                    case "open":
+                        MenuBarPanel.toggle()
+                    case "ring":
+                        if let id = model.primaryId { model.ring(id) }
+                    case "mirror":
+                        if let id = model.primaryId { model.mirror(id) }
+                    default:
+                        model.shareInbox.open(url)
+                    }
                 case "tel":
                     let number = (url.absoluteString.dropFirst("tel:".count).removingPercentEncoding ?? "")
                         .filter { $0.isNumber || $0 == "+" || $0 == "*" || $0 == "#" }
