@@ -4,7 +4,9 @@ using System.Text.Json.Nodes;
 namespace Aproid.Core;
 
 /// Mirroring the phone's screen. The computer asks with `Start`; the phone answers with an "aproid.screen" packet
-/// whose payload is a live H.264 stream of `ScreenFrame`s. Mirrors Screen.kt and Screen.swift.
+/// whose payload is a live H.264 stream of `ScreenFrame`s. When the computer asks for sound and the phone can record
+/// it, the stream also carries `ScreenFrame.Audio` frames of 16-bit little-endian PCM at `AudioRate` Hz with
+/// `AudioChannels` channels, interleaved. Mirrors Screen.kt and Screen.swift.
 public static class Screen
 {
     /// The payload size of a live stream: read until the sender closes it.
@@ -12,6 +14,8 @@ public static class Screen
 
     public const long MaxSize = 1600;
     public const long Bitrate = 8_000_000;
+    public const long AudioRate = 48_000;
+    public const long AudioChannels = 2;
 
     public enum Action
     {
@@ -19,17 +23,27 @@ public static class Screen
         Stop,
     }
 
-    public sealed record Request(Action Action, long MaxSize = Screen.MaxSize, long Bitrate = Screen.Bitrate);
+    public sealed record Request(Action Action, long MaxSize = Screen.MaxSize, long Bitrate = Screen.Bitrate, bool Audio = false);
 
     /// What the phone is sending. Sizes are in pixels; `Running` is false once mirroring stops.
-    public sealed record Info(long Width, long Height, bool Running);
-
-    public static NetworkPacket Start(long maxSize = MaxSize, long bitrate = Bitrate) => new(PacketType.ScreenRequest, new JsonObject
+    /// `AudioRate` and `AudioChannels` are 0 when the stream has no sound.
+    public sealed record Info(long Width, long Height, bool Running, long AudioRate = 0, long AudioChannels = 0)
     {
-        ["action"] = "start",
-        ["maxSize"] = maxSize,
-        ["bitrate"] = bitrate,
-    });
+        public bool HasAudio => AudioRate > 0 && AudioChannels > 0;
+    }
+
+    public static NetworkPacket Start(long maxSize = MaxSize, long bitrate = Bitrate, bool audio = false)
+    {
+        var body = new JsonObject
+        {
+            ["action"] = "start",
+            ["maxSize"] = maxSize,
+            ["bitrate"] = bitrate,
+        };
+        if (audio) body["audio"] = true;
+
+        return new NetworkPacket(PacketType.ScreenRequest, body);
+    }
 
     public static NetworkPacket Stop() => new(PacketType.ScreenRequest, new JsonObject { ["action"] = "stop" });
 
@@ -48,17 +62,29 @@ public static class Screen
         return new Request(
             known,
             Math.Clamp(packet.GetLong("maxSize") ?? MaxSize, 320, 4096),
-            Math.Clamp(packet.GetLong("bitrate") ?? Bitrate, 500_000, 50_000_000));
+            Math.Clamp(packet.GetLong("bitrate") ?? Bitrate, 500_000, 50_000_000),
+            packet.GetBool("audio") ?? false);
     }
 
     /// Announces a stream; send it with `Stream` as the payload size.
-    public static NetworkPacket Started(long width, long height) => new(PacketType.Screen, new JsonObject
+    public static NetworkPacket Started(long width, long height, bool audio = false)
     {
-        ["width"] = width,
-        ["height"] = height,
-        ["codec"] = "h264",
-        ["running"] = true,
-    });
+        var body = new JsonObject
+        {
+            ["width"] = width,
+            ["height"] = height,
+            ["codec"] = "h264",
+            ["running"] = true,
+        };
+        if (audio)
+        {
+            body["audioCodec"] = "pcm16le";
+            body["audioRate"] = AudioRate;
+            body["audioChannels"] = AudioChannels;
+        }
+
+        return new NetworkPacket(PacketType.Screen, body);
+    }
 
     public static NetworkPacket Stopped() => new(PacketType.Screen, new JsonObject { ["running"] = false });
 
@@ -66,7 +92,13 @@ public static class Screen
     {
         if (packet.Type != PacketType.Screen) return null;
 
-        return new Info(packet.GetLong("width") ?? 0, packet.GetLong("height") ?? 0, packet.GetBool("running") ?? false);
+        var pcm = packet.GetString("audioCodec") == "pcm16le";
+        return new Info(
+            packet.GetLong("width") ?? 0,
+            packet.GetLong("height") ?? 0,
+            packet.GetBool("running") ?? false,
+            pcm ? Math.Clamp(packet.GetLong("audioRate") ?? 0, 0, 192_000) : 0,
+            pcm ? Math.Clamp(packet.GetLong("audioChannels") ?? 0, 0, 8) : 0);
     }
 }
 
@@ -77,6 +109,7 @@ public sealed record ScreenFrame(byte[] Data, long TimeUs, byte Flags)
     public const int HeaderSize = 13;
     public const byte Config = 1;
     public const byte Key = 2;
+    public const byte Audio = 4;
 
     /// Larger than any real frame; anything bigger means the stream is corrupt.
     public const int MaxSize = 16 * 1024 * 1024;
@@ -85,6 +118,9 @@ public sealed record ScreenFrame(byte[] Data, long TimeUs, byte Flags)
     public bool IsConfig => (Flags & Config) != 0;
 
     public bool IsKey => (Flags & Key) != 0;
+
+    /// PCM sound rather than video.
+    public bool IsAudio => (Flags & Audio) != 0;
 
     public byte[] Header()
     {
