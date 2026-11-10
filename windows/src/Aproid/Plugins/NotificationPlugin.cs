@@ -6,10 +6,15 @@ using Microsoft.Windows.AppNotifications.Builder;
 
 namespace Aproid.Plugins;
 
-/// Shows phone notifications as Windows notifications. Replying or dismissing there is sent back to the phone.
+/// Shows phone notifications as Windows notifications. Replying, dismissing or pressing
+/// one of the phone's buttons there is sent back to the phone.
 internal sealed class NotificationPlugin(ToastCenter toasts, DeviceRegistry devices) : IPlugin
 {
     private const string ReplyInput = "reply";
+    private const string ActionPrefix = "action.";
+
+    /// Windows shows at most five buttons on a notification.
+    private const int MaxButtons = 5;
 
     private readonly NotificationIcons icons = new();
     private readonly Dictionary<string, string> shown = [];
@@ -76,15 +81,22 @@ internal sealed class NotificationPlugin(ToastCenter toasts, DeviceRegistry devi
 
             if (icon is not null) builder.SetAppLogoOverride(new Uri(icon), AppNotificationImageCrop.Circle);
 
+            var buttons = 0;
             if (note.ReplyId is not null)
             {
                 builder.AddTextBox(ReplyInput, "Message", "");
                 builder.AddButton(ToastCenter.Button("Send", "reply", key).SetInputId(ReplyInput));
+                buttons++;
             }
-            else if (note.IsClearable)
+
+            // The phone's own buttons, such as "Mark as read".
+            foreach (var title in note.ActionTitles.Take(MaxButtons - buttons - (note.IsClearable ? 1 : 0)))
             {
-                builder.AddButton(ToastCenter.Button("Dismiss on phone", "dismiss", key));
+                builder.AddButton(ToastCenter.Button(title, ActionPrefix + title, key));
+                buttons++;
             }
+
+            if (note.IsClearable && buttons < MaxButtons) builder.AddButton(ToastCenter.Button("Dismiss on phone", "dismiss", key));
 
             return builder;
         }, (action, input) => Respond(action, input, deviceId, note), Tag(note.Id), deviceId, quiet: note.Silent);
@@ -103,6 +115,9 @@ internal sealed class NotificationPlugin(ToastCenter toasts, DeviceRegistry devi
                 break;
             case "dismiss":
                 device.Send(NotificationRequests.Dismiss(note.Id));
+                break;
+            case var pressed when pressed.StartsWith(ActionPrefix, StringComparison.Ordinal):
+                device.Send(NotificationRequests.Action(note.Id, pressed[ActionPrefix.Length..]));
                 break;
         }
     }
