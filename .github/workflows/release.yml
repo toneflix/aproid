@@ -2,7 +2,7 @@ name: Release
 
 # Tag a version as 1.2.3 to build all three apps and publish them together as one GitHub release,
 # or as android-1.2.3, macos-1.2.3 or windows-1.2.3 to release just that app:
-#   Aproid-1.2.3.apk          signed Android app
+#   Aproid-1.2.3.apk / .aab   signed Android app and Play Store bundle
 #   Aproid-1.2.3.dmg / .zip   signed, notarized Mac app and its update zip
 #   Aproid-Setup-1.2.3.exe    Windows installer
 # Nothing is published unless every app in the release builds.
@@ -63,10 +63,11 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           VERSION: ${{ steps.version.outputs.number }}
         run: |
-          ./gradlew :app:assembleRelease -PversionName="$VERSION" -PversionCode=${{ github.run_number }}
+          ./gradlew :app:assembleRelease :app:bundleRelease -PversionName="$VERSION" -PversionCode=${{ github.run_number }}
           rm "$ANDROID_KEYSTORE_FILE"
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk "dist/Aproid-$VERSION.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "dist/Aproid-$VERSION.aab"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -262,6 +263,7 @@ jobs:
           name: ${{ steps.name.outputs.title }}
           files: |
             dist/Aproid-*.apk
+            dist/Aproid-*.aab
             dist/Aproid-*.dmg
             dist/Aproid-*.zip
             dist/Aproid-Setup-*.exe
