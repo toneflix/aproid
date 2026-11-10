@@ -108,7 +108,9 @@
     <string name="share_send_failed">Couldn\'t send to %1$s</string>
     <string name="share_receiving">Receiving %1$s from %2$s</string>
     <string name="share_received">From %1$s · Saved to Downloads</string>
-    <string name="share_received_note">From %1$s · Saved to Downloads</string>
+    <string name="share_received_note">From %1$s · Tap to open</string>
+    <string name="share_no_app">No app on this phone opens this file, so here it is in Downloads</string>
+    <string name="share_file_gone">This file was moved or deleted</string>
     <string name="share_save_failed">Couldn\'t save to Downloads</string>
     <string name="share_paused">Paused · resumes when %1$s reconnects</string>
     <string name="share_stopped">Transfer from %1$s stopped</string>

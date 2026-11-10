@@ -654,7 +654,7 @@ private fun RecentSection(items: List<RecentItem>) {
                 items.take(6).forEachIndexed { index, item ->
                     if (index > 0) HorizontalDivider(Modifier.padding(start = 74.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     RecentRow(item) {
-                        item.openIntent()?.let { runCatching { context.startActivity(it) } }
+                        item.openIntent(context)?.let { runCatching { context.startActivity(it) } }
                     }
                 }
             }

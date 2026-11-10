@@ -123,12 +123,12 @@ object SharePlugin : Plugin {
             kind = RecentItem.Kind.RECEIVED,
             detail = context.getString(R.string.share_received, device.name),
             time = System.currentTimeMillis(),
-            uri = target.uri,
+            uri = target.viewUri(),
             mimeType = target.mimeType,
             progress = null,
         )
         Recent.put(done)
-        notify(context, file.safeName, context.getString(R.string.share_received_note, device.name), done.openIntent())
+        notify(context, file.safeName, context.getString(R.string.share_received_note, device.name), done.openIntent(context))
     }
 
     private fun forget(id: String) {
@@ -155,7 +155,7 @@ object SharePlugin : Plugin {
             .copy(uri = uri)
         Recent.put(item)
 
-        notify(context, uri.host ?: url, context.getString(R.string.share_link_tap, device.name), item.openIntent())
+        notify(context, uri.host ?: url, context.getString(R.string.share_link_tap, device.name), item.openIntent(context))
     }
 
     private fun text(context: Context, device: Device, text: String) {
@@ -186,11 +186,10 @@ object SharePlugin : Plugin {
     }
 }
 
-/** Opens a received file or link, or null when there is nothing to open. */
-fun RecentItem.openIntent(): Intent? {
+/** Opens a received file or link, or null when there is nothing to open. Files go through [OpenFileActivity]. */
+fun RecentItem.openIntent(context: Context): Intent? {
     val uri = uri ?: return null
+    if (kind == RecentItem.Kind.LINK) return Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-    return Intent(Intent.ACTION_VIEW)
-        .apply { if (mimeType != null) setDataAndType(uri, mimeType) else data = uri }
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    return OpenFileActivity.intent(context, uri, mimeType)
 }
