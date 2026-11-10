@@ -38,6 +38,9 @@ SolidCompression=yes
 CloseApplications=force
 RestartApplications=no
 
+[Tasks]
+Name: "startup"; Description: "Start Aproid when I sign in to Windows"
+
 [Files]
 Source: "{#Publish}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
@@ -62,3 +65,5 @@ Root: HKCU; Subkey: "Software\Classes\Aproid.tel"; Flags: uninsdeletekey dontcre
 Root: HKCU; Subkey: "Software\Aproid"; Flags: uninsdeletekey dontcreatekey
 Root: HKCU; Subkey: "Software\RegisteredApplications"; ValueType: none; ValueName: "Aproid"; Flags: uninsdeletevalue dontcreatekey
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "Aproid"; Flags: uninsdeletevalue dontcreatekey
+; Same value the app's "Start with Windows" setting writes.
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Aproid"; ValueData: """{app}\{#AppExe}"" --background"; Tasks: startup
