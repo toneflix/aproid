@@ -70,7 +70,7 @@ if xcrun appintentsmetadataprocessor \
         echo "Shortcuts actions: added"
     else
         echo "Shortcuts actions: the metadata tool ran but wrote nothing"
-        otool -L "$APP/Contents/MacOS/Aproid" | grep -i intents || echo "(the app doesn't load AppIntents.framework)"
+        if [ -n "${CI:-}" ]; then xcrun appintentsmetadataprocessor --help 2>&1 | head -120; fi
     fi
 else
     echo "Shortcuts actions: skipped (the metadata tool failed)"
