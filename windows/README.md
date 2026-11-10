@@ -34,7 +34,20 @@ Mirror and control the phone's screen from the panel's Mirror tile. When the pho
 
 Your phone's 2,000 most recent photos show in Explorer under `Phone Photos` in your user folder. They take no space until opened, when Aproid fetches the original from the phone. Turn it off in the panel's settings menu.
 
-Win+Shift+A opens the panel from anywhere. Pin Aproid to the taskbar for jump list shortcuts to Messages, Photos, mirroring and ringing your phone.
+Win+Shift+A opens the panel from anywhere, and Ctrl+Alt+C, F, M and R send the clipboard, send files, mirror and ring the phone (turn them off under Settings, Keyboard shortcuts). Pin Aproid to the taskbar for jump list shortcuts to Messages, Photos, mirroring, ringing your phone and sending the clipboard or files.
+
+Scripts, Task Scheduler and Power Automate can drive the shown phone through `Aproid.exe`:
+
+| Command | Does |
+| --- | --- |
+| `--ring` | Rings the phone |
+| `--mirror` | Mirrors its screen |
+| `--send-clipboard` | Sends what's copied |
+| `--send-text "text"` | Opens a link on the phone, or puts other text on its clipboard |
+| `--send <files>` | Sends files |
+| `--battery` | Prints the battery level, 0 to 100 (in PowerShell, `Aproid.exe --battery \| Out-String` waits for it) |
+
+The connected phones' battery is also kept in `%LOCALAPPDATA%\Aproid\status.json`.
 
 Right-click files in Explorer and pick "Send to phone" (on Windows 11 it's under "Show more options"). To call `tel:` links from your phone, pick Aproid for TEL in Settings > Apps > Default apps.
 

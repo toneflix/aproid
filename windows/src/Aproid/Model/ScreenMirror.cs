@@ -16,6 +16,7 @@ public sealed class ScreenMirror : Observable
     private MirrorPhase phase;
     private string deviceName = "";
     private (long Width, long Height) size;
+    private bool isMuted;
 
     /// Sends a packet to a phone. Set by the app model.
     internal Func<string, NetworkPacket, bool>? Send { get; set; }
@@ -41,6 +42,13 @@ public sealed class ScreenMirror : Observable
         private set => Set(ref size, value);
     }
 
+    /// Silences the phone's sound on this PC.
+    public bool IsMuted
+    {
+        get => isMuted;
+        set => Set(ref isMuted, value);
+    }
+
     /// Asks the phone to start; it shows a prompt the user has to allow.
     public void Begin(string id, string name)
     {
@@ -49,7 +57,7 @@ public sealed class ScreenMirror : Observable
         if (DeviceId is string old && old != id) Send?.Invoke(old, Screen.Stop());
         DeviceId = id;
         DeviceName = name;
-        Phase = Send?.Invoke(id, Screen.Start()) == true ? MirrorPhase.Waiting : MirrorPhase.Ended;
+        Phase = Send?.Invoke(id, Screen.Start(audio: true)) == true ? MirrorPhase.Waiting : MirrorPhase.Ended;
     }
 
     public void Stop()

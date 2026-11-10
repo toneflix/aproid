@@ -411,10 +411,14 @@ public sealed partial class PanelWindow : Window
         Map.Source = new Uri(MapLinks.Embed(location));
     }
 
-    private async void SendFiles_Click(object sender, RoutedEventArgs e)
+    private void SendFiles_Click(object sender, RoutedEventArgs e)
     {
-        if (FocusedId is not string id) return;
+        if (FocusedId is string id) ChooseFiles(id);
+    }
 
+    /// Lets the user pick files and sends them to phone `id`.
+    internal async void ChooseFiles(string id)
+    {
         var picker = new FileOpenPicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary, CommitButtonText = "Send" };
         picker.FileTypeFilter.Add("*");
         InitializeWithWindow.Initialize(picker, hwnd);
@@ -452,6 +456,21 @@ public sealed partial class PanelWindow : Window
 
         if (activity.Path is string path) Explorer.OpenFile(path);
         else if (activity.Url is string url) Explorer.Open(url);
+        else Expand(sender);
+    }
+
+    /// Shows a Recent row's full title and detail, or folds it back to one line each.
+    private static void Expand(object row)
+    {
+        if (row is not Button { Content: Grid content } || content.Children.OfType<StackPanel>().FirstOrDefault() is not StackPanel text) return;
+
+        var lines = text.Children.OfType<TextBlock>().ToList();
+        var expanding = lines.FirstOrDefault()?.TextWrapping != TextWrapping.Wrap;
+        foreach (var line in lines)
+        {
+            line.TextWrapping = expanding ? TextWrapping.Wrap : TextWrapping.NoWrap;
+            line.TextTrimming = expanding ? TextTrimming.None : TextTrimming.CharacterEllipsis;
+        }
     }
 
     /// Right-clicking a received file offers to show it in its folder.
@@ -489,9 +508,13 @@ public sealed partial class PanelWindow : Window
         startup.Click += (_, _) => Model.StartsWithWindows = startup.IsChecked;
         SettingsMenu.Items.Add(startup);
 
-        var hotkey = new ToggleMenuFlyoutItem { Text = $"Open with {TrayIcon.HotkeyName}", IsChecked = Model.OpensWithHotkey };
-        hotkey.Click += (_, _) => Model.OpensWithHotkey = hotkey.IsChecked;
-        SettingsMenu.Items.Add(hotkey);
+        var shortcuts = new MenuFlyoutSubItem { Text = "Keyboard shortcuts" };
+        var useShortcuts = new ToggleMenuFlyoutItem { Text = "Use shortcuts", IsChecked = Model.UsesShortcuts };
+        useShortcuts.Click += (_, _) => Model.UsesShortcuts = useShortcuts.IsChecked;
+        shortcuts.Items.Add(useShortcuts);
+        shortcuts.Items.Add(new MenuFlyoutSeparator());
+        foreach (var shortcut in GlobalShortcuts.All) shortcuts.Items.Add(new MenuFlyoutItem { Text = $"{shortcut.Name}   {shortcut.Title}", IsEnabled = false });
+        SettingsMenu.Items.Add(shortcuts);
 
         var photosFolder = new ToggleMenuFlyoutItem { Text = "Show phone photos in Explorer", IsChecked = Model.ShowsPhotosInExplorer };
         photosFolder.Click += (_, _) => Model.ShowsPhotosInExplorer = photosFolder.IsChecked;

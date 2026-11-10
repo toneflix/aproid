@@ -1,6 +1,8 @@
 using System.Runtime.InteropServices;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Aproid.Model;
+using Aproid.Shell;
 using Microsoft.Windows.AppLifecycle;
 
 namespace Aproid;
@@ -13,6 +15,9 @@ public static class Program
     {
         WinRT.ComWrappersSupport.InitializeComWrappers();
 
+        var arguments = Environment.GetCommandLineArgs();
+        if (arguments.Contains(LaunchArguments.BatteryArgument)) return PrintBattery();
+
         if (RedirectToRunningInstance()) return 0;
 
         Application.Start(callback =>
@@ -21,6 +26,22 @@ public static class Program
             new App();
         });
 
+        return 0;
+    }
+
+    /// Writes the shown phone's battery level, 0 to 100, for scripts. Fails when no phone is connected.
+    private static int PrintBattery()
+    {
+        AttachConsole(AttachParentProcess);
+        var output = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
+
+        if (PhoneStatus.Load().Phones.FirstOrDefault(p => p.IsConnected) is not { Charge: int charge })
+        {
+            new StreamWriter(Console.OpenStandardError()) { AutoFlush = true }.WriteLine("No connected phone has reported its battery.");
+            return 1;
+        }
+
+        output.WriteLine(charge);
         return 0;
     }
 
@@ -41,6 +62,11 @@ public static class Program
 
         return true;
     }
+
+    private const int AttachParentProcess = -1;
+
+    [DllImport("kernel32.dll")]
+    private static extern bool AttachConsole(int processId);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr CreateEvent(IntPtr attributes, bool manualReset, bool initialState, string? name);

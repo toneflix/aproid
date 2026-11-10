@@ -12,6 +12,7 @@ public partial class App : Application
 {
     private AppModel? model;
     private TrayIcon? tray;
+    private GlobalShortcuts? shortcuts;
     private PanelWindow? panel;
     private CallWindow? call;
     private MessagesWindow? messages;
@@ -36,11 +37,17 @@ public partial class App : Application
         tray.Clicked += () => panel.Toggle(tray.Bounds);
         tray.MenuRequested += ShowTrayMenu;
         tray.ClipboardChanged += model.ClipboardChanged;
-        tray.HotkeyPressed += () => panel.Toggle(tray.Bounds);
-        tray.UseHotkey(model.OpensWithHotkey);
+        shortcuts = new GlobalShortcuts(tray);
+        shortcuts.Pressed += task =>
+        {
+            if (task == JumpTask.Panel) panel.Toggle(tray.Bounds);
+            else Open(task);
+        };
+        shortcuts.Use(model.UsesShortcuts);
         model.PropertyChanged += (_, change) =>
         {
-            if (change.PropertyName == nameof(AppModel.OpensWithHotkey)) tray.UseHotkey(model.OpensWithHotkey);
+            if (change.PropertyName == nameof(AppModel.UsesShortcuts)) shortcuts.Use(model.UsesShortcuts);
+            if (change.PropertyName == nameof(AppModel.Focused)) ShowPhoneOnTray();
         };
         model.PairRequested += () => panel.ShowNear(tray.Bounds);
         panel.QuitRequested += Quit;
@@ -90,7 +97,7 @@ public partial class App : Application
             return;
         }
 
-        model!.Handover(launch.Files, launch.Number);
+        model!.Handover(launch.Files, launch.Number, launch.Text);
 
         // The panel shows the files going across.
         if (launch.Files.Count > 0) panel!.ShowNear(tray!.Bounds);
@@ -116,10 +123,30 @@ public partial class App : Application
                 model.Ring(phone);
                 panel!.ShowNear(tray!.Bounds);
                 break;
+            case JumpTask.SendClipboard when phone is not null:
+                model.SendClipboard(phone);
+                break;
+            case JumpTask.SendFiles when phone is not null:
+                panel!.ShowNear(tray!.Bounds);
+                panel.ChooseFiles(phone);
+                break;
             default:
                 panel!.ShowNear(tray!.Bounds);
                 break;
         }
+    }
+
+    /// The shown phone's battery on the tray icon and in its tooltip.
+    private void ShowPhoneOnTray()
+    {
+        var phone = model!.Focused is { IsPaired: true } focused ? focused : null;
+        tray!.ShowBattery(phone?.Battery);
+        tray.Tooltip = phone switch
+        {
+            null => "Aproid",
+            { Battery: { } battery } => $"Aproid · {phone.Name} · {battery.Charge}%{(battery.IsCharging ? ", charging" : "")}",
+            _ => $"Aproid · {phone.Name}",
+        };
     }
 
     private void ShowTrayMenu()

@@ -25,8 +25,9 @@ internal sealed class Settings
         public string? SelectedPhone { get; set; }
         public PhoneSwitcherStyle SwitcherStyle { get; set; } = PhoneSwitcherStyle.Carousel;
         public Dictionary<string, string> PhoneHotspots { get; set; } = new();
-        public bool OpensWithHotkey { get; set; } = true;
+        public bool UsesShortcuts { get; set; } = true;
         public bool ShowsPhotosInExplorer { get; set; } = true;
+        public bool MirrorMuted { get; set; }
     }
 
     public Settings(string path)
@@ -88,13 +89,13 @@ internal sealed class Settings
         }
     }
 
-    /// Whether Win+Shift+A opens the panel.
-    public bool OpensWithHotkey
+    /// Whether the system-wide keyboard shortcuts are on.
+    public bool UsesShortcuts
     {
-        get => values.OpensWithHotkey;
+        get => values.UsesShortcuts;
         set
         {
-            values.OpensWithHotkey = value;
+            values.UsesShortcuts = value;
             Save();
         }
     }
@@ -106,6 +107,17 @@ internal sealed class Settings
         set
         {
             values.ShowsPhotosInExplorer = value;
+            Save();
+        }
+    }
+
+    /// Whether the phone's sound stays off while mirroring.
+    public bool MirrorMuted
+    {
+        get => values.MirrorMuted;
+        set
+        {
+            values.MirrorMuted = value;
             Save();
         }
     }

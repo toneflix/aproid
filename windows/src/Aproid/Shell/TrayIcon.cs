@@ -9,10 +9,6 @@ internal sealed class TrayIcon : IDisposable
 {
     private const uint CallbackMessage = WM_APP + 1;
     private const string ClassName = "AproidTrayWindow";
-    private const int HotkeyId = 1;
-
-    /// Win+Shift+A opens the panel from anywhere.
-    public const string HotkeyName = "Win+Shift+A";
 
     // Held so the garbage collector does not free the callback Windows calls into.
     private readonly WndProc procedure;
@@ -20,6 +16,8 @@ internal sealed class TrayIcon : IDisposable
     private readonly IntPtr hwnd;
     private IntPtr icon;
     private string tooltip;
+    private readonly HashSet<int> hotkeys = [];
+    private readonly TrayBadge badge;
 
     public TrayIcon(string iconPath, string tooltip)
     {
@@ -38,6 +36,7 @@ internal sealed class TrayIcon : IDisposable
         RegisterClassEx(ref windowClass);
         hwnd = CreateWindowEx(0, ClassName, "Aproid", 0, 0, 0, 0, 0, IntPtr.Zero, IntPtr.Zero, instance, IntPtr.Zero);
 
+        badge = new TrayBadge(iconPath);
         icon = LoadImage(IntPtr.Zero, iconPath, IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_LOADFROMFILE);
         Add();
         AddClipboardFormatListener(hwnd);
@@ -52,15 +51,19 @@ internal sealed class TrayIcon : IDisposable
     /// Something new was copied, by any app.
     public event Action? ClipboardChanged;
 
-    /// The panel's shortcut was pressed.
-    public event Action? HotkeyPressed;
+    /// A shortcut was pressed, with the id it was turned on with.
+    public event Action<int>? HotkeyPressed;
 
-    /// Turns the shortcut on or off. Returns false when another app already uses it.
-    public bool UseHotkey(bool on)
+    /// Turns shortcut `id` on or off. Returns false when another app already uses it.
+    public bool UseHotkey(int id, bool on, uint modifiers, uint key)
     {
-        UnregisterHotKey(hwnd, HotkeyId);
+        if (hotkeys.Remove(id)) UnregisterHotKey(hwnd, id);
+        if (!on) return true;
 
-        return !on || RegisterHotKey(hwnd, HotkeyId, MOD_WIN | MOD_SHIFT | MOD_NOREPEAT, 'A');
+        if (!RegisterHotKey(hwnd, id, modifiers, key)) return false;
+
+        hotkeys.Add(id);
+        return true;
     }
 
     public string Tooltip
@@ -72,6 +75,27 @@ internal sealed class TrayIcon : IDisposable
             var data = Data(NIF_TIP);
             Shell_NotifyIcon(NIM_MODIFY, ref data);
         }
+    }
+
+    /// Shows the phone's battery as a bar on the icon, or the plain icon for null.
+    public void ShowBattery(Core.BatteryStatus? battery)
+    {
+        IntPtr drawn;
+        try
+        {
+            drawn = badge.Draw(GetSystemMetrics(SM_CXSMICON), battery);
+        }
+        catch (Exception e) when (e is ArgumentException or ExternalException or IOException)
+        {
+            System.Diagnostics.Debug.WriteLine($"Tray icon failed: {e.Message}");
+            return;
+        }
+
+        var old = icon;
+        icon = drawn;
+        var data = Data(NIF_ICON);
+        Shell_NotifyIcon(NIM_MODIFY, ref data);
+        if (old != IntPtr.Zero) DestroyIcon(old);
     }
 
     /// Where the icon sits on screen, in physical pixels, if Windows can tell.
@@ -110,7 +134,8 @@ internal sealed class TrayIcon : IDisposable
         var data = Data(0);
         Shell_NotifyIcon(NIM_DELETE, ref data);
         RemoveClipboardFormatListener(hwnd);
-        UnregisterHotKey(hwnd, HotkeyId);
+        foreach (var id in hotkeys) UnregisterHotKey(hwnd, id);
+        hotkeys.Clear();
         DestroyWindow(hwnd);
         if (icon != IntPtr.Zero) DestroyIcon(icon);
         icon = IntPtr.Zero;
@@ -152,9 +177,9 @@ internal sealed class TrayIcon : IDisposable
             return IntPtr.Zero;
         }
 
-        if (message == WM_HOTKEY && wParam.ToInt64() == HotkeyId)
+        if (message == WM_HOTKEY && hotkeys.Contains((int)wParam.ToInt64()))
         {
-            HotkeyPressed?.Invoke();
+            HotkeyPressed?.Invoke((int)wParam.ToInt64());
             return IntPtr.Zero;
         }
 

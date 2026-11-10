@@ -36,7 +36,7 @@ WINDOWS = [
     "file-archive", "file-text", "file-up", "film", "folder-open", "image", "images", "link", "lock", "map-pin",
     "message-square", "messages-square", "mic", "mic-off", "music", "pause", "phone", "phone-off", "play",
     "rotate-cw", "search", "settings", "skip-back", "skip-forward", "smartphone", "square-pen", "triangle-alert",
-    "unplug", "video", "volume-2", "wifi", "x", "zap",
+    "unplug", "video", "volume-2", "volume-x", "wifi", "x", "zap",
 ]
 
 # Drawn solid as well as stroked, like the filled media controls people expect.
