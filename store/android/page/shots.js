@@ -51,7 +51,7 @@ class FeatureGraphic {
   render(assets) {
     const app = new AndroidApp(assets);
     const phone = new Phone(232, 520);
-    const screen = app.screen(app.home([app.hero('MacBook Pro', 'Notifications, clipboard and files are flowing'), app.tiles()]));
+    const screen = app.screen(app.home([app.hero('MacBook Pro', 'Notifications, clipboard and files are flowing'), app.tiles(), app.flyyDropCard()]));
 
     return `<div class="canvas feature">
       <div class="glow"></div>
@@ -60,7 +60,7 @@ class FeatureGraphic {
       <div class="copy">
         <div class="brand"><img src="${assets.mark}"><span>Aproid</span></div>
         <div class="headline">Your Android phone,<br><span class="accent">on your Mac and PC</span></div>
-        <div class="sub">Files, texts, calls, notifications<br>and your clipboard, all in one place.</div>
+        <div class="sub">FlyyDrop files to anyone nearby, plus<br>texts, calls and notifications.</div>
       </div>
     </div>`;
   }
@@ -83,7 +83,15 @@ const SHOTS = [
     ])),
   }),
   new StoreShot({
-    id: '02-send-files',
+    id: '02-flyydrop',
+    lines: ['FlyyDrop to anyone', 'nearby, no pairing'],
+    screen: (app) => app.screen(
+      app.home([app.hero('MacBook Pro', FLOWING), app.tiles(), app.flyyDropCard()]),
+      app.flyyDropSheet("Ada's Pixel 8", { title: '3 photos · 12.4 MB', detail: 'IMG_2207.jpg, IMG_2208.jpg, IMG_2210.jpg' }),
+    ),
+  }),
+  new StoreShot({
+    id: '03-send-files',
     lines: ['Send files', 'without the cable'],
     screen: (app) => app.screen(
       app.home([app.hero('MacBook Pro', FLOWING), app.tiles()]),
@@ -98,7 +106,7 @@ const SHOTS = [
     ),
   }),
   new StoreShot({
-    id: '03-notifications',
+    id: '04-notifications',
     lines: ['Never miss a text', 'while you work'],
     dark: true,
     screen: (app) => app.screen(app.home([
@@ -116,7 +124,7 @@ const SHOTS = [
     </div>`,
   }),
   new StoreShot({
-    id: '04-clipboard',
+    id: '05-clipboard',
     lines: ['Copy here,', 'paste there'],
     screen: (app) => app.screen(
       app.home([
@@ -130,7 +138,7 @@ const SHOTS = [
     ),
   }),
   new StoreShot({
-    id: '05-many-computers',
+    id: '06-many-computers',
     lines: ['One phone,', 'all your computers'],
     dark: true,
     screen: (app) => app.screen(app.home([
@@ -143,7 +151,7 @@ const SHOTS = [
     ])),
   }),
   new StoreShot({
-    id: '06-pair',
+    id: '07-pair',
     lines: ['Pair once,', 'stay connected'],
     screen: (app) => app.screen(
       app.home([app.hero('Work PC', FLOWING), app.tiles()]),

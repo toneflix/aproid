@@ -24,6 +24,8 @@ If you carry an Android phone, you've mostly had to do without. Aproid fixes tha
 
 **Files.** Drop a file on Aproid, use the Share menu, or share from any app on your phone. A big video that gets cut off halfway carries on from where it stopped.
 
+**FlyyDrop.** Want to send photos to a friend's phone or a colleague's laptop? If they have Aproid and you're on the same Wi-Fi, just FlyyDrop them. No pairing needed. They see who it's from and what you're sending, and tap Accept or Decline. You choose who can FlyyDrop to you: only your own devices, everyone for the next 10 minutes, or everyone.
+
 **Screen mirroring.** See your phone in a window on your computer, with sound, and use it with your mouse and keyboard. Great for the apps that only live on your phone.
 
 **Photos.** Your latest photos and screenshots are right there on the computer. Grab the ones you want. On Windows they also show up in File Explorer.
@@ -42,7 +44,7 @@ If you carry an Android phone, you've mostly had to do without. Aproid fixes tha
 
 ## Your stuff stays yours
 
-There's no Aproid server, no account to make and nothing tracking you. Your phone and your computer talk straight to each other over your own network or Bluetooth, and everything they send is encrypted. A device can only connect after you've paired it and checked the same code on both screens. Your texts, photos and notifications never go anywhere but your own devices.
+There's no Aproid server, no account to make and nothing tracking you. Your phone and your computer talk straight to each other over your own network or Bluetooth, and everything they send is encrypted. Your own devices only connect after you've paired them and checked the same code on both screens. Someone you haven't paired can only ask to FlyyDrop you something, only if you've allowed it, and nothing arrives until you tap Accept. Your texts, photos and notifications never go anywhere but your own devices.
 
 ## Get it
 

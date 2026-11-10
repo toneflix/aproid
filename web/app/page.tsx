@@ -91,6 +91,18 @@ export default function Home() {
 
         <Showcase
           reverse
+          eyebrow="FlyyDrop"
+          title="Send it to anyone nearby. No pairing."
+          body="Your friend's phone, a colleague's laptop, the family PC. If it has Aproid and it's on the same Wi-Fi, FlyyDrop your photos or files straight to it. They see what's coming and tap Accept."
+          points={[
+            "Works between phones, Macs and PCs",
+            "Nothing arrives until they accept",
+            "You choose who can FlyyDrop to you: your devices, everyone for 10 minutes, or everyone",
+          ]}
+          media={<img className="bleed" src="/screens/flyydrop.png" alt="An Android phone being asked to accept three photos sent with FlyyDrop" />}
+        />
+
+        <Showcase
           gold
           eyebrow="All your devices"
           title="Two phones? Two computers? No problem."
@@ -112,6 +124,7 @@ export default function Home() {
             "Click, scroll and type straight into the phone",
             "Works on both Mac and Windows",
           ]}
+          reverse
           media={<img className="tall" src="/screens/android-home.png" alt="Aproid on Android, showing a paired MacBook Pro" />}
         />
       </section>
