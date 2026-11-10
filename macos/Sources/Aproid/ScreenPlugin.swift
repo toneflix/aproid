@@ -2,28 +2,36 @@ import AppKit
 import SwiftUI
 import AproidKit
 
-/// Receives the phone's screen stream ("aproid.screen") and feeds pictures to the decoder and sound to the player.
+/// Receives screen streams ("aproid.screen"). A phone's H.264 pictures go to the decoder and its sound to the
+/// player; another computer's JPEG pictures go to the remote desktop feed.
 final class ScreenPlugin: Plugin {
     let incoming: Set<String> = [PacketType.screen]
 
     let decoder: ScreenDecoder
     let audio: ScreenAudio
+    let desktop: RemoteDesktopFeed
 
-    /// Called on a network thread when a phone starts or stops streaming.
-    var onStarted: ((Device) -> Void)?
+    /// Called on a network thread when a device starts or stops streaming.
+    var onStarted: ((Device, Screen.Info) -> Void)?
     var onEnded: ((String) -> Void)?
 
-    init(decoder: ScreenDecoder, audio: ScreenAudio) {
+    init(decoder: ScreenDecoder, audio: ScreenAudio, desktop: RemoteDesktopFeed) {
         self.decoder = decoder
         self.audio = audio
+        self.desktop = desktop
     }
 
     func onPacket(_ packet: NetworkPacket, from device: Device) {
         guard let info = Screen.info(packet) else { return }
 
         guard info.running, packet.payloadSize == Screen.stream else {
-            audio.stop()
+            if !device.link.identity.deviceType.isComputer { audio.stop() }
             onEnded?(device.id)
+            return
+        }
+
+        if info.codec == Screen.jpeg {
+            receivePictures(packet, info: info, from: device)
             return
         }
 
@@ -54,7 +62,26 @@ final class ScreenPlugin: Plugin {
                 self?.onEnded?(deviceId)
             }
 
-            onStarted?(device)
+            onStarted?(device, info)
+        } catch {
+            onEnded?(deviceId)
+        }
+    }
+
+    private func receivePictures(_ packet: NetworkPacket, info: Screen.Info, from device: Device) {
+        let reader = ScreenFrameReader()
+        let desktop = desktop
+        let deviceId = device.id
+
+        do {
+            try device.receiveStream(packet) { data in
+                for frame in try reader.feed(data) where !frame.isAudio {
+                    desktop.push(frame.data)
+                }
+            }
+            .whenComplete { [weak self] _ in self?.onEnded?(deviceId) }
+
+            onStarted?(device, info)
         } catch {
             onEnded?(deviceId)
         }

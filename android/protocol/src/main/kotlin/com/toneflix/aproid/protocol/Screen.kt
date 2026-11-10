@@ -18,6 +18,10 @@ object Screen {
     const val AUDIO_RATE = 48_000
     const val AUDIO_CHANNELS = 2
 
+    /** How the pictures are encoded. Phones send H.264; computers send each picture as a JPEG. */
+    const val H264 = "h264"
+    const val JPEG = "jpeg"
+
     enum class Action(val wire: String) {
         START("start"),
         STOP("stop"),
@@ -26,10 +30,19 @@ object Screen {
     data class Request(val action: Action, val maxSize: Int = MAX_SIZE, val bitrate: Int = BITRATE, val audio: Boolean = false)
 
     /**
-     * What the phone is sending. Sizes are in pixels; [running] is false once mirroring stops.
-     * [audioRate] and [audioChannels] are 0 when the stream has no sound.
+     * What the device is sending. Sizes are in pixels; [running] is false once mirroring stops.
+     * [audioRate] and [audioChannels] are 0 when the stream has no sound. A computer also says which
+     * [platform] it is ([RemoteInput.MACOS] or [RemoteInput.WINDOWS]), so the viewer can swap Control and Command.
      */
-    data class Info(val width: Int, val height: Int, val running: Boolean, val audioRate: Int = 0, val audioChannels: Int = 0) {
+    data class Info(
+        val width: Int,
+        val height: Int,
+        val running: Boolean,
+        val audioRate: Int = 0,
+        val audioChannels: Int = 0,
+        val codec: String = H264,
+        val platform: String? = null,
+    ) {
         val hasAudio: Boolean get() = audioRate > 0 && audioChannels > 0
     }
 
@@ -54,8 +67,9 @@ object Screen {
     }
 
     /** Announces a stream; send it with [STREAM] as the payload size. */
-    fun started(width: Int, height: Int, audio: Boolean = false): NetworkPacket {
-        val fields = mutableListOf<Pair<String, Any?>>("width" to width, "height" to height, "codec" to "h264", "running" to true)
+    fun started(width: Int, height: Int, audio: Boolean = false, codec: String = H264, platform: String? = null): NetworkPacket {
+        val fields = mutableListOf<Pair<String, Any?>>("width" to width, "height" to height, "codec" to codec, "running" to true)
+        if (platform != null) fields += "platform" to platform
         if (audio) fields += listOf("audioCodec" to "pcm16le", "audioRate" to AUDIO_RATE, "audioChannels" to AUDIO_CHANNELS)
         return NetworkPacket(PacketType.SCREEN, NetworkPacket.body(*fields.toTypedArray()))
     }
@@ -72,6 +86,8 @@ object Screen {
             packet.bool("running") ?: false,
             if (pcm) (packet.int("audioRate") ?: 0).coerceIn(0, 192_000) else 0,
             if (pcm) (packet.int("audioChannels") ?: 0).coerceIn(0, 8) else 0,
+            packet.string("codec") ?: H264,
+            packet.string("platform"),
         )
     }
 }

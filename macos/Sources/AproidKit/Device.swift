@@ -111,6 +111,26 @@ public final class Device {
         }
     }
 
+    /// Sends `packet` with a live `stream` as its payload, such as a shared screen.
+    /// Returns false when not paired or the stream could not be offered. Call off the event loops.
+    @discardableResult
+    public func sendStream(_ packet: NetworkPacket, stream: PayloadStream) -> Bool {
+        guard isPaired, let payloads = lock.withLock({ payloads }) else { return false }
+
+        do {
+            let port = try payloads.offer(peerCertificateDER: link.certificateDER, stream: stream)
+            var announced = packet
+            announced.payloadSize = Screen.stream
+            announced.payloadTransferInfo = ["port": .int(Int64(port))]
+            link.send(announced)
+
+            return true
+        } catch {
+            stream.finished(error)
+            return false
+        }
+    }
+
     /// Downloads the payload of a packet from this device into `sink`. `onProgress` gets each piece's byte count.
     public func receivePayload(
         _ packet: NetworkPacket,

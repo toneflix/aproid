@@ -34,6 +34,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private readonly MediaHostPlugin mediaHost;
     private readonly NotificationSharePlugin notificationShare;
     private readonly InputSharePlugin inputShare;
+    private readonly ScreenHostPlugin screenHost = new();
     private LanLink? link;
     private DispatcherQueueTimer? timer;
     private DateOnly notificationsDay = DateOnly.FromDateTime(DateTime.Now);
@@ -109,6 +110,17 @@ public sealed class AppModel : Observable, IDeviceDelegate
         Photos.Send = packet => Primary is Device phone && phone.Send(packet);
         screen.OnStarted = (device, info) =>
         {
+            if (info.Codec == Screen.Jpeg)
+            {
+                var (computerId, computerName) = (device.Id, device.Name);
+                ui.TryEnqueue(() =>
+                {
+                    Desktop.Started(computerId, computerName, info.Width, info.Height, info.Platform);
+                    DesktopRequested?.Invoke();
+                });
+                return;
+            }
+
             // Reset now, on the network thread, so the stream's first frames aren't lost.
             Video.Reset();
             if (info.HasAudio) Audio.Start(info.AudioRate, info.AudioChannels);
@@ -126,11 +138,21 @@ public sealed class AppModel : Observable, IDeviceDelegate
             if (frame.IsAudio) Audio.Play(frame);
             else Video.Push(frame);
         };
+        screen.OnPicture = DesktopFeed.Push;
         screen.OnEnded = id =>
         {
-            Audio.Stop();
-            ui.TryEnqueue(() => Mirror.Ended(id));
+            if (Mirror.DeviceId == id) Audio.Stop();
+            ui.TryEnqueue(() =>
+            {
+                Mirror.Ended(id);
+                Desktop.Ended(id);
+            });
         };
+        DesktopFeed.OnPicture = bitmap =>
+        {
+            if (!ui.TryEnqueue(() => DesktopPicture?.Invoke(bitmap))) bitmap.Dispose();
+        };
+        Desktop.Send = (id, packet) => connected[id]?.Send(packet) == true;
         Mirror.IsMuted = Audio.IsMuted = settings.MirrorMuted;
         Mirror.PropertyChanged += (_, args) =>
         {
@@ -143,7 +165,9 @@ public sealed class AppModel : Observable, IDeviceDelegate
         mediaHost = new MediaHostPlugin(connected);
         notificationShare = new NotificationSharePlugin(connected) { IsEnabled = settings.SharesNotifications };
         inputShare = new InputSharePlugin(connected, settings) { OnChange = () => ui.TryEnqueue(InputChanged) };
-        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find, mediaHost, notificationShare, inputShare]);
+        screenHost.Allows = () => inputShare.AllowsControl;
+        screenHost.OnChange = _ => ui.TryEnqueue(ScreenViewerChanged);
+        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find, mediaHost, notificationShare, inputShare, screenHost]);
 
         updater = new Updater(toasts) { OnInstalling = () => ui.TryEnqueue(() => UpdateInstalling?.Invoke()) };
         hotspot = new PhoneHotspot(() => settings.PhoneHotspots, settings.RememberHotspot);
@@ -162,6 +186,11 @@ public sealed class AppModel : Observable, IDeviceDelegate
     internal ScreenVideo Video { get; } = new();
 
     internal ScreenAudio Audio { get; } = new();
+
+    /// Another computer's screen, watched here.
+    public RemoteDesktop Desktop { get; } = new();
+
+    internal RemoteDesktopFeed DesktopFeed { get; } = new();
 
     /// The call the call card shows.
     public ActiveCall? Call
@@ -219,6 +248,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
             Raise(nameof(FocusIsComputer));
             Raise(nameof(InputStatus));
             Raise(nameof(InputActive));
+            Raise(nameof(FocusWatchesScreen));
+            Raise(nameof(ScreenStatus));
             Raise(nameof(Found));
         }
     }
@@ -297,7 +328,11 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public bool AllowsRemoteInput
     {
         get => inputShare.AllowsControl;
-        set => inputShare.AllowsControl = value;
+        set
+        {
+            inputShare.AllowsControl = value;
+            if (!value) screenHost.Stop();
+        }
     }
 
     public ScreenEdge? InputEdge(string id) => inputShare.Edge(id);
@@ -312,6 +347,29 @@ public sealed class AppModel : Observable, IDeviceDelegate
         : $"Choose which side of this PC {device.Name} sits on.";
 
     public bool InputActive => Focused is { } device && (InputTarget == device.Id || InputController == device.Id);
+
+    // Screen
+
+    /// The computer watching this PC's screen now, or null.
+    public string? ScreenViewer => screenHost.ViewerId;
+
+    /// Whether the computer the panel shows is watching this PC.
+    public bool FocusWatchesScreen => Focused is { } device && ScreenViewer == device.Id;
+
+    /// What the screen card says about the computer the panel shows.
+    public string ScreenStatus => Focused is not { IsComputer: true } device ? ""
+        : FocusWatchesScreen ? $"{device.Name} is watching this PC."
+        : $"See and use {device.Name}'s screen.";
+
+    /// Stops showing this PC's screen to whoever is watching.
+    public void StopScreenShare() => screenHost.Stop();
+
+    private void ScreenViewerChanged()
+    {
+        Raise(nameof(ScreenViewer));
+        Raise(nameof(FocusWatchesScreen));
+        Raise(nameof(ScreenStatus));
+    }
 
     private void InputChanged()
     {
@@ -879,7 +937,9 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
         media.Forget(device.Id);
         inputShare.Forget(device.Id);
+        screenHost.Stop(device.Id);
         Mirror.Ended(device.Id);
+        Desktop.Ended(device.Id);
         if (Call?.DeviceId == device.Id) EndCall();
 
         Publish();
@@ -1020,16 +1080,29 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     public void ShowDialer() => DialerRequested?.Invoke();
 
-    /// Asks the phone to share its screen and opens the window that shows it.
+    /// Asks the phone or computer to share its screen and opens the window that shows it.
     public void StartMirroring(string id)
     {
-        if (connected[id] is not { IsPaired: true } device || device.Link.Identity.DeviceType.IsComputer()) return;
+        if (connected[id] is not { IsPaired: true } device) return;
+
+        if (device.Link.Identity.DeviceType.IsComputer())
+        {
+            Desktop.Begin(id, device.Name);
+            DesktopRequested?.Invoke();
+            return;
+        }
 
         Mirror.Begin(id, device.Name);
         MirrorRequested?.Invoke();
     }
 
     public event Action? MirrorRequested;
+
+    /// Another computer's screen should show, because it was asked for or started.
+    public event Action? DesktopRequested;
+
+    /// A decoded picture of the other computer's screen, on the UI thread. Whoever shows it owns it.
+    public event Action<Windows.Graphics.Imaging.SoftwareBitmap>? DesktopPicture;
 
     /// A phone started streaming its screen, whether asked here or on the phone. Carries the decoder's source.
     public event Action<Windows.Media.Core.MediaStreamSource>? ScreenStarted;

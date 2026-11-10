@@ -298,6 +298,33 @@ public sealed class LanLinkTests : IDisposable
     }
 
     [Fact]
+    public async Task LiveStreamSendsPiecesAsTheyAreWritten()
+    {
+        var (phoneDevice, pcDevice) = ConnectPaired();
+        var live = new LiveStream(backlog: 8);
+        var ended = new BlockingCollection<Exception?>();
+
+        Assert.True(phoneDevice.SendWithPayload(Screen.Started(1440, 900, codec: Screen.Jpeg), PayloadTransfer.Stream, live, completion: ended.Add));
+        var announced = pc.Recorder.Packets.Take()!;
+
+        var received = new MemoryStream();
+        var reading = pcDevice.ReceiveStreamAsync(announced, data =>
+        {
+            received.Write(data.Span);
+            return ValueTask.CompletedTask;
+        });
+        var frames = new[] { new ScreenFrame([1, 2, 3], 0, ScreenFrame.Key), new ScreenFrame(new byte[70_000], 66_666, ScreenFrame.Key) };
+        foreach (var frame in frames) Assert.True(live.Push([.. frame.Header(), .. frame.Data]));
+        live.Complete();
+        await reading.WaitAsync(TimeSpan.FromSeconds(20));
+
+        Assert.Equal(frames, new ScreenFrameReader().Feed(received.ToArray()).ToArray());
+        Assert.True(ended.TryTake(out var error, TimeSpan.FromSeconds(10)));
+        Assert.Null(error);
+        Assert.False(live.Push([4]));
+    }
+
+    [Fact]
     public void AnnouncementConnectsToANewPeer()
     {
         Assert.True(phone.Lan.HandleAnnouncement(pc.Announced, "127.0.0.1"));
