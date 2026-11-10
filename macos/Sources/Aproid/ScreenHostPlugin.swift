@@ -107,16 +107,16 @@ private final class ScreenShare {
 
             switch result {
             case .success(let size):
-                guard !lock.withLock({ stopped }) else {
-                    capture.stop()
+                guard !self.lock.withLock({ self.stopped }) else {
+                    self.capture.stop()
                     return
                 }
 
                 let packet = Screen.started(width: Int64(size.width), height: Int64(size.height), codec: Screen.jpeg, platform: RemoteInput.macOS)
-                device.sendStream(packet, stream: stream)
+                device.sendStream(packet, stream: self.stream)
             case .failure:
                 device.send(Screen.stopped())
-                onEnd?()
+                self.onEnd?()
             }
         }
     }
