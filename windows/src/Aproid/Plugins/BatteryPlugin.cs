@@ -1,15 +1,30 @@
 using Aproid.Core;
+using Aproid.Model;
+using Aproid.Shell;
 using Microsoft.Windows.AppNotifications.Builder;
 
 namespace Aproid.Plugins;
 
-/// Keeps each phone's battery level for the panel, and alerts when a phone runs low.
-internal sealed class BatteryPlugin(ToastCenter toasts) : IPlugin
+/// Keeps each device's battery level for the panel and alerts when one runs low. Tells paired devices this PC's own level.
+internal sealed class BatteryPlugin : IPlugin
 {
     private readonly Dictionary<string, BatteryStatus> levels = [];
     private readonly object gate = new();
+    private readonly ToastCenter toasts;
+    private readonly DeviceRegistry devices;
+    private readonly SystemBattery own = new();
+    private BatteryStatus? lastSent;
 
-    public IReadOnlySet<string> Incoming { get; } = new HashSet<string> { PacketType.Battery };
+    public BatteryPlugin(ToastCenter toasts, DeviceRegistry devices)
+    {
+        this.toasts = toasts;
+        this.devices = devices;
+
+        own.OnChange = OwnChanged;
+        own.Start();
+    }
+
+    public IReadOnlySet<string> Incoming { get; } = new HashSet<string> { PacketType.Battery, PacketType.BatteryRequest };
 
     /// Called on a background thread when a level changes.
     public Action? OnChange { get; set; }
@@ -23,6 +38,12 @@ internal sealed class BatteryPlugin(ToastCenter toasts) : IPlugin
 
     public void OnPacket(NetworkPacket packet, Device device)
     {
+        if (packet.Type == PacketType.BatteryRequest)
+        {
+            if (SystemBattery.Current() is BatteryStatus mine) device.Send(mine.ToPacket());
+            return;
+        }
+
         if (BatteryStatus.FromPacket(packet) is not BatteryStatus status) return;
 
         bool wasLow;
@@ -40,5 +61,20 @@ internal sealed class BatteryPlugin(ToastCenter toasts) : IPlugin
         }
 
         OnChange?.Invoke();
+    }
+
+    /// Sends this PC's level to every paired device when it moves.
+    private void OwnChanged()
+    {
+        if (SystemBattery.Current() is not BatteryStatus status) return;
+
+        lock (gate)
+        {
+            if (status == lastSent) return;
+
+            lastSent = status;
+        }
+
+        foreach (var device in devices.Paired) device.Send(status.ToPacket());
     }
 }

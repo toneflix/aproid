@@ -68,7 +68,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
             DeviceType = Windows.System.Power.PowerManager.BatteryStatus == Windows.System.Power.BatteryStatus.NotPresent ? DeviceType.Desktop : DeviceType.Laptop,
         };
 
-        battery = new BatteryPlugin(toasts) { OnChange = () => ui.TryEnqueue(Publish) };
+        battery = new BatteryPlugin(toasts, connected) { OnChange = () => ui.TryEnqueue(Publish) };
         clipboard = new ClipboardPlugin(connected, ui) { OnSync = () => ClipboardSyncedAt = DateTimeOffset.Now };
         notifications = new NotificationPlugin(toasts, connected) { IsEnabled = settings.MirrorsNotifications };
         notifications.OnShown = () => ui.TryEnqueue(CountNotification);

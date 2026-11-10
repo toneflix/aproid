@@ -113,7 +113,7 @@ final class AppModel: ObservableObject {
 
     private let connected = DeviceRegistry()
     private let plugins: PluginRouter
-    private let battery = BatteryPlugin()
+    private let battery: BatteryPlugin
     private let clipboard: ClipboardPlugin
     private let notifications: NotificationPlugin
     private let share = SharePlugin(folder: AppModel.downloads)
@@ -161,6 +161,7 @@ final class AppModel: ObservableObject {
             deviceName: DeviceIdentity.sanitizeName(Host.current().localizedName ?? "Mac"),
             deviceType: Self.isLaptop() ? .laptop : .desktop
         )
+        battery = BatteryPlugin(devices: connected)
         clipboard = ClipboardPlugin(devices: connected)
         nearby = NearbyFinder(ownId: identity.deviceId)
         let screen = ScreenMirror()
