@@ -411,10 +411,14 @@ public sealed partial class PanelWindow : Window
         Map.Source = new Uri(MapLinks.Embed(location));
     }
 
-    private async void SendFiles_Click(object sender, RoutedEventArgs e)
+    private void SendFiles_Click(object sender, RoutedEventArgs e)
     {
-        if (FocusedId is not string id) return;
+        if (FocusedId is string id) ChooseFiles(id);
+    }
 
+    /// Lets the user pick files and sends them to phone `id`.
+    internal async void ChooseFiles(string id)
+    {
         var picker = new FileOpenPicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary, CommitButtonText = "Send" };
         picker.FileTypeFilter.Add("*");
         InitializeWithWindow.Initialize(picker, hwnd);
@@ -470,9 +474,13 @@ public sealed partial class PanelWindow : Window
         startup.Click += (_, _) => Model.StartsWithWindows = startup.IsChecked;
         SettingsMenu.Items.Add(startup);
 
-        var hotkey = new ToggleMenuFlyoutItem { Text = $"Open with {TrayIcon.HotkeyName}", IsChecked = Model.OpensWithHotkey };
-        hotkey.Click += (_, _) => Model.OpensWithHotkey = hotkey.IsChecked;
-        SettingsMenu.Items.Add(hotkey);
+        var shortcuts = new MenuFlyoutSubItem { Text = "Keyboard shortcuts" };
+        var useShortcuts = new ToggleMenuFlyoutItem { Text = "Use shortcuts", IsChecked = Model.UsesShortcuts };
+        useShortcuts.Click += (_, _) => Model.UsesShortcuts = useShortcuts.IsChecked;
+        shortcuts.Items.Add(useShortcuts);
+        shortcuts.Items.Add(new MenuFlyoutSeparator());
+        foreach (var shortcut in GlobalShortcuts.All) shortcuts.Items.Add(new MenuFlyoutItem { Text = $"{shortcut.Name}   {shortcut.Title}", IsEnabled = false });
+        SettingsMenu.Items.Add(shortcuts);
 
         var photosFolder = new ToggleMenuFlyoutItem { Text = "Show phone photos in Explorer", IsChecked = Model.ShowsPhotosInExplorer };
         photosFolder.Click += (_, _) => Model.ShowsPhotosInExplorer = photosFolder.IsChecked;

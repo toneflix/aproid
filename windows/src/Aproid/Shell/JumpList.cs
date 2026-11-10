@@ -10,6 +10,8 @@ internal enum JumpTask
     Photos,
     Mirror,
     Ring,
+    SendClipboard,
+    SendFiles,
 }
 
 /// Fills the jump list through the shell's ICustomDestinationList. Each task starts Aproid with `--open <task>`,

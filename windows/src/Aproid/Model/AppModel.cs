@@ -284,13 +284,13 @@ public sealed class AppModel : Observable, IDeviceDelegate
         if (NextPhone is DeviceState next) Select(next.Id);
     }
 
-    /// Whether the keyboard shortcut opens the panel. The app turns the shortcut itself on and off.
-    public bool OpensWithHotkey
+    /// Whether the system-wide keyboard shortcuts are on. The app turns the shortcuts themselves on and off.
+    public bool UsesShortcuts
     {
-        get => settings.OpensWithHotkey;
+        get => settings.UsesShortcuts;
         set
         {
-            settings.OpensWithHotkey = value;
+            settings.UsesShortcuts = value;
             Raise();
         }
     }
