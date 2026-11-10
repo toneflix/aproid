@@ -47,6 +47,7 @@ public partial class App : Application
         model.PropertyChanged += (_, change) =>
         {
             if (change.PropertyName == nameof(AppModel.UsesShortcuts)) shortcuts.Use(model.UsesShortcuts);
+            if (change.PropertyName == nameof(AppModel.Focused)) ShowPhoneOnTray();
         };
         model.PairRequested += () => panel.ShowNear(tray.Bounds);
         panel.QuitRequested += Quit;
@@ -133,6 +134,19 @@ public partial class App : Application
                 panel!.ShowNear(tray!.Bounds);
                 break;
         }
+    }
+
+    /// The shown phone's battery on the tray icon and in its tooltip.
+    private void ShowPhoneOnTray()
+    {
+        var phone = model!.Focused is { IsPaired: true } focused ? focused : null;
+        tray!.ShowBattery(phone?.Battery);
+        tray.Tooltip = phone switch
+        {
+            null => "Aproid",
+            { Battery: { } battery } => $"Aproid · {phone.Name} · {battery.Charge}%{(battery.IsCharging ? ", charging" : "")}",
+            _ => $"Aproid · {phone.Name}",
+        };
     }
 
     private void ShowTrayMenu()
