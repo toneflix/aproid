@@ -27,6 +27,7 @@ internal sealed class Settings
         public Dictionary<string, string> PhoneHotspots { get; set; } = new();
         public bool OpensWithHotkey { get; set; } = true;
         public bool ShowsPhotosInExplorer { get; set; } = true;
+        public bool MirrorMuted { get; set; }
     }
 
     public Settings(string path)
@@ -106,6 +107,17 @@ internal sealed class Settings
         set
         {
             values.ShowsPhotosInExplorer = value;
+            Save();
+        }
+    }
+
+    /// Whether the phone's sound stays off while mirroring.
+    public bool MirrorMuted
+    {
+        get => values.MirrorMuted;
+        set
+        {
+            values.MirrorMuted = value;
             Save();
         }
     }

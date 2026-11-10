@@ -105,6 +105,9 @@ public sealed class AppModel : Observable, IDeviceDelegate
         {
             // Reset now, on the network thread, so the stream's first frames aren't lost.
             Video.Reset();
+            if (info.HasAudio) Audio.Start(info.AudioRate, info.AudioChannels);
+            else Audio.Stop();
+
             var (id, name) = (device.Id, device.Name);
             ui.TryEnqueue(() =>
             {
@@ -112,8 +115,23 @@ public sealed class AppModel : Observable, IDeviceDelegate
                 ScreenStarted?.Invoke(Video.CreateSource((uint)Math.Max(info.Width, 0), (uint)Math.Max(info.Height, 0)));
             });
         };
-        screen.OnFrame = frame => Video.Push(frame);
-        screen.OnEnded = id => ui.TryEnqueue(() => Mirror.Ended(id));
+        screen.OnFrame = frame =>
+        {
+            if (frame.IsAudio) Audio.Play(frame);
+            else Video.Push(frame);
+        };
+        screen.OnEnded = id =>
+        {
+            Audio.Stop();
+            ui.TryEnqueue(() => Mirror.Ended(id));
+        };
+        Mirror.IsMuted = Audio.IsMuted = settings.MirrorMuted;
+        Mirror.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName != nameof(ScreenMirror.IsMuted)) return;
+
+            Audio.IsMuted = settings.MirrorMuted = Mirror.IsMuted;
+        };
         Mirror.Send = (id, packet) => connected[id]?.Send(packet) == true;
         plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen]);
 
@@ -132,6 +150,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public ScreenMirror Mirror { get; } = new();
 
     internal ScreenVideo Video { get; } = new();
+
+    internal ScreenAudio Audio { get; } = new();
 
     /// The call the call card shows.
     public ActiveCall? Call
@@ -423,6 +443,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         timer?.Stop();
         link?.Stop();
         folder.Disconnect();
+        Audio.Dispose();
         foreach (var device in connected.All) device.Link.Close("Aproid quit");
         toasts.Unregister();
     }

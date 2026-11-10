@@ -14,8 +14,8 @@ using static Aproid.Shell.NativeMethods;
 
 namespace Aproid.Views;
 
-/// The phone's live screen, with Back, Home, Recents and Notifications underneath. Clicks become taps, drags
-/// swipes, the wheel scrolls, right-click goes back and typing goes to the phone. Closing it stops mirroring.
+/// The phone's live screen and sound, with Back, Home, Recents, Notifications and Mute underneath. Clicks become
+/// taps, drags swipes, the wheel scrolls, right-click goes back and typing goes to the phone. Closing it stops mirroring.
 public sealed class ScreenWindow : Window
 {
     private const double ControlsHeight = 52;
@@ -36,6 +36,8 @@ public sealed class ScreenWindow : Window
     private double scrolled;
     private readonly Microsoft.UI.Dispatching.DispatcherQueueTimer scrollEnd;
     private bool shown;
+    private readonly Button muteButton;
+    private readonly LucideIcon muteIcon = new() { Size = 18, Foreground = new SolidColorBrush(Colors.White) };
 
     public ScreenWindow(ScreenMirror mirror)
     {
@@ -61,6 +63,10 @@ public sealed class ScreenWindow : Window
         }
 
         surface.SetMediaPlayer(player);
+
+        muteButton = RoundButton(muteIcon);
+        muteButton.Click += (_, _) => mirror.IsMuted = !mirror.IsMuted;
+        ShowMute();
 
         statusIcon.SetValue(LucideIcon.ForegroundProperty, Application.Current.Resources["AproidAccentBrush"]);
         retry.Click += (_, _) =>
@@ -88,6 +94,7 @@ public sealed class ScreenWindow : Window
         controls.Children.Add(Control(Lucide.Circle, "Home", ScreenInput.Home));
         controls.Children.Add(Control(Lucide.Copy, "Recent apps", ScreenInput.Recents));
         controls.Children.Add(Control(Lucide.Bell, "Notifications", ScreenInput.Notifications));
+        controls.Children.Add(muteButton);
 
         var root = new Grid { Background = new SolidColorBrush(Colors.Black), RequestedTheme = ElementTheme.Dark };
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -101,6 +108,7 @@ public sealed class ScreenWindow : Window
         {
             if (args.PropertyName is nameof(ScreenMirror.Phase) or nameof(ScreenMirror.DeviceName)) ShowStatus();
             if (args.PropertyName == nameof(ScreenMirror.Size)) Fit();
+            if (args.PropertyName == nameof(ScreenMirror.IsMuted)) ShowMute();
         };
         ShowStatus();
     }
@@ -163,21 +171,34 @@ public sealed class ScreenWindow : Window
 
     private Button Control(Lucide icon, string label, string key)
     {
-        var button = new Button
-        {
-            Width = 40,
-            Height = 40,
-            Padding = new Thickness(0),
-            CornerRadius = new CornerRadius(20),
-            Background = new SolidColorBrush(Colors.Transparent),
-            BorderThickness = new Thickness(0),
-            Content = new LucideIcon { Icon = icon, Size = 18, Foreground = new SolidColorBrush(Colors.White) },
-        };
+        var button = RoundButton(new LucideIcon { Icon = icon, Size = 18, Foreground = new SolidColorBrush(Colors.White) });
         button.Click += (_, _) => mirror.Input(new ScreenInput.KeyPress(key));
-        ToolTipService.SetToolTip(button, label);
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, label);
+        Label(button, label);
 
         return button;
+    }
+
+    private static Button RoundButton(UIElement content) => new()
+    {
+        Width = 40,
+        Height = 40,
+        Padding = new Thickness(0),
+        CornerRadius = new CornerRadius(20),
+        Background = new SolidColorBrush(Colors.Transparent),
+        BorderThickness = new Thickness(0),
+        Content = content,
+    };
+
+    private static void Label(Button button, string label)
+    {
+        ToolTipService.SetToolTip(button, label);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, label);
+    }
+
+    private void ShowMute()
+    {
+        muteIcon.Icon = mirror.IsMuted ? Lucide.VolumeX : Lucide.Volume2;
+        Label(muteButton, mirror.IsMuted ? "Play the phone's sound" : "Mute the phone's sound");
     }
 
     // Pointer and keyboard
