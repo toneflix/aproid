@@ -7,6 +7,8 @@ internal static class CrashLog
 {
     private const long MaxSize = 256 * 1024;
 
+    private static readonly string Version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "unknown";
+
     public static string Path => System.IO.Path.Combine(AppPaths.Data, "crash.log");
 
     public static void Attach(Microsoft.UI.Xaml.Application app)
@@ -22,9 +24,9 @@ internal static class CrashLog
         {
             if (File.Exists(Path) && new FileInfo(Path).Length > MaxSize) File.Delete(Path);
 
-            File.AppendAllText(Path, $"[{DateTimeOffset.Now:u}] {source} {Updater.CurrentText}\n{error}\n\n");
+            File.AppendAllText(Path, $"[{DateTimeOffset.Now:u}] {source} {Version}\n{error}\n\n");
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception)
         {
         }
     }

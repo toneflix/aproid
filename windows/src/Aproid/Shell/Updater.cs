@@ -16,14 +16,15 @@ internal sealed class Updater(ToastCenter toasts)
     private static readonly TimeSpan FirstCheck = TimeSpan.FromMinutes(2);
     private static readonly TimeSpan CheckEvery = TimeSpan.FromHours(12);
 
+    /// The running app's version.
+    public static Version Current { get; } = Trim(Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 0, 0));
+
     private static readonly HttpClient Http = CreateClient();
 
     private Version? offered;
 
     /// Called on a background thread once the installer is running, so the app can quit and let it replace the files.
     public Action? OnInstalling { get; set; }
-
-    public static Version Current { get; } = Trim(Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 0, 0));
 
     /// The version shown to the user, like 1.2.3.
     public static string CurrentText => Current.ToString(3);
