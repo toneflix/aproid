@@ -74,6 +74,8 @@ public final class LanLink {
         // If the port is taken (for example by KDE Connect) we can still be found over TCP.
         udpChannel = try? DatagramBootstrap(group: group)
             .channelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
+            // NIO reads datagrams into 2 KB buffers by default, which cuts off identities with many capabilities.
+            .channelOption(ChannelOptions.recvAllocator, value: FixedSizeRecvByteBufferAllocator(capacity: Self.maxDatagram))
             .channelInitializer { channel in
                 channel.pipeline.addHandler(DiscoveryHandler(link: self))
             }
@@ -88,6 +90,9 @@ public final class LanLink {
         udpChannel = nil
         tcpPort = nil
     }
+
+    /// The largest announcement we read, the most a UDP datagram can carry.
+    static let maxDatagram = 65_507
 
     /// How an identity broadcast went.
     public enum BroadcastResult: Equatable {

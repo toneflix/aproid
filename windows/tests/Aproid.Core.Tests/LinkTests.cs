@@ -76,16 +76,23 @@ internal static class Wait
 
 internal sealed class Peer : IDisposable
 {
-    public Peer(string name, DeviceType type, PortRange ports)
+    public Peer(string name, DeviceType type, PortRange ports, int udpPort = 41716, IReadOnlySet<string>? capabilities = null)
     {
-        Identity = new DeviceIdentity { DeviceId = DeviceIdentity.NewDeviceId(), DeviceName = name, DeviceType = type };
+        Identity = new DeviceIdentity
+        {
+            DeviceId = DeviceIdentity.NewDeviceId(),
+            DeviceName = name,
+            DeviceType = type,
+            IncomingCapabilities = capabilities ?? Capabilities.Mvp,
+            OutgoingCapabilities = capabilities ?? Capabilities.Mvp,
+        };
         Certificate = DeviceCertificate.Generate(Identity.DeviceId);
         var identity = Identity;
         var recorder = Recorder;
         var connected = Connected;
 
         // High ports so the test does not clash with a real KDE Connect install.
-        Lan = new LanLink(() => identity, Certificate, Trust, link => recorder.Links.Add(link), id => connected.ContainsKey(id), udpPort: 41716, tcpPorts: ports);
+        Lan = new LanLink(() => identity, Certificate, Trust, link => recorder.Links.Add(link), id => connected.ContainsKey(id), udpPort: udpPort, tcpPorts: ports);
     }
 
     public DeviceIdentity Identity { get; }
@@ -130,6 +137,22 @@ public sealed class LanLinkTests : IDisposable
         var onPc = pc.Recorder.Links.Take() ?? throw new Exception("PC got no link");
 
         return (onPhone, onPc);
+    }
+
+    [Fact]
+    public void ConnectsToAPeerWhoseAnnouncementIsLargerThanTwoKilobytes()
+    {
+        var capabilities = Enumerable.Range(0, 120).Select(i => $"aproid.capability.{i}").ToHashSet();
+        using var big = new Peer("Phone", DeviceType.Phone, new PortRange(42765, 42780), udpPort: 42799, capabilities: capabilities);
+        big.Lan.Start();
+
+        var datagram = big.Announced.ToPacket().Serialize();
+        Assert.True(datagram.Length > 4096);
+
+        using var udp = new System.Net.Sockets.UdpClient();
+        udp.Send(datagram, datagram.Length, "127.0.0.1", 41716);
+
+        Assert.True(pc.Recorder.Links.TryTake(out _, TimeSpan.FromSeconds(10)));
     }
 
     [Fact]

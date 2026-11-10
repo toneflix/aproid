@@ -88,8 +88,20 @@ final class LanLinkTests: XCTestCase {
         let connected: ConnectedSet
         let lan: LanLink
 
-        init(name: String, type: DeviceType, ports: ClosedRange<UInt16>) throws {
-            let identity = DeviceIdentity(deviceId: DeviceIdentity.newDeviceId(), deviceName: name, deviceType: type)
+        init(
+            name: String,
+            type: DeviceType,
+            ports: ClosedRange<UInt16>,
+            udpPort: UInt16 = 41716,
+            capabilities: Set<String> = Capabilities.mvp
+        ) throws {
+            let identity = DeviceIdentity(
+                deviceId: DeviceIdentity.newDeviceId(),
+                deviceName: name,
+                deviceType: type,
+                incomingCapabilities: capabilities,
+                outgoingCapabilities: capabilities
+            )
             let certificate = try DeviceCertificate.generate(deviceId: identity.deviceId)
             let trust = InMemoryTrustStore()
             let recorder = Recorder()
@@ -105,7 +117,7 @@ final class LanLinkTests: XCTestCase {
                 identityProvider: { identity },
                 certificate: certificate,
                 trustStore: trust,
-                udpPort: 41716,
+                udpPort: udpPort,
                 tcpPorts: ports,
                 isConnected: { connected.contains($0) },
                 onLink: { recorder.links.put($0) }
@@ -135,6 +147,42 @@ final class LanLinkTests: XCTestCase {
         let onMac = try XCTUnwrap(mac.recorder.links.take())
 
         return (onPhone, onMac)
+    }
+
+    func testConnectsToAPeerWhoseAnnouncementIsLargerThanTwoKilobytes() throws {
+        let capabilities = Set((0..<120).map { "aproid.capability.\($0)" })
+        let big = try Peer(name: "Phone", type: .phone, ports: 41765...41780, udpPort: 41799, capabilities: capabilities)
+        try big.lan.start()
+        defer { big.lan.stop() }
+
+        var announced = big.identity
+        announced.tcpPort = big.lan.tcpPort
+        let datagram = try announced.toPacket().serialize()
+        XCTAssertGreaterThan(datagram.count, 4096)
+
+        try sendDatagram(datagram, port: 41716)
+
+        XCTAssertNotNil(mac.recorder.links.take())
+    }
+
+    private func sendDatagram(_ data: Data, port: UInt16) throws {
+        let fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
+        guard fd >= 0 else { throw ProtocolError("no socket") }
+        defer { close(fd) }
+
+        var addr = sockaddr_in()
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_port = port.bigEndian
+        inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr)
+
+        let sent = data.withUnsafeBytes { buf in
+            withUnsafePointer(to: &addr) { ptr in
+                ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                    sendto(fd, buf.baseAddress, buf.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+                }
+            }
+        }
+        guard sent == data.count else { throw ProtocolError("send failed: \(errno)") }
     }
 
     func testBroadcastsToEveryNetworkAndTheLimitedAddress() {
