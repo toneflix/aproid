@@ -7,7 +7,8 @@ name: Release
 #   Aproid-Setup-1.2.3.exe    Windows installer
 # Nothing is published unless every app in the release builds.
 #
-# Android secrets: ANDROID_KEYSTORE (base64 .jks), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
+# Android secrets: ANDROID_KEYSTORE (base64 .jks), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS,
+# and ANDROID_KEY_PASSWORD when the key has its own password.
 #
 # Mac secrets: MACOS_CERT_P12 (base64 Developer ID Application .p12), MACOS_CERT_PASSWORD,
 # NOTARY_KEY (App Store Connect API .p8 contents), NOTARY_KEY_ID, NOTARY_ISSUER_ID, SPARKLE_PRIVATE_KEY.
@@ -50,7 +51,7 @@ jobs:
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
         run: |
           if [ -z "$KEYSTORE" ]; then
-            echo "::error::Add the ANDROID_KEYSTORE, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD secrets first."
+            echo "::error::Add the ANDROID_KEYSTORE, ANDROID_KEYSTORE_PASSWORD and ANDROID_KEY_ALIAS secrets first."
             exit 1
           fi
           echo "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.jks"
