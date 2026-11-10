@@ -470,6 +470,14 @@ public sealed partial class PanelWindow : Window
         startup.Click += (_, _) => Model.StartsWithWindows = startup.IsChecked;
         SettingsMenu.Items.Add(startup);
 
+        var hotkey = new ToggleMenuFlyoutItem { Text = $"Open with {TrayIcon.HotkeyName}", IsChecked = Model.OpensWithHotkey };
+        hotkey.Click += (_, _) => Model.OpensWithHotkey = hotkey.IsChecked;
+        SettingsMenu.Items.Add(hotkey);
+
+        var photosFolder = new ToggleMenuFlyoutItem { Text = "Show phone photos in Explorer", IsChecked = Model.ShowsPhotosInExplorer };
+        photosFolder.Click += (_, _) => Model.ShowsPhotosInExplorer = photosFolder.IsChecked;
+        SettingsMenu.Items.Add(photosFolder);
+
         var switcher = new MenuFlyoutSubItem { Text = "Switch phones with" };
         foreach (var (style, label) in new[] { (PhoneSwitcherStyle.Carousel, "Card carousel"), (PhoneSwitcherStyle.Menu, "Menu on the phone name") })
         {
@@ -478,6 +486,10 @@ public sealed partial class PanelWindow : Window
             switcher.Items.Add(item);
         }
         SettingsMenu.Items.Add(switcher);
+
+        var updates = new MenuFlyoutItem { Text = $"Check for updates (you have {Model.VersionText})" };
+        updates.Click += (_, _) => Model.CheckForUpdates();
+        SettingsMenu.Items.Add(updates);
 
         var downloads = new MenuFlyoutItem { Text = "Open Downloads" };
         downloads.Click += (_, _) => Explorer.Open(AppPaths.Downloads);

@@ -31,6 +31,8 @@ final class ScreenTests: XCTestCase {
             .swipe(x: 0.5, y: 0.8, toX: 0.5, toY: 0.2, durationMs: 300),
             .text("hello"),
             .key(ScreenInput.back),
+            .key(ScreenInput.wordLeft, select: true),
+            .key(ScreenInput.selectAll),
         ]
 
         for input in inputs {

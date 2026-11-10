@@ -33,9 +33,12 @@ struct RecentList: View {
     }
 }
 
+/// One activity. Clicking it shows its full title and detail, and clicking again folds it back to one line.
 private struct RecentRow: View {
     let item: Activity
     let now: Date
+
+    @State private var expanded = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -50,8 +53,9 @@ private struct RecentRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.title)
                     .font(.system(size: 13, weight: .medium))
-                    .lineLimit(1)
+                    .lineLimit(expanded ? nil : 1)
                     .truncationMode(.middle)
+                    .fixedSize(horizontal: false, vertical: expanded)
 
                 if let reading = item.progress {
                     ProgressView(value: reading.fraction)
@@ -66,7 +70,8 @@ private struct RecentRow: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
-                    .lineLimit(1)
+                    .lineLimit(expanded ? nil : 1)
+                    .fixedSize(horizontal: false, vertical: expanded)
             }
 
             Spacer(minLength: 0)
@@ -75,6 +80,9 @@ private struct RecentRow: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 7)
+        .contentShape(Rectangle())
+        .onTapGesture { withAnimation(.easeOut(duration: 0.18)) { expanded.toggle() } }
+        .help(expanded ? "Show less" : "Show more")
     }
 
     private var subtitle: String {

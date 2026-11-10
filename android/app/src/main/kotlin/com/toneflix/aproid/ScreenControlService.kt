@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Path
 import android.os.Build
-import android.os.Bundle
 import android.provider.Settings
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
@@ -45,8 +44,8 @@ class ScreenControlService : AccessibilityService() {
             is ScreenInput.Tap -> stroke(input.x, input.y, input.x, input.y, TAP_MS)
             is ScreenInput.LongPress -> stroke(input.x, input.y, input.x, input.y, LONG_PRESS_MS)
             is ScreenInput.Swipe -> stroke(input.x, input.y, input.toX, input.toY, input.durationMs)
-            is ScreenInput.Text -> type(input.text)
-            is ScreenInput.Key -> key(input.key)
+            is ScreenInput.Text -> focusedField()?.type(input.text)
+            is ScreenInput.Key -> key(input)
         }
     }
 
@@ -64,40 +63,17 @@ class ScreenControlService : AccessibilityService() {
         dispatchGesture(gesture, null, null)
     }
 
-    private fun key(key: String) {
-        when (key) {
+    private fun key(input: ScreenInput.Key) {
+        when (input.key) {
             ScreenInput.BACK -> performGlobalAction(GLOBAL_ACTION_BACK)
             ScreenInput.HOME -> performGlobalAction(GLOBAL_ACTION_HOME)
             ScreenInput.RECENTS -> performGlobalAction(GLOBAL_ACTION_RECENTS)
             ScreenInput.NOTIFICATIONS -> performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
-            ScreenInput.ENTER -> enter()
-            ScreenInput.DELETE -> editFocused { it.dropLast(1) }
+            else -> focusedField()?.press(input.key, input.select)
         }
     }
 
-    private fun type(text: String) = editFocused { it + text }
-
-    /** Changes the text of the field that has focus, since there is no way to send key presses. */
-    private fun editFocused(change: (String) -> String) {
-        val field = rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) ?: return
-
-        // A hint shows as the text of an empty field, so don't build on it.
-        val current = if (field.isShowingHintText) "" else field.text?.toString().orEmpty()
-        val arguments = Bundle().apply {
-            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, change(current))
-        }
-        field.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
-    }
-
-    private fun enter() {
-        val field = rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) ?: return
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            field.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id)
-        } else {
-            editFocused { it + "\n" }
-        }
-    }
+    private fun focusedField() = rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)?.let(::FocusedField)
 
     private fun screenSize(): Pair<Int, Int> {
         val windows = getSystemService(WindowManager::class.java)

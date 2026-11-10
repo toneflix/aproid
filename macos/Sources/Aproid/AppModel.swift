@@ -3,6 +3,7 @@ import Combine
 import Foundation
 import OSLog
 import AproidKit
+import Carbon.HIToolbox
 
 /// What the menu shows for one connected device.
 struct DeviceState: Identifiable, Equatable {
@@ -59,6 +60,34 @@ final class AppModel: ObservableObject {
     @Published var switcherStyle: PhoneSwitcherStyle {
         didSet { UserDefaults.standard.set(switcherStyle.rawValue, forKey: "switcherStyle") }
     }
+
+    @Published var opensAtLogin: Bool {
+        didSet { LoginItem.set(opensAtLogin) }
+    }
+
+    @Published var usesShortcuts: Bool {
+        didSet {
+            shortcuts.isEnabled = usesShortcuts
+            UserDefaults.standard.set(usesShortcuts, forKey: "usesShortcuts")
+        }
+    }
+
+    /// ⌃⌥ shortcuts for the shown phone that work from any app.
+    private(set) lazy var shortcuts = GlobalShortcuts([
+        .init(keyCode: kVK_ANSI_A, symbol: "⌃⌥A", title: "Open Aproid") { MenuBarPanel.toggle() },
+        .init(keyCode: kVK_ANSI_C, symbol: "⌃⌥C", title: "Send clipboard") { [weak self] in
+            if let id = self?.primaryId { self?.sendClipboard(to: id) }
+        },
+        .init(keyCode: kVK_ANSI_F, symbol: "⌃⌥F", title: "Send files") { [weak self] in
+            if let id = self?.primaryId { self?.chooseFiles(for: id) }
+        },
+        .init(keyCode: kVK_ANSI_M, symbol: "⌃⌥M", title: "Mirror phone") { [weak self] in
+            if let id = self?.primaryId { self?.mirror(id) }
+        },
+        .init(keyCode: kVK_ANSI_R, symbol: "⌃⌥R", title: "Ring phone") { [weak self] in
+            if let id = self?.primaryId { self?.ring(id) }
+        },
+    ])
 
     /// Sends what is shared from the Share menu.
     private(set) lazy var shareInbox = ShareInbox(model: self)
@@ -129,6 +158,8 @@ final class AppModel: ObservableObject {
         plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
         switcherStyle = UserDefaults.standard.string(forKey: "switcherStyle").flatMap(PhoneSwitcherStyle.init(rawValue:)) ?? .carousel
+        opensAtLogin = LoginItem.isEnabled
+        usesShortcuts = UserDefaults.standard.object(forKey: "usesShortcuts") as? Bool ?? true
         notifications.isEnabled = mirrorsNotifications
 
         battery.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
@@ -177,6 +208,7 @@ final class AppModel: ObservableObject {
         share.restore()
         start()
         clipboard.startWatching()
+        shortcuts.isEnabled = usesShortcuts
     }
 
     /// The paired phone after the one shown, wrapping round to the first.

@@ -4,8 +4,8 @@ import OSLog
 import UserNotifications
 import AproidKit
 
-/// Shows phone notifications in Notification Center. Replying or dismissing there
-/// is sent back to the phone.
+/// Shows phone notifications in Notification Center. Replying, pressing a button or dismissing
+/// there is sent back to the phone.
 final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelegate {
     let incoming: Set<String> = [PacketType.notification]
 
@@ -21,7 +21,23 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         static let replyId = "replyId"
         static let file = "file"
         static let callBack = "callBack"
+        static let actions = "actions"
     }
+
+    /// Notification Center shows at most this many buttons in a notification's Options menu.
+    private static let maxActions = 4
+    private static let actionPrefix = "action."
+
+    private static let reply = UNTextInputNotificationAction(
+        identifier: "reply",
+        title: "Reply",
+        options: [],
+        textInputButtonTitle: "Send",
+        textInputPlaceholder: "Message"
+    )
+
+    /// Every category registered so far. Each set of buttons needs its own, added the first time it is seen.
+    private var categories: [String: UNNotificationCategory] = [:]
 
     private let log = Logger(subsystem: "com.toneflix.aproid.app", category: "notifications")
     private let devices: DeviceRegistry
@@ -53,23 +69,18 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
 
         guard let center else { return }
 
-        let reply = UNTextInputNotificationAction(
-            identifier: "reply",
-            title: "Reply",
-            options: [],
-            textInputButtonTitle: "Send",
-            textInputPlaceholder: "Message"
-        )
-        center.setNotificationCategories([
+        let base = [
             UNNotificationCategory(identifier: Category.plain, actions: [], intentIdentifiers: [], options: [.customDismissAction]),
-            UNNotificationCategory(identifier: Category.replyable, actions: [reply], intentIdentifiers: [], options: [.customDismissAction]),
+            UNNotificationCategory(identifier: Category.replyable, actions: [Self.reply], intentIdentifiers: [], options: [.customDismissAction]),
             UNNotificationCategory(
                 identifier: Category.missedCall,
                 actions: [UNNotificationAction(identifier: Key.callBack, title: "Call back")],
                 intentIdentifiers: [],
                 options: []
             ),
-        ])
+        ]
+        categories = Dictionary(uniqueKeysWithValues: base.map { ($0.identifier, $0) })
+        center.setNotificationCategories(Set(base))
         center.delegate = self
         center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
@@ -101,8 +112,9 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         content.title = note.title.isEmpty ? note.appName : note.title
         content.subtitle = note.title.isEmpty ? device.name : "\(note.appName) · \(device.name)"
         content.body = note.text
-        content.categoryIdentifier = note.replyId == nil ? Category.plain : Category.replyable
-        content.userInfo = [Key.device: device.id, Key.id: note.id, Key.replyId: note.replyId ?? ""]
+        let actions = Array(note.actions.prefix(Self.maxActions))
+        content.categoryIdentifier = category(replyable: note.replyId != nil, actions: actions, in: center)
+        content.userInfo = [Key.device: device.id, Key.id: note.id, Key.replyId: note.replyId ?? "", Key.actions: actions]
         content.threadIdentifier = "\(device.id).\(note.appName)"
         if note.silent {
             // Already on the phone before we connected: list it without a banner.
@@ -120,6 +132,32 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
             center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: nil))
             if !note.silent { self?.onShown?() }
         }
+    }
+
+    /// The category for a notification with these buttons, registering it with Notification Center if it is new.
+    private func category(replyable: Bool, actions: [String], in center: UNUserNotificationCenter) -> String {
+        guard !actions.isEmpty else { return replyable ? Category.replyable : Category.plain }
+
+        let identifier = ([replyable ? Category.replyable : Category.plain] + actions).joined(separator: "\u{1F}")
+        let buttons = actions.enumerated().map { index, title in
+            UNNotificationAction(identifier: Self.actionPrefix + String(index), title: title)
+        }
+        let category = UNNotificationCategory(
+            identifier: identifier,
+            actions: (replyable ? [Self.reply] : []) + buttons,
+            intentIdentifiers: [],
+            options: [.customDismissAction]
+        )
+
+        let all: Set<UNNotificationCategory>? = lock.withLock {
+            guard categories[identifier] == nil else { return nil }
+
+            categories[identifier] = category
+            return Set(categories.values)
+        }
+        if let all { center.setNotificationCategories(all) }
+
+        return identifier
     }
 
     /// Tells the user a file arrived. Clicking it shows the file in Finder.
@@ -195,6 +233,14 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
            let replyId = info[Key.replyId] as? String, !replyId.isEmpty {
             let sent = device.send(NotificationRequests.reply(to: replyId, message: text.userText))
             log.info("Reply to \(id, privacy: .public) sent: \(sent)")
+            return
+        }
+
+        if response.actionIdentifier.hasPrefix(Self.actionPrefix),
+           let index = Int(response.actionIdentifier.dropFirst(Self.actionPrefix.count)),
+           let actions = info[Key.actions] as? [String], actions.indices.contains(index) {
+            let sent = device.send(NotificationRequests.action(id: id, action: actions[index]))
+            log.info("Pressed \(actions[index], privacy: .public) on \(id, privacy: .public): \(sent)")
             return
         }
 

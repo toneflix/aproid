@@ -2,10 +2,10 @@ using System.Runtime.InteropServices;
 
 namespace Aproid.Shell;
 
-/// What Aproid was started with: files to send from Explorer, a tel: link to call, or a start at sign-in.
-internal sealed record LaunchArguments(IReadOnlyList<string> Files, string? Number, bool Background)
+/// What Aproid was started with: files to send from Explorer, a tel: link to call, a jump list task, or a start at sign-in.
+internal sealed record LaunchArguments(IReadOnlyList<string> Files, string? Number, bool Background, JumpTask? Jump = null)
 {
-    public bool IsEmpty => Files.Count == 0 && Number is null;
+    public bool IsEmpty => Files.Count == 0 && Number is null && Jump is null;
 
     public static LaunchArguments Parse(IEnumerable<string> arguments)
     {
@@ -13,16 +13,20 @@ internal sealed record LaunchArguments(IReadOnlyList<string> Files, string? Numb
         string? number = null;
         var background = false;
         var sending = false;
+        var opening = false;
+        JumpTask? task = null;
 
         foreach (var argument in arguments)
         {
             if (argument == Startup.BackgroundArgument) background = true;
             else if (argument == Integration.SendArgument) sending = true;
+            else if (argument == JumpList.OpenArgument) opening = true;
+            else if (opening && Enum.TryParse<JumpTask>(argument, ignoreCase: true, out var picked)) (task, opening) = (picked, false);
             else if (argument.StartsWith("tel:", StringComparison.OrdinalIgnoreCase)) number = DigitsOf(argument);
             else if (sending && File.Exists(argument)) files.Add(argument);
         }
 
-        return new LaunchArguments(files, number, background);
+        return new LaunchArguments(files, number, background, task);
     }
 
     /// Splits a command line the way Windows does. It may start with the program itself, which is left out.

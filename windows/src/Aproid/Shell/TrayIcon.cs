@@ -9,6 +9,10 @@ internal sealed class TrayIcon : IDisposable
 {
     private const uint CallbackMessage = WM_APP + 1;
     private const string ClassName = "AproidTrayWindow";
+    private const int HotkeyId = 1;
+
+    /// Win+Shift+A opens the panel from anywhere.
+    public const string HotkeyName = "Win+Shift+A";
 
     // Held so the garbage collector does not free the callback Windows calls into.
     private readonly WndProc procedure;
@@ -47,6 +51,17 @@ internal sealed class TrayIcon : IDisposable
 
     /// Something new was copied, by any app.
     public event Action? ClipboardChanged;
+
+    /// The panel's shortcut was pressed.
+    public event Action? HotkeyPressed;
+
+    /// Turns the shortcut on or off. Returns false when another app already uses it.
+    public bool UseHotkey(bool on)
+    {
+        UnregisterHotKey(hwnd, HotkeyId);
+
+        return !on || RegisterHotKey(hwnd, HotkeyId, MOD_WIN | MOD_SHIFT | MOD_NOREPEAT, 'A');
+    }
 
     public string Tooltip
     {
@@ -95,6 +110,7 @@ internal sealed class TrayIcon : IDisposable
         var data = Data(0);
         Shell_NotifyIcon(NIM_DELETE, ref data);
         RemoveClipboardFormatListener(hwnd);
+        UnregisterHotKey(hwnd, HotkeyId);
         DestroyWindow(hwnd);
         if (icon != IntPtr.Zero) DestroyIcon(icon);
         icon = IntPtr.Zero;
@@ -133,6 +149,12 @@ internal sealed class TrayIcon : IDisposable
                     break;
             }
 
+            return IntPtr.Zero;
+        }
+
+        if (message == WM_HOTKEY && wParam.ToInt64() == HotkeyId)
+        {
+            HotkeyPressed?.Invoke();
             return IntPtr.Zero;
         }
 

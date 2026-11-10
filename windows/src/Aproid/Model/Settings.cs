@@ -25,6 +25,8 @@ internal sealed class Settings
         public string? SelectedPhone { get; set; }
         public PhoneSwitcherStyle SwitcherStyle { get; set; } = PhoneSwitcherStyle.Carousel;
         public Dictionary<string, string> PhoneHotspots { get; set; } = new();
+        public bool OpensWithHotkey { get; set; } = true;
+        public bool ShowsPhotosInExplorer { get; set; } = true;
     }
 
     public Settings(string path)
@@ -82,6 +84,28 @@ internal sealed class Settings
         set
         {
             values.SwitcherStyle = value;
+            Save();
+        }
+    }
+
+    /// Whether Win+Shift+A opens the panel.
+    public bool OpensWithHotkey
+    {
+        get => values.OpensWithHotkey;
+        set
+        {
+            values.OpensWithHotkey = value;
+            Save();
+        }
+    }
+
+    /// Whether the phone's photos show as a folder in Explorer.
+    public bool ShowsPhotosInExplorer
+    {
+        get => values.ShowsPhotosInExplorer;
+        set
+        {
+            values.ShowsPhotosInExplorer = value;
             Save();
         }
     }

@@ -196,7 +196,8 @@ public enum ScreenInput: Equatable, Sendable {
     case longPress(x: Double, y: Double)
     case swipe(x: Double, y: Double, toX: Double, toY: Double, durationMs: Int64)
     case text(String)
-    case key(String)
+    /// A key that is not text. With `select`, a movement key extends the selection like Shift does.
+    case key(String, select: Bool = false)
 
     public static let back = "back"
     public static let home = "home"
@@ -204,8 +205,25 @@ public enum ScreenInput: Equatable, Sendable {
     public static let notifications = "notifications"
     public static let enter = "enter"
     public static let delete = "delete"
+    public static let deleteForward = "deleteForward"
+    public static let deleteWord = "deleteWord"
+    public static let tab = "tab"
+    public static let left = "left"
+    public static let right = "right"
+    public static let up = "up"
+    public static let down = "down"
+    public static let wordLeft = "wordLeft"
+    public static let wordRight = "wordRight"
+    public static let lineStart = "lineStart"
+    public static let lineEnd = "lineEnd"
+    public static let selectAll = "selectAll"
+    public static let copy = "copy"
+    public static let cut = "cut"
 
-    public static let keys: Set<String> = [back, home, recents, notifications, enter, delete]
+    public static let keys: Set<String> = [
+        back, home, recents, notifications, enter, delete, deleteForward, deleteWord, tab,
+        left, right, up, down, wordLeft, wordRight, lineStart, lineEnd, selectAll, copy, cut,
+    ]
 
     public func toPacket() -> NetworkPacket {
         let body: [String: JSONValue]
@@ -218,8 +236,8 @@ public enum ScreenInput: Equatable, Sendable {
             body = ["action": "swipe", "x": .double(x), "y": .double(y), "toX": .double(toX), "toY": .double(toY), "duration": .int(duration)]
         case .text(let text):
             body = ["action": "text", "text": .string(text)]
-        case .key(let key):
-            body = ["action": "key", "key": .string(key)]
+        case .key(let key, let select):
+            body = select ? ["action": "key", "key": .string(key), "select": .bool(true)] : ["action": "key", "key": .string(key)]
         }
         return NetworkPacket(type: PacketType.screenInput, body: body)
     }
@@ -246,7 +264,7 @@ public enum ScreenInput: Equatable, Sendable {
             self = .text(text)
         case "key":
             guard let key = packet.string("key"), Self.keys.contains(key) else { return nil }
-            self = .key(key)
+            self = .key(key, select: packet.bool("select") ?? false)
         default:
             return nil
         }
