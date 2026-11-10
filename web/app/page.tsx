@@ -5,10 +5,10 @@ import { features, platforms, steps } from "@/content/features";
 import { site } from "@/content/site";
 
 const promises = [
-  { icon: ServerOff, text: "No servers. Your devices talk straight to each other." },
-  { icon: UserX, text: "No account, no sign-up, no email." },
-  { icon: EyeOff, text: "No ads, no analytics, no tracking." },
-  { icon: Lock, text: "Everything encrypted. Only devices you pair can connect." },
+  { icon: ServerOff, text: "No servers" },
+  { icon: UserX, text: "No account" },
+  { icon: EyeOff, text: "No ads or tracking" },
+  { icon: Lock, text: "Encrypted end to end" },
 ];
 
 export default function Home() {
@@ -22,11 +22,10 @@ export default function Home() {
               Android, <em>meet your computer.</em>
             </h1>
             <p className="lead">
-              Answer texts and calls, see your notifications and swap files and photos with your phone, all from
-              your Mac or PC. It&apos;s free, and nothing leaves your own network.
+              Texts, calls, notifications, files and photos from your phone, on your Mac or PC.
             </p>
             <DownloadButtons />
-            <p className="hero-note">Free forever. No account needed.</p>
+            <p className="hero-note">Free. No account.</p>
           </div>
 
           <div className="hero-visual" aria-hidden="true">
@@ -38,23 +37,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="story">
-        <div className="container">
-          <p>iPhone owners have had this for years: their phone and their computer just work together.</p>
-          <p>
-            A text comes in and they answer it from the laptop. A photo goes from pocket to desktop in a second. If you
-            carry an Android phone, you&apos;ve mostly had to do without. Aproid fixes that. Pair your phone once and
-            it&apos;ll work with your computer like they came in the same box.
-          </p>
-        </div>
-      </section>
-
       <section className="section" id="features">
         <div className="container">
           <div className="section-head">
             <span className="eyebrow">What it does</span>
             <h2>Put the phone down. Keep up anyway.</h2>
-            <p className="lead">All the things you keep picking your phone up for, on the screen you&apos;re already looking at.</p>
           </div>
 
           <div className="features">
@@ -75,11 +62,11 @@ export default function Home() {
         <Showcase
           eyebrow="Messages and calls"
           title="Answer from wherever you're sitting."
-          body="Your texts are in a proper Messages window. When a call comes in, you see who it is and pick up without digging through your bag."
+          body="Text from a proper Messages window. See who's calling and pick up."
           points={[
-            "Read and reply to SMS from your keyboard",
+            "Reply to SMS from your keyboard",
             "Answer, decline or start calls",
-            "On a Mac, talk through the Mac's speakers and mic",
+            "Talk through your Mac's speakers and mic",
           ]}
           media={
             <div className="stack">
@@ -93,11 +80,11 @@ export default function Home() {
           reverse
           eyebrow="FlyyDrop"
           title="Send it to anyone nearby. No pairing."
-          body="Your friend's phone, a colleague's laptop, the family PC. If it has Aproid and it's on the same Wi-Fi, FlyyDrop your photos or files straight to it. They see what's coming and tap Accept."
+          body="Send photos and files to any phone or computer with Aproid on your Wi-Fi. They tap Accept."
           points={[
-            "Works between phones, Macs and PCs",
-            "Nothing arrives until they accept",
-            "You choose who can FlyyDrop to you: your devices, everyone for 10 minutes, or everyone",
+            "Phones, Macs and PCs",
+            "Nothing arrives until accepted",
+            "Open to everyone, for 10 minutes, or paired only",
           ]}
           media={<img className="bleed" src="/screens/flyydrop.png" alt="An Android phone being asked to accept three photos sent with FlyyDrop" />}
         />
@@ -106,11 +93,11 @@ export default function Home() {
           gold
           eyebrow="All your devices"
           title="Two phones? Two computers? No problem."
-          body="Each phone or computer you pair gets its own card. Click or swipe between them and everything else switches with you."
+          body="Each device gets its own card. Swipe between them."
           points={[
-            "Pair as many phones and computers as you want",
-            "Calls and texts always come from the right phone",
-            "Pair your computers with each other to share files and the clipboard",
+            "Pair as many as you want",
+            "Calls and texts from the right phone",
+            "Share files and the clipboard between computers",
           ]}
           media={<img className="tall" src="/screens/mac-panel.png" alt="The Aproid panel on a Mac with two phones paired" />}
         />
@@ -118,11 +105,11 @@ export default function Home() {
         <Showcase
           eyebrow="Screen mirroring"
           title="Your phone, in a window, with sound."
-          body="Open any app on your phone and use it from your computer with your mouse and keyboard. Great for the apps that only live on your phone."
+          body="Use any phone app with your mouse and keyboard."
           points={[
             "Smooth video, with sound",
-            "Click, scroll and type straight into the phone",
-            "Works on both Mac and Windows",
+            "Click, scroll and type",
+            "Mac and Windows",
           ]}
           reverse
           media={<img className="tall" src="/screens/android-home.png" alt="Aproid on Android, showing a paired MacBook Pro" />}
@@ -135,11 +122,7 @@ export default function Home() {
             <div>
               <span className="eyebrow">Privacy</span>
               <h2>Your stuff stays yours.</h2>
-              <p>
-                There&apos;s no Aproid server for your data to go to. Your phone and your computer talk straight to each
-                other over your own network or Bluetooth, and only after you&apos;ve paired them and checked the same
-                code on both screens. Your texts, photos and notifications never leave your own devices.
-              </p>
+              <p>Your devices talk straight to each other over your own network or Bluetooth. Nothing goes to a server.</p>
             </div>
 
             <div className="pills">
@@ -189,7 +172,7 @@ export default function Home() {
         <div className="container">
           <img src="/icon.svg" alt="" width={96} height={96} />
           <h2>Give it a try.</h2>
-          <p className="lead">It&apos;s free, it&apos;s open source, and it takes a minute to set up.</p>
+          <p className="lead">Free and open source.</p>
           <DownloadButtons />
         </div>
       </section>
