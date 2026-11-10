@@ -289,6 +289,47 @@ final class LanLinkTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: sinkURL), bytes)
     }
 
+    func testFlyyDropMovesOnlyTheAcceptedFileBetweenUnpairedDevices() throws {
+        let (onPhone, onMac) = try connect()
+        let phoneDrop = FlyyDrop()
+        let macDrop = FlyyDrop()
+        macDrop.receiving = .everyone
+        let phoneDevice = Device(link: onPhone, ownCertificate: phone.certificate, trustStore: phone.trust, guests: phoneDrop)
+        let macDevice = Device(link: onMac, ownCertificate: mac.certificate, trustStore: mac.trust, guests: macDrop)
+        phoneDevice.delegate = phone.recorder
+        macDevice.delegate = mac.recorder
+        phoneDevice.start()
+        macDevice.start()
+
+        let bytes = Data("hello from the phone".utf8)
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let sourceURL = folder.appendingPathComponent("hello.txt")
+        let sinkURL = folder.appendingPathComponent("received.txt")
+        try bytes.write(to: sourceURL)
+        FileManager.default.createFile(atPath: sinkURL.path, contents: nil)
+
+        XCTAssertFalse(phoneDevice.send(NetworkPacket(type: PacketType.ping)))
+        let item = FlyyDrop.Item(name: "hello.txt", size: Int64(bytes.count))
+        XCTAssertTrue(phoneDevice.send(phoneDrop.request(to: mac.identity.deviceId, items: [item])))
+
+        let request = try XCTUnwrap(mac.recorder.packets.take())
+        guard case .ask(let offer)? = macDrop.onRequest(from: phone.identity.deviceId, request, isPaired: false) else { return XCTFail("not asked") }
+        XCTAssertTrue(macDevice.send(try XCTUnwrap(macDrop.accept(offer.id))))
+        XCTAssertEqual(phoneDrop.onResponse(from: mac.identity.deviceId, try XCTUnwrap(phone.recorder.packets.take()))?.accepted, true)
+
+        let sent = phoneDevice.sendWithPayload(FlyyDrop.file(offer.id, item), size: item.size, source: try FileHandle(forReadingFrom: sourceURL))
+        let packet = try XCTUnwrap(mac.recorder.packets.take())
+        let sink = try FileHandle(forWritingTo: sinkURL)
+        try macDevice.receivePayload(packet, into: sink).wait()
+        try sink.close()
+
+        XCTAssertTrue(sent)
+        XCTAssertEqual(try Data(contentsOf: sinkURL), bytes)
+        XCTAssertFalse(phoneDevice.sendWithPayload(FlyyDrop.file(offer.id, item), size: item.size, source: try FileHandle(forReadingFrom: sourceURL)))
+        XCTAssertFalse(mac.trust.isTrusted(phone.identity.deviceId))
+    }
+
     func testLiveStreamIsReadUntilTheSenderCloses() throws {
         let (onPhone, onMac) = try connect()
         phone.trust.trust(mac.identity.deviceId, certificate: onPhone.certificateDER)

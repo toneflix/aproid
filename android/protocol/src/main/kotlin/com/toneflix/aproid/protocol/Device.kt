@@ -5,13 +5,14 @@ import java.io.OutputStream
 
 /**
  * A connected peer: its encrypted link plus pairing. Packets from a device that
- * is not paired are dropped, except pairing packets.
+ * is not paired are dropped, except pairing packets and what [guests] lets through.
  */
 class Device(
     val link: DeviceLink,
     private val ownCertificate: DeviceCertificate,
     private val trustStore: TrustStore,
     private val clock: () -> Long = { System.currentTimeMillis() / 1000 },
+    private val guests: GuestAccess? = null,
 ) {
     interface Listener {
         /** The peer asked to pair. Show [code] and call [accept] or [reject]. */
@@ -61,7 +62,7 @@ class Device(
     }
 
     fun send(packet: NetworkPacket): Boolean {
-        if (!isPaired) return false
+        if (!maySend(packet)) return false
 
         link.send(packet)
 
@@ -70,7 +71,8 @@ class Device(
 
     /**
      * Sends [packet] with a payload that the peer downloads from us, such as a file.
-     * [open] is called once the peer connects. Returns false when not paired.
+     * [open] is called once the peer connects. Returns false when not paired
+     * and not let through by [guests].
      */
     fun sendWithPayload(
         packet: NetworkPacket,
@@ -78,7 +80,7 @@ class Device(
         open: () -> InputStream,
         onDone: (Throwable?) -> Unit = {},
     ): Boolean {
-        if (!isPaired) return false
+        if (!maySend(packet)) return false
 
         val port = payloads.offer(link.certificate, open, onDone)
         link.send(packet.copy(payloadSize = size, payloadTransferInfo = NetworkPacket.body("port" to port)))
@@ -134,8 +136,10 @@ class Device(
             return
         }
 
-        if (isPaired) listener?.onPacket(this, packet)
+        if (isPaired || guests?.admitsIncoming(id, packet) == true) listener?.onPacket(this, packet)
     }
+
+    private fun maySend(packet: NetworkPacket): Boolean = isPaired || guests?.admitsOutgoing(id, packet) == true
 
     private fun apply(action: PairAction) {
         when (action) {

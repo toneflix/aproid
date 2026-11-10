@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.toneflix.aproid.protocol.DeviceType
 
 /** A drawn laptop: dark lid with a light screen, on a wider base. */
 @Composable
@@ -44,6 +45,27 @@ fun LaptopArt(width: Dp, modifier: Modifier = Modifier, content: @Composable () 
                 .background(colors.deviceBase, RoundedCornerShape(bottomStart = width * 0.05f, bottomEnd = width * 0.05f)),
         )
     }
+}
+
+/** A drawn phone: dark body with a light screen, in the same style as [LaptopArt]. */
+@Composable
+fun PhoneArt(height: Dp, modifier: Modifier = Modifier) {
+    val colors = Aproid.colors
+
+    Box(
+        modifier
+            .size(height * 0.5f, height)
+            .background(colors.deviceBody, RoundedCornerShape(height * 0.1f))
+            .padding(height * 0.035f),
+    ) {
+        Box(Modifier.fillMaxSize().background(colors.deviceScreen, RoundedCornerShape(height * 0.075f)))
+    }
+}
+
+/** A phone or a laptop, drawn about [width] wide, to stand for any device. */
+@Composable
+fun DeviceArt(type: DeviceType, width: Dp, modifier: Modifier = Modifier) {
+    if (type.isPhone) PhoneArt(width * 0.75f, modifier) else LaptopArt(width, modifier)
 }
 
 /** The pairing code as big separate characters, split in two halves. */

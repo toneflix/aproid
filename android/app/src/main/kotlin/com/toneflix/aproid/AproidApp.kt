@@ -39,6 +39,13 @@ class AproidApp : Application() {
             NotificationManager.IMPORTANCE_HIGH,
         ).apply { setSound(null, null) }
 
-        getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(channel, find, transfers, screen, hotspot))
+        // Pops up, since someone nearby is waiting for an answer.
+        val flyyDrop = NotificationChannel(
+            FlyyDropPlugin.CHANNEL_ID,
+            getString(R.string.channel_flyydrop),
+            NotificationManager.IMPORTANCE_HIGH,
+        )
+
+        getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(channel, find, transfers, screen, hotspot, flyyDrop))
     }
 }

@@ -80,6 +80,7 @@ class LinkService : Service() {
         LocationPlugin.start(this)
         PhotosPlugin.start(this)
         ScreenPlugin.start(this)
+        FlyyDropPlugin.start(this)
 
         val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         multicastLock = wifi.createMulticastLock("aproid").apply {
@@ -106,7 +107,7 @@ class LinkService : Service() {
                 identityProvider = { DeviceStore.identity(this) },
                 certificate = certificate,
                 trustStore = trustStore,
-                onLink = { DeviceStore.add(Device(it, certificate, trustStore), ownId) },
+                onLink = { DeviceStore.add(Device(it, certificate, trustStore, guests = FlyyDropPlugin.drop), ownId) },
                 isConnected = { DeviceStore.find(it)?.link?.isOpen == true },
             )
 
@@ -119,6 +120,7 @@ class LinkService : Service() {
         exec.scheduleWithFixedDelay({
             runCatching { link?.broadcastIdentity() }
             DeviceStore.tickAll()
+            FlyyDropPlugin.tick()
         }, 1, 5, TimeUnit.SECONDS)
     }
 

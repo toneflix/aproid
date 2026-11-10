@@ -134,4 +134,33 @@
         <item quantity="one">about %d minute left</item>
         <item quantity="other">about %d minutes left</item>
     </plurals>
+
+    <string name="channel_flyydrop">FlyyDrop requests</string>
+    <string name="flyydrop">FlyyDrop</string>
+    <string name="flyydrop_ask_title">%1$s wants to FlyyDrop</string>
+    <string name="flyydrop_accept">Accept</string>
+    <string name="flyydrop_decline">Decline</string>
+    <string name="flyydrop_guest_hint">Not paired. It can only send what you accept here, nothing else.</string>
+    <string name="flyydrop_paired_hint">From one of your paired devices.</string>
+    <string name="flyydrop_receiving_title">Who can FlyyDrop to you</string>
+    <string name="flyydrop_off">Paired only</string>
+    <string name="flyydrop_ten_minutes">10 minutes</string>
+    <string name="flyydrop_everyone">Everyone</string>
+    <string name="flyydrop_off_hint">Only your paired devices can send you files.</string>
+    <string name="flyydrop_everyone_hint">Anyone nearby with Aproid can ask to send you files. You choose each time.</string>
+    <plurals name="flyydrop_minutes_left">
+        <item quantity="one">Anyone nearby can ask to send you files for the next minute.</item>
+        <item quantity="other">Anyone nearby can ask to send you files for the next %1$d minutes.</item>
+    </plurals>
+    <string name="flyydrop_nearby">FlyyDrop to nearby</string>
+    <string name="flyydrop_nearby_hint">They\'ll be asked to accept</string>
+    <string name="flyydrop_tap">Tap to FlyyDrop</string>
+    <string name="flyydrop_waiting">Waiting for them to accept…</string>
+    <string name="flyydrop_declined">Declined</string>
+    <string name="flyydrop_unavailable">Not taking FlyyDrops right now</string>
+    <string name="flyydrop_busy">Busy with another request</string>
+    <string name="flyydrop_no_answer">No answer</string>
+    <string name="flyydrop_failed">Didn\'t finish</string>
+    <string name="flyydrop_sent">Sent</string>
+    <string name="flyydrop_send_files">FlyyDrop files to %1$s</string>
 </resources>
