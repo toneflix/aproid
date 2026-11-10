@@ -127,6 +127,7 @@ final class LanLinkTests: XCTestCase {
 
     private var mac: Peer!
     private var phone: Peer!
+    private var extra: Peer?
 
     override func setUpWithError() throws {
         mac = try Peer(name: "Mac", type: .laptop, ports: 41716...41730)
@@ -136,6 +137,8 @@ final class LanLinkTests: XCTestCase {
 
     override func tearDown() {
         mac.lan.stop()
+        extra?.lan.stop()
+        extra = nil
     }
 
     private func connect() throws -> (onPhone: DeviceLink, onMac: DeviceLink) {
@@ -152,8 +155,9 @@ final class LanLinkTests: XCTestCase {
     func testConnectsToAPeerWhoseAnnouncementIsLargerThanTwoKilobytes() throws {
         let capabilities = Set((0..<120).map { "aproid.capability.\($0)" })
         let big = try Peer(name: "Phone", type: .phone, ports: 41765...41780, udpPort: 41799, capabilities: capabilities)
+        // Kept until tearDown, so its event loops are shut down from the test thread and not from one of their own.
+        extra = big
         try big.lan.start()
-        defer { big.lan.stop() }
 
         var announced = big.identity
         announced.tcpPort = big.lan.tcpPort
@@ -163,6 +167,7 @@ final class LanLinkTests: XCTestCase {
         try sendDatagram(datagram, port: 41716)
 
         XCTAssertNotNil(mac.recorder.links.take())
+        XCTAssertNotNil(big.recorder.links.take())
     }
 
     private func sendDatagram(_ data: Data, port: UInt16) throws {
