@@ -1,21 +1,14 @@
 package com.toneflix.aproid
 
-import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.content.res.Configuration
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
-import android.media.AudioAttributes
-import android.media.AudioFormat
-import android.media.AudioPlaybackCaptureConfiguration
-import android.media.AudioRecord
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
@@ -26,11 +19,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.os.SystemClock
 import android.util.Log
 import android.view.Surface
 import android.view.WindowManager
-import androidx.annotation.RequiresApi
 import com.toneflix.aproid.protocol.Screen
 import com.toneflix.aproid.protocol.ScreenFrame
 import java.io.InputStream
@@ -41,13 +32,11 @@ import kotlin.math.roundToInt
 /**
  * Records the screen into H.264 and streams it to the Mac over a payload connection.
  * The encoder restarts at the new size when the phone rotates; the stream carries the new settings.
- * When the Mac asks for sound and Android allows it, the phone's playback goes into the same stream as PCM.
  */
 class ScreenService : Service() {
     private var projection: MediaProjection? = null
     private var display: VirtualDisplay? = null
     private var encoder: Encoder? = null
-    private var sound: SoundCapture? = null
     private var frames: FrameQueue? = null
     private var deviceId: String? = null
     private var request: ScreenPlugin.Pending? = null
@@ -70,8 +59,7 @@ class ScreenService : Service() {
         // A service started with startForegroundService must go foreground, even when it then gives up.
         val pending = ScreenPlugin.pending
         val device = pending?.let { DeviceStore.find(it.deviceId) }
-        val withSound = pending?.audio == true && canRecordSound()
-        goForeground(device?.name ?: "", withSound)
+        goForeground(device?.name ?: "")
 
         if (pending == null || device == null || !device.isPaired) {
             stopSelf()
@@ -104,11 +92,8 @@ class ScreenService : Service() {
         val (width, height) = videoSize(pending.maxSize)
 
         // Encoding starts once the Mac connects, so the first frame it gets is the settings and a key frame.
-        DeviceStore.offer(device, Screen.started(width, height, audio = withSound), Screen.STREAM, open = {
-            main.post {
-                startEncoding(width, height)
-                if (withSound) startSound()
-            }
+        DeviceStore.offer(device, Screen.started(width, height), Screen.STREAM, open = {
+            main.post { startEncoding(width, height) }
             queue.stream
         }) { error ->
             Log.i(TAG, "Screen stream ended: ${error?.message ?: "closed"}")
@@ -118,41 +103,14 @@ class ScreenService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun goForeground(macName: String, withSound: Boolean) {
+    private fun goForeground(macName: String) {
         val shown = notification(macName)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && withSound) {
-            // Recording sound counts as using the microphone; if Android refuses, mirror without it.
-            val started = runCatching {
-                startForeground(
-                    NOTIFICATION_ID,
-                    shown,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE,
-                )
-            }
-            if (started.isSuccess) return
-            Log.w(TAG, "Could not record sound in the background", started.exceptionOrNull())
-        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, shown, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
         } else {
             startForeground(NOTIFICATION_ID, shown)
         }
-    }
-
-    private fun canRecordSound(): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-            checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-
-    private fun startSound() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || sound != null) return
-        val projection = projection ?: return
-        val queue = frames ?: return
-
-        sound = runCatching { SoundCapture(projection, queue) }
-            .onFailure { Log.w(TAG, "Could not record the phone's sound", it) }
-            .getOrNull()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -171,8 +129,6 @@ class ScreenService : Service() {
 
     override fun onDestroy() {
         isRunning = false
-        sound?.stop()
-        sound = null
         encoder?.stop()
         encoder = null
         display?.release()
@@ -350,72 +306,6 @@ class ScreenService : Service() {
 
         private companion object {
             const val MAX_BACKLOG = 20
-        }
-    }
-
-    /**
-     * Records what the phone plays (music, videos, games; not calls, and not apps that opt out) in
-     * 20 ms pieces of 16-bit stereo PCM, sent as [ScreenFrame.AUDIO] frames.
-     */
-    @RequiresApi(Build.VERSION_CODES.Q)
-    private class SoundCapture(projection: MediaProjection, private val queue: FrameQueue) {
-        private val record: AudioRecord
-        @Volatile private var running = true
-
-        init {
-            val capture = AudioPlaybackCaptureConfiguration.Builder(projection)
-                .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
-                .addMatchingUsage(AudioAttributes.USAGE_GAME)
-                .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
-                .build()
-            val format = AudioFormat.Builder()
-                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                .setSampleRate(Screen.AUDIO_RATE)
-                .setChannelMask(AudioFormat.CHANNEL_IN_STEREO)
-                .build()
-            val minimum = AudioRecord.getMinBufferSize(Screen.AUDIO_RATE, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT)
-
-            record = build(capture, format, maxOf(minimum, CHUNK * 4))
-            record.startRecording()
-
-            thread(name = "aproid-screen-sound", isDaemon = true) { read() }
-        }
-
-        // The service only starts this after checking the permission.
-        @SuppressLint("MissingPermission")
-        private fun build(capture: AudioPlaybackCaptureConfiguration, format: AudioFormat, size: Int) =
-            AudioRecord.Builder()
-                .setAudioFormat(format)
-                .setBufferSizeInBytes(size)
-                .setAudioPlaybackCaptureConfig(capture)
-                .build()
-
-        private fun read() {
-            val buffer = ByteArray(CHUNK)
-
-            while (running) {
-                val count = record.read(buffer, 0, buffer.size)
-                if (count < 0) break
-                if (count == 0) continue
-
-                // When the Wi-Fi falls behind, late sound is worse than a gap.
-                if (queue.backlog > MAX_BACKLOG) continue
-
-                val frame = ScreenFrame(buffer.copyOf(count), SystemClock.elapsedRealtimeNanos() / 1000, ScreenFrame.AUDIO)
-                queue.put(frame.header() + frame.data)
-            }
-        }
-
-        fun stop() {
-            running = false
-            runCatching { record.stop() }
-            record.release()
-        }
-
-        private companion object {
-            /** 20 ms of 48 kHz 16-bit stereo. */
-            const val CHUNK = Screen.AUDIO_RATE / 50 * Screen.AUDIO_CHANNELS * 2
-            const val MAX_BACKLOG = 40
         }
     }
 

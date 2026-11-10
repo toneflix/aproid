@@ -21,7 +21,7 @@ MAC = [
     "file-archive", "file-text", "file-up", "film", "hand", "hash", "headphones", "image", "images",
     "laptop", "link", "lock", "map-pin", "message-square", "messages-square", "mic", "mic-off", "music",
     "pause", "phone", "phone-off", "play", "radio", "rotate-cw", "settings", "skip-back", "skip-forward",
-    "smartphone", "square-pen", "triangle-alert", "unplug", "video", "volume-2", "volume-x", "wifi", "x", "zap",
+    "smartphone", "square-pen", "triangle-alert", "unplug", "video", "volume-2", "wifi", "x", "zap",
 ]
 
 ANDROID = [

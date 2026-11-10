@@ -152,7 +152,7 @@ final class AppModel: ObservableObject {
         nearby = NearbyFinder(ownId: identity.deviceId)
         let screen = ScreenMirror()
         self.screen = screen
-        screenPlugin = ScreenPlugin(decoder: screen.decoder, audio: screen.audio)
+        screenPlugin = ScreenPlugin(decoder: screen.decoder)
         screenWindow = ScreenWindowController(mirror: screen)
         notifications = NotificationPlugin(devices: connected)
         plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin])

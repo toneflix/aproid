@@ -1,17 +1,13 @@
 import Foundation
 
 /// Mirroring the phone's screen on the Mac. The Mac asks with `start`; the phone answers with an
-/// "aproid.screen" packet whose payload is a live H.264 stream of `ScreenFrame`s. When the Mac asks for sound and
-/// the phone can record it, the stream also carries `ScreenFrame.audio` frames of 16-bit little-endian PCM at
-/// `audioRate` Hz with `audioChannels` channels, interleaved. Mirrors Screen.kt.
+/// "aproid.screen" packet whose payload is a live H.264 stream of `ScreenFrame`s. Mirrors Screen.kt.
 public enum Screen {
     /// The payload size of a live stream: read until the sender closes it.
     public static let stream: Int64 = -1
 
     public static let maxSize: Int64 = 1600
     public static let bitrate: Int64 = 8_000_000
-    public static let audioRate: Int64 = 48_000
-    public static let audioChannels: Int64 = 2
 
     public enum Action: String, Sendable {
         case start
@@ -22,44 +18,27 @@ public enum Screen {
         public var action: Action
         public var maxSize: Int64
         public var bitrate: Int64
-        public var audio: Bool
 
-        public init(action: Action, maxSize: Int64 = Screen.maxSize, bitrate: Int64 = Screen.bitrate, audio: Bool = false) {
+        public init(action: Action, maxSize: Int64 = Screen.maxSize, bitrate: Int64 = Screen.bitrate) {
             self.action = action
             self.maxSize = maxSize
             self.bitrate = bitrate
-            self.audio = audio
         }
     }
 
     /// What the phone is sending. Sizes are in pixels; `running` is false once mirroring stops.
-    /// `audioRate` and `audioChannels` are 0 when the stream has no sound.
     public struct Info: Equatable, Sendable {
         public var width: Int64
         public var height: Int64
         public var running: Bool
-        public var audioRate: Int64
-        public var audioChannels: Int64
-
-        public init(width: Int64, height: Int64, running: Bool, audioRate: Int64 = 0, audioChannels: Int64 = 0) {
-            self.width = width
-            self.height = height
-            self.running = running
-            self.audioRate = audioRate
-            self.audioChannels = audioChannels
-        }
-
-        public var hasAudio: Bool { audioRate > 0 && audioChannels > 0 }
     }
 
-    public static func start(maxSize: Int64 = Screen.maxSize, bitrate: Int64 = Screen.bitrate, audio: Bool = false) -> NetworkPacket {
-        var body: [String: JSONValue] = [
+    public static func start(maxSize: Int64 = Screen.maxSize, bitrate: Int64 = Screen.bitrate) -> NetworkPacket {
+        NetworkPacket(type: PacketType.screenRequest, body: [
             "action": .string(Action.start.rawValue),
             "maxSize": .int(maxSize),
             "bitrate": .int(bitrate),
-        ]
-        if audio { body["audio"] = .bool(true) }
-        return NetworkPacket(type: PacketType.screenRequest, body: body)
+        ])
     }
 
     public static func stop() -> NetworkPacket {
@@ -74,25 +53,18 @@ public enum Screen {
         return Request(
             action: action,
             maxSize: min(max(packet.int("maxSize") ?? maxSize, 320), 4096),
-            bitrate: min(max(packet.int("bitrate") ?? bitrate, 500_000), 50_000_000),
-            audio: packet.bool("audio") ?? false
+            bitrate: min(max(packet.int("bitrate") ?? bitrate, 500_000), 50_000_000)
         )
     }
 
     /// Announces a stream; send it with `stream` as the payload size.
-    public static func started(width: Int64, height: Int64, audio: Bool = false) -> NetworkPacket {
-        var body: [String: JSONValue] = [
+    public static func started(width: Int64, height: Int64) -> NetworkPacket {
+        NetworkPacket(type: PacketType.screen, body: [
             "width": .int(width),
             "height": .int(height),
             "codec": .string("h264"),
             "running": .bool(true),
-        ]
-        if audio {
-            body["audioCodec"] = .string("pcm16le")
-            body["audioRate"] = .int(audioRate)
-            body["audioChannels"] = .int(audioChannels)
-        }
-        return NetworkPacket(type: PacketType.screen, body: body)
+        ])
     }
 
     public static func stopped() -> NetworkPacket {
@@ -102,25 +74,16 @@ public enum Screen {
     public static func info(_ packet: NetworkPacket) -> Info? {
         guard packet.type == PacketType.screen else { return nil }
 
-        let pcm = packet.string("audioCodec") == "pcm16le"
-        return Info(
-            width: packet.int("width") ?? 0,
-            height: packet.int("height") ?? 0,
-            running: packet.bool("running") ?? false,
-            audioRate: pcm ? min(max(packet.int("audioRate") ?? 0, 0), 192_000) : 0,
-            audioChannels: pcm ? min(max(packet.int("audioChannels") ?? 0, 0), 8) : 0
-        )
+        return Info(width: packet.int("width") ?? 0, height: packet.int("height") ?? 0, running: packet.bool("running") ?? false)
     }
 }
 
 /// One encoded piece of the screen stream. On the wire each is a 13 byte header (size, then the
-/// presentation time in microseconds, then `flags`, all big-endian) followed by H.264 in Annex B form, or by
-/// PCM sound when `isAudio`.
+/// presentation time in microseconds, then `flags`, all big-endian) followed by H.264 in Annex B form.
 public struct ScreenFrame: Equatable, Sendable {
     public static let headerSize = 13
     public static let config: UInt8 = 1
     public static let key: UInt8 = 2
-    public static let audio: UInt8 = 4
 
     /// Larger than any real frame; anything bigger means the stream is corrupt.
     public static let maxSize = 16 * 1024 * 1024
@@ -138,7 +101,6 @@ public struct ScreenFrame: Equatable, Sendable {
     /// The SPS and PPS the decoder needs before any picture.
     public var isConfig: Bool { flags & Self.config != 0 }
     public var isKey: Bool { flags & Self.key != 0 }
-    public var isAudio: Bool { flags & Self.audio != 0 }
 
     public func header() -> Data {
         var header = Data()

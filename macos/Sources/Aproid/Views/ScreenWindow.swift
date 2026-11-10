@@ -68,9 +68,6 @@ struct ScreenWindow: View {
             control(.circle, help: "Home") { mirror.input(.key(ScreenInput.home)) }
             control(.copy, help: "Recent apps") { mirror.input(.key(ScreenInput.recents)) }
             control(.bell, help: "Notifications") { mirror.input(.key(ScreenInput.notifications)) }
-            control(mirror.isMuted ? .volumeX : .volume2, help: mirror.isMuted ? "Play the phone's sound" : "Mute the phone's sound") {
-                mirror.isMuted.toggle()
-            }
         }
         .frame(maxWidth: .infinity)
         .frame(height: 40)

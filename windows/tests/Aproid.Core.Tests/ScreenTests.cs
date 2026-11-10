@@ -18,18 +18,6 @@ public class ScreenTests
     }
 
     [Fact]
-    public void SoundIsAskedForAndAnnounced()
-    {
-        Assert.False(Screen.RequestOf(Wire(Screen.Start()))?.Audio);
-        Assert.True(Screen.RequestOf(Wire(Screen.Start(audio: true)))?.Audio);
-        Assert.False(Screen.InfoOf(Wire(Screen.Started(1080, 2400)))?.HasAudio);
-
-        var info = Screen.InfoOf(Wire(Screen.Started(1080, 2400, audio: true)));
-        Assert.Equal(new Screen.Info(1080, 2400, true, Screen.AudioRate, Screen.AudioChannels), info);
-        Assert.True(info!.HasAudio);
-    }
-
-    [Fact]
     public void InputRoundTripsAndRejectsNonsense()
     {
         ScreenInput[] inputs =
@@ -54,7 +42,6 @@ public class ScreenTests
             new([0, 0, 0, 1, 0x67], 0, ScreenFrame.Config),
             new(Enumerable.Range(0, 5000).Select(i => (byte)(i % 256)).ToArray(), 33_333, ScreenFrame.Key),
             new([9, 9], 50_000, 0),
-            new(Enumerable.Range(0, 3840).Select(i => (byte)(i * 3 % 256)).ToArray(), 60_000, ScreenFrame.Audio),
         ];
         var stream = frames.SelectMany(f => f.Header().Concat(f.Data)).ToArray();
         var reader = new ScreenFrameReader();
@@ -63,7 +50,7 @@ public class ScreenTests
         for (var start = 0; start < stream.Length; start += 7) read.AddRange(reader.Feed(stream.AsSpan(start, Math.Min(7, stream.Length - start))));
 
         Assert.Equal(frames, read);
-        Assert.True(read[0].IsConfig && read[1].IsKey && read[3].IsAudio && !read[1].IsAudio);
+        Assert.True(read[0].IsConfig && read[1].IsKey);
     }
 
     [Fact]
