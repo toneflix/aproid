@@ -79,6 +79,9 @@ object PacketType {
 
     /** Keeps the link alive and detects a dead one. Body: {"pong": bool}. */
     const val HEARTBEAT = "aproid.heartbeat"
+
+    /** Keyboard and mouse shared between computers. Body: {"action", ...}; see [RemoteInput]. */
+    const val INPUT = "aproid.input"
 }
 
 /** What this MVP sends and accepts. Kept in one place so both apps advertise the same set. */
@@ -117,5 +120,6 @@ object Capabilities {
         PacketType.CALL_AUDIO_REQUEST,
         PacketType.CALL_AUDIO,
         PacketType.HEARTBEAT,
+        PacketType.INPUT,
     )
 }

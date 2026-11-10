@@ -89,6 +89,9 @@ public static class PacketType
 
     /// Keeps the link alive and detects a dead one. Body: {"pong": bool}.
     public const string Heartbeat = "aproid.heartbeat";
+
+    /// Keyboard and mouse shared between computers. Body: {"action", ...}; see `RemoteInput`.
+    public const string Input = "aproid.input";
 }
 
 public static class Capabilities
@@ -128,5 +131,6 @@ public static class Capabilities
         PacketType.CallAudioRequest,
         PacketType.CallAudio,
         PacketType.Heartbeat,
+        PacketType.Input,
     };
 }
