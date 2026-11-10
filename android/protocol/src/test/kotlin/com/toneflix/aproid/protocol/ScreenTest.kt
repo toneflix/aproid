@@ -26,6 +26,14 @@ class ScreenTest {
         assertTrue(info!!.hasAudio)
     }
 
+    @Test fun computersAnnounceJpegAndTheirPlatform() {
+        val info = Screen.info(wire(Screen.started(1440, 900, codec = Screen.JPEG, platform = RemoteInput.WINDOWS)))
+
+        assertEquals(Screen.Info(1440, 900, true, codec = Screen.JPEG, platform = RemoteInput.WINDOWS), info)
+        assertEquals(Screen.H264, Screen.info(wire(Screen.started(1080, 2400)))?.codec)
+        assertNull(Screen.info(wire(Screen.started(1080, 2400)))?.platform)
+    }
+
     @Test fun inputRoundTripsAndRejectsNonsense() {
         val inputs = listOf(
             ScreenInput.Tap(0.5, 0.25),

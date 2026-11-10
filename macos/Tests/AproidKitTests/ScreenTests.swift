@@ -24,6 +24,14 @@ final class ScreenTests: XCTestCase {
         XCTAssertEqual(info?.hasAudio, true)
     }
 
+    func testComputersAnnounceJpegAndTheirPlatform() throws {
+        let info = Screen.info(try wire(Screen.started(width: 1440, height: 900, codec: Screen.jpeg, platform: RemoteInput.windows)))
+
+        XCTAssertEqual(info, Screen.Info(width: 1440, height: 900, running: true, codec: Screen.jpeg, platform: RemoteInput.windows))
+        XCTAssertEqual(Screen.info(try wire(Screen.started(width: 1080, height: 2400)))?.codec, Screen.h264)
+        XCTAssertNil(Screen.info(try wire(Screen.started(width: 1080, height: 2400)))?.platform)
+    }
+
     func testInputRoundTripsAndRejectsNonsense() throws {
         let inputs: [ScreenInput] = [
             .tap(x: 0.5, y: 0.25),

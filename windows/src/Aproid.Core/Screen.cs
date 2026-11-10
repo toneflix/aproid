@@ -17,6 +17,10 @@ public static class Screen
     public const long AudioRate = 48_000;
     public const long AudioChannels = 2;
 
+    /// How the pictures are encoded. Phones send H.264; computers send each picture as a JPEG.
+    public const string H264 = "h264";
+    public const string Jpeg = "jpeg";
+
     public enum Action
     {
         Start,
@@ -25,9 +29,10 @@ public static class Screen
 
     public sealed record Request(Action Action, long MaxSize = Screen.MaxSize, long Bitrate = Screen.Bitrate, bool Audio = false);
 
-    /// What the phone is sending. Sizes are in pixels; `Running` is false once mirroring stops.
-    /// `AudioRate` and `AudioChannels` are 0 when the stream has no sound.
-    public sealed record Info(long Width, long Height, bool Running, long AudioRate = 0, long AudioChannels = 0)
+    /// What the device is sending. Sizes are in pixels; `Running` is false once mirroring stops.
+    /// `AudioRate` and `AudioChannels` are 0 when the stream has no sound. A computer also says which
+    /// `Platform` it is (`RemoteInput.MacOS` or `RemoteInput.Windows`), so the viewer can swap Control and Command.
+    public sealed record Info(long Width, long Height, bool Running, long AudioRate = 0, long AudioChannels = 0, string Codec = H264, string? Platform = null)
     {
         public bool HasAudio => AudioRate > 0 && AudioChannels > 0;
     }
@@ -67,15 +72,16 @@ public static class Screen
     }
 
     /// Announces a stream; send it with `Stream` as the payload size.
-    public static NetworkPacket Started(long width, long height, bool audio = false)
+    public static NetworkPacket Started(long width, long height, bool audio = false, string codec = H264, string? platform = null)
     {
         var body = new JsonObject
         {
             ["width"] = width,
             ["height"] = height,
-            ["codec"] = "h264",
+            ["codec"] = codec,
             ["running"] = true,
         };
+        if (platform is not null) body["platform"] = platform;
         if (audio)
         {
             body["audioCodec"] = "pcm16le";
@@ -98,12 +104,15 @@ public static class Screen
             packet.GetLong("height") ?? 0,
             packet.GetBool("running") ?? false,
             pcm ? Math.Clamp(packet.GetLong("audioRate") ?? 0, 0, 192_000) : 0,
-            pcm ? Math.Clamp(packet.GetLong("audioChannels") ?? 0, 0, 8) : 0);
+            pcm ? Math.Clamp(packet.GetLong("audioChannels") ?? 0, 0, 8) : 0,
+            packet.GetString("codec") ?? H264,
+            packet.GetString("platform"));
     }
 }
 
 /// One encoded piece of the screen stream. On the wire each is a 13 byte header (size, then the presentation time
-/// in microseconds, then `Flags`, all big-endian) followed by H.264 in Annex B form.
+/// in microseconds, then `Flags`, all big-endian) followed by H.264 in Annex B form, or one JPEG picture, flagged
+/// `Key`, from a computer.
 public sealed record ScreenFrame(byte[] Data, long TimeUs, byte Flags)
 {
     public const int HeaderSize = 13;

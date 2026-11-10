@@ -316,6 +316,47 @@ final class LanLinkTests: XCTestCase {
         XCTAssertEqual(received, frames)
     }
 
+    func testPayloadStreamSendsPiecesAsTheyAreWritten() throws {
+        let (onPhone, onMac) = try connect()
+        phone.trust.trust(mac.identity.deviceId, certificate: onPhone.certificateDER)
+        mac.trust.trust(phone.identity.deviceId, certificate: onMac.certificateDER)
+        let senderDevice = Device(link: onPhone, ownCertificate: phone.certificate, trustStore: phone.trust)
+        let viewerDevice = Device(link: onMac, ownCertificate: mac.certificate, trustStore: mac.trust)
+        viewerDevice.delegate = mac.recorder
+        senderDevice.start()
+        viewerDevice.start()
+
+        let frames = [
+            ScreenFrame(data: Data([1, 2, 3]), timeUs: 0, flags: ScreenFrame.key),
+            ScreenFrame(data: Data((0..<70_000).map { UInt8($0 % 256) }), timeUs: 66_666, flags: ScreenFrame.key),
+        ]
+        let stream = PayloadStream()
+        let opened = expectation(description: "opened")
+        let closed = expectation(description: "closed")
+        stream.onOpen = { opened.fulfill() }
+        stream.onClose = { error in
+            XCTAssertNil(error)
+            closed.fulfill()
+        }
+
+        XCTAssertTrue(senderDevice.sendStream(Screen.started(width: 1440, height: 900, codec: Screen.jpeg), stream: stream))
+        let packet = try XCTUnwrap(mac.recorder.packets.take())
+        let reader = ScreenFrameReader()
+        var received: [ScreenFrame] = []
+        let reading = try viewerDevice.receiveStream(packet) { received += try reader.feed($0) }
+
+        wait(for: [opened], timeout: 10)
+        XCTAssertTrue(stream.write(frames[0].header() + frames[0].data))
+        while !stream.write(frames[1].header() + frames[1].data) { usleep(1000) }
+        stream.close()
+        try reading.wait()
+        wait(for: [closed], timeout: 10)
+
+        XCTAssertEqual(Screen.info(packet)?.codec, Screen.jpeg)
+        XCTAssertEqual(received, frames)
+        XCTAssertFalse(stream.write(Data([4])))
+    }
+
     func testAnnouncementConnectsToANewPeer() throws {
         var announced = mac.identity
         announced.tcpPort = mac.lan.tcpPort

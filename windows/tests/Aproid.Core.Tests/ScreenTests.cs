@@ -30,6 +30,16 @@ public class ScreenTests
     }
 
     [Fact]
+    public void ComputersAnnounceJpegAndTheirPlatform()
+    {
+        var info = Screen.InfoOf(Wire(Screen.Started(1440, 900, codec: Screen.Jpeg, platform: RemoteInput.Windows)));
+
+        Assert.Equal(new Screen.Info(1440, 900, true, Codec: Screen.Jpeg, Platform: RemoteInput.Windows), info);
+        Assert.Equal(Screen.H264, Screen.InfoOf(Wire(Screen.Started(1080, 2400)))?.Codec);
+        Assert.Null(Screen.InfoOf(Wire(Screen.Started(1080, 2400)))?.Platform);
+    }
+
+    [Fact]
     public void InputRoundTripsAndRejectsNonsense()
     {
         ScreenInput[] inputs =

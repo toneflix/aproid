@@ -79,6 +79,41 @@ public final class PayloadTransfer {
         throw lastError
     }
 
+    /// Opens a port for a live `stream` that the first peer connecting with `peerCertificateDER` reads until
+    /// either side closes it. Returns the port to put in the packet. Blocks briefly, so call it off the event loops.
+    public func offer(peerCertificateDER: [UInt8], stream: PayloadStream) throws -> UInt16 {
+        let done = Once { stream.finished($0) }
+        let serverContext = serverContext
+        var lastError: Error = ProtocolError("no free payload port in \(ports)")
+
+        for port in ports {
+            do {
+                let channel = try ServerBootstrap(group: Self.group)
+                    .serverChannelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
+                    .childChannelInitializer { child in
+                        let box = PeerCertificateBox()
+                        let tls = NIOSSLServerHandler(context: serverContext, customVerificationCallback: box.verify)
+                        let upload = StreamUploadHandler(box: box, expected: peerCertificateDER, stream: stream, done: done)
+
+                        return child.pipeline.addHandlers([tls, upload])
+                    }
+                    .bind(host: "0.0.0.0", port: Int(port))
+                    .wait()
+
+                channel.eventLoop.scheduleTask(in: .seconds(60)) {
+                    channel.close(promise: nil)
+                    if !stream.isOpen { done.call(ProtocolError("the peer never opened the stream")) }
+                }
+
+                return port
+            } catch {
+                lastError = error
+            }
+        }
+
+        throw lastError
+    }
+
     /// Downloads `size` bytes that the peer offered at `host`:`port` into `sink`.
     /// `onProgress` gets each piece's byte count once it is written.
     public func receive(
@@ -241,6 +276,117 @@ private final class UploadHandler: ChannelInboundHandler {
 
     private func fail(_ context: ChannelHandlerContext, _ error: Error) {
         try? source.close()
+        context.close(promise: nil)
+        done.call(error)
+    }
+}
+
+/// A payload written while it is sent, such as a shared screen. Offer it with `Device.sendStream`, then `write`
+/// whole pieces to it and `close` it at the end. While the peer is still busy with earlier pieces, new ones are
+/// dropped, so each piece must stand on its own. Mirrors LiveStream.cs.
+public final class PayloadStream: @unchecked Sendable {
+    private let lock = NSLock()
+    private var channel: Channel?
+    private var closed = false
+
+    /// Called on a network thread once the peer connects.
+    public var onOpen: (() -> Void)?
+
+    /// Called once on a network thread when the stream ends, with the error if it broke.
+    public var onClose: ((Error?) -> Void)?
+
+    public init() {}
+
+    /// True while the peer is connected and reading.
+    public var isOpen: Bool { lock.withLock { channel != nil && !closed } }
+
+    /// Sends one whole piece. Returns false when it was dropped, because the peer isn't there yet or is busy.
+    @discardableResult
+    public func write(_ data: Data) -> Bool {
+        guard let channel = lock.withLock({ closed ? nil : channel }), channel.isWritable else { return false }
+
+        channel.writeAndFlush(channel.allocator.buffer(bytes: data), promise: nil)
+        return true
+    }
+
+    /// Ends the stream once what was written has gone out; the peer then sees it close.
+    public func close() {
+        let channel = lock.withLock { () -> Channel? in
+            closed = true
+            return self.channel
+        }
+        guard let channel else { return }
+
+        // Writes finish in order, so this empty one completes after the last piece.
+        channel.writeAndFlush(channel.allocator.buffer(capacity: 0)).whenComplete { _ in
+            channel.close(promise: nil)
+        }
+    }
+
+    func opened(_ channel: Channel) {
+        let wasClosed = lock.withLock { () -> Bool in
+            if !closed { self.channel = channel }
+            return closed
+        }
+
+        if wasClosed {
+            channel.close(promise: nil)
+            return
+        }
+        onOpen?()
+    }
+
+    func finished(_ error: Error?) {
+        lock.withLock {
+            closed = true
+            channel = nil
+        }
+        onClose?(error)
+    }
+}
+
+/// Hands a live stream's channel to its `PayloadStream` once TLS is up and the peer's certificate checks out.
+private final class StreamUploadHandler: ChannelInboundHandler {
+    typealias InboundIn = ByteBuffer
+
+    private let box: PeerCertificateBox
+    private let expected: [UInt8]
+    private let stream: PayloadStream
+    private let done: Once
+
+    init(box: PeerCertificateBox, expected: [UInt8], stream: PayloadStream, done: Once) {
+        self.box = box
+        self.expected = expected
+        self.stream = stream
+        self.done = done
+    }
+
+    func channelActive(context: ChannelHandlerContext) {
+        context.channel.parent?.close(promise: nil)
+        context.fireChannelActive()
+    }
+
+    func userInboundEventTriggered(context: ChannelHandlerContext, event: Any) {
+        guard let tlsEvent = event as? TLSUserEvent, case .handshakeCompleted = tlsEvent else {
+            context.fireUserInboundEventTriggered(event)
+            return
+        }
+
+        guard let der = try? box.certificate?.toDERBytes(), der == expected else {
+            context.close(promise: nil)
+            done.call(ProtocolError("payload peer is not the paired device"))
+            return
+        }
+
+        stream.opened(context.channel)
+    }
+
+    func channelInactive(context: ChannelHandlerContext) {
+        done.call(nil)
+        context.fireChannelInactive()
+    }
+
+    func errorCaught(context: ChannelHandlerContext, error: Error) {
         context.close(promise: nil)
         done.call(error)
     }

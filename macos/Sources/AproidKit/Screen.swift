@@ -13,6 +13,10 @@ public enum Screen {
     public static let audioRate: Int64 = 48_000
     public static let audioChannels: Int64 = 2
 
+    /// How the pictures are encoded. Phones send H.264; computers send each picture as a JPEG.
+    public static let h264 = "h264"
+    public static let jpeg = "jpeg"
+
     public enum Action: String, Sendable {
         case start
         case stop
@@ -32,21 +36,34 @@ public enum Screen {
         }
     }
 
-    /// What the phone is sending. Sizes are in pixels; `running` is false once mirroring stops.
-    /// `audioRate` and `audioChannels` are 0 when the stream has no sound.
+    /// What the device is sending. Sizes are in pixels; `running` is false once mirroring stops.
+    /// `audioRate` and `audioChannels` are 0 when the stream has no sound. A computer also says which
+    /// `platform` it is (`RemoteInput.macOS` or `RemoteInput.windows`), so the viewer can swap Control and Command.
     public struct Info: Equatable, Sendable {
         public var width: Int64
         public var height: Int64
         public var running: Bool
         public var audioRate: Int64
         public var audioChannels: Int64
+        public var codec: String
+        public var platform: String?
 
-        public init(width: Int64, height: Int64, running: Bool, audioRate: Int64 = 0, audioChannels: Int64 = 0) {
+        public init(
+            width: Int64,
+            height: Int64,
+            running: Bool,
+            audioRate: Int64 = 0,
+            audioChannels: Int64 = 0,
+            codec: String = Screen.h264,
+            platform: String? = nil
+        ) {
             self.width = width
             self.height = height
             self.running = running
             self.audioRate = audioRate
             self.audioChannels = audioChannels
+            self.codec = codec
+            self.platform = platform
         }
 
         public var hasAudio: Bool { audioRate > 0 && audioChannels > 0 }
@@ -80,13 +97,14 @@ public enum Screen {
     }
 
     /// Announces a stream; send it with `stream` as the payload size.
-    public static func started(width: Int64, height: Int64, audio: Bool = false) -> NetworkPacket {
+    public static func started(width: Int64, height: Int64, audio: Bool = false, codec: String = Screen.h264, platform: String? = nil) -> NetworkPacket {
         var body: [String: JSONValue] = [
             "width": .int(width),
             "height": .int(height),
-            "codec": .string("h264"),
+            "codec": .string(codec),
             "running": .bool(true),
         ]
+        if let platform { body["platform"] = .string(platform) }
         if audio {
             body["audioCodec"] = .string("pcm16le")
             body["audioRate"] = .int(audioRate)
@@ -108,14 +126,16 @@ public enum Screen {
             height: packet.int("height") ?? 0,
             running: packet.bool("running") ?? false,
             audioRate: pcm ? min(max(packet.int("audioRate") ?? 0, 0), 192_000) : 0,
-            audioChannels: pcm ? min(max(packet.int("audioChannels") ?? 0, 0), 8) : 0
+            audioChannels: pcm ? min(max(packet.int("audioChannels") ?? 0, 0), 8) : 0,
+            codec: packet.string("codec") ?? h264,
+            platform: packet.string("platform")
         )
     }
 }
 
 /// One encoded piece of the screen stream. On the wire each is a 13 byte header (size, then the
-/// presentation time in microseconds, then `flags`, all big-endian) followed by H.264 in Annex B form, or by
-/// PCM sound when `isAudio`.
+/// presentation time in microseconds, then `flags`, all big-endian) followed by H.264 in Annex B form (or one JPEG
+/// picture, flagged `key`, from a computer), or by PCM sound when `isAudio`.
 public struct ScreenFrame: Equatable, Sendable {
     public static let headerSize = 13
     public static let config: UInt8 = 1
