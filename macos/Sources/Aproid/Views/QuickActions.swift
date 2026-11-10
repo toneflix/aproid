@@ -19,35 +19,35 @@ struct QuickActions: View {
     }
 
     @ViewBuilder private var phoneTiles: some View {
-        ActionTile(icon: .volume2, title: "Ring phone", subtitle: "Full volume") {
+        ActionTile(icon: .volume2, title: "Ring phone") {
             model.ring(device.id)
         }
         sharedTiles
         ActionTile(icon: .messageSquare, title: "Messages", subtitle: messagesSubtitle) {
             showMessages()
         }
-        ActionTile(icon: .phone, title: "Call", subtitle: "From your phone") {
+        ActionTile(icon: .phone, title: "Call") {
             showMessages()
             messages.showsDialer = true
         }
-        ActionTile(icon: .cast, title: "Mirror", subtitle: "See & use your phone") {
+        ActionTile(icon: .cast, title: "Mirror") {
             model.mirror(device.id)
         }
-        ActionTile(icon: .images, title: "Photos", subtitle: "Browse & download") {
+        ActionTile(icon: .images, title: "Photos") {
             NSApplication.shared.activate(ignoringOtherApps: true)
             openWindow(id: AproidApp.photosWindow)
         }
     }
 
     @ViewBuilder private var computerTiles: some View {
-        ActionTile(icon: .volume2, title: "Play sound", subtitle: "To find it") {
+        ActionTile(icon: .volume2, title: "Play sound") {
             model.ring(device.id)
         }
         sharedTiles
     }
 
     @ViewBuilder private var sharedTiles: some View {
-        ActionTile(icon: .fileUp, title: "Send file", subtitle: "To Downloads") {
+        ActionTile(icon: .fileUp, title: "Send file") {
             model.chooseFiles(for: device.id)
         }
         ActionTile(icon: .clipboard, title: "Clipboard", subtitle: clipboardSubtitle) {
@@ -83,11 +83,11 @@ struct QuickActions: View {
     }
 }
 
-/// One square action: an icon chip with a title and a hint.
+/// One square action: an icon chip with a title and an optional status line.
 struct ActionTile: View {
     let icon: Lucide
     let title: String
-    let subtitle: String
+    var subtitle: String? = nil
     var isOn = true
     let action: () -> Void
 
@@ -106,10 +106,12 @@ struct ActionTile: View {
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title).font(.system(size: 13, weight: .semibold))
-                    Text(subtitle)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
 
                 Spacer(minLength: 0)

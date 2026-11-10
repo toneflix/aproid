@@ -58,7 +58,7 @@ private func phoneId(_ phone: PhoneEntity?) throws -> String {
 
 struct RingPhoneIntent: AppIntent {
     static let title: LocalizedStringResource = "Ring Phone"
-    static let description = IntentDescription("Rings your phone, even when it's on silent, so you can find it.")
+    static let description = IntentDescription("Rings your phone, even on silent.")
 
     @Parameter(title: "Phone")
     var phone: PhoneEntity?
@@ -72,7 +72,7 @@ struct RingPhoneIntent: AppIntent {
 
 struct SendClipboardIntent: AppIntent {
     static let title: LocalizedStringResource = "Send Clipboard to Phone"
-    static let description = IntentDescription("Sends what you last copied on this Mac to your phone's clipboard.")
+    static let description = IntentDescription("Sends this Mac's clipboard to your phone.")
 
     @Parameter(title: "Phone")
     var phone: PhoneEntity?
@@ -86,7 +86,7 @@ struct SendClipboardIntent: AppIntent {
 
 struct SendTextIntent: AppIntent {
     static let title: LocalizedStringResource = "Send Text to Phone"
-    static let description = IntentDescription("Sends text or a link to your phone. Links open there.")
+    static let description = IntentDescription("Sends text or a link to your phone.")
 
     @Parameter(title: "Text")
     var text: String
@@ -142,7 +142,7 @@ struct SendFilesIntent: AppIntent {
 
 struct MirrorPhoneIntent: AppIntent {
     static let title: LocalizedStringResource = "Mirror Phone Screen"
-    static let description = IntentDescription("Shows your phone's screen on this Mac. The phone asks you to allow it.")
+    static let description = IntentDescription("Shows your phone's screen on this Mac.")
 
     @Parameter(title: "Phone")
     var phone: PhoneEntity?
@@ -156,7 +156,7 @@ struct MirrorPhoneIntent: AppIntent {
 
 struct GetBatteryIntent: AppIntent {
     static let title: LocalizedStringResource = "Get Phone Battery"
-    static let description = IntentDescription("Gives your phone's battery level, from 0 to 100.")
+    static let description = IntentDescription("Gives your phone's battery level.")
 
     @Parameter(title: "Phone")
     var phone: PhoneEntity?

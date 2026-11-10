@@ -17,7 +17,7 @@ struct MenuPanel: View {
             if model.localNetworkBlocked {
                 Banner(
                     icon: .wifi,
-                    text: "macOS is blocking Aproid from the local network, so your phone can't find this Mac. Turn on Aproid under Local Network.",
+                    text: "Turn on Aproid under Local Network so your phone can find this Mac.",
                     action: ("Open Settings", model.openLocalNetworkSettings)
                 )
             }
