@@ -13,6 +13,7 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         static let plain = "phone.notification"
         static let replyable = "phone.notification.reply"
         static let missedCall = "phone.call.missed"
+        static let file = "phone.file"
     }
 
     private enum Key {
@@ -22,6 +23,7 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         static let file = "file"
         static let callBack = "callBack"
         static let actions = "actions"
+        static let showInFinder = "showInFinder"
     }
 
     /// Notification Center shows at most this many buttons in a notification's Options menu.
@@ -75,6 +77,12 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
             UNNotificationCategory(
                 identifier: Category.missedCall,
                 actions: [UNNotificationAction(identifier: Key.callBack, title: "Call back")],
+                intentIdentifiers: [],
+                options: []
+            ),
+            UNNotificationCategory(
+                identifier: Category.file,
+                actions: [UNNotificationAction(identifier: Key.showInFinder, title: "Show in Finder")],
                 intentIdentifiers: [],
                 options: []
             ),
@@ -160,7 +168,7 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         return identifier
     }
 
-    /// Tells the user a file arrived. Clicking it shows the file in Finder.
+    /// Tells the user a file arrived. Clicking it opens the file, and its button shows it in Finder.
     func announce(file url: URL, from device: Device) {
         guard let center else { return }
 
@@ -168,7 +176,7 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         content.title = url.lastPathComponent
         content.subtitle = "From \(device.name)"
         content.body = "Saved to Downloads"
-        content.categoryIdentifier = Category.plain
+        content.categoryIdentifier = Category.file
         content.userInfo = [Key.file: url.path]
         content.sound = .default
 
@@ -211,8 +219,11 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
 
         let info = response.notification.request.content.userInfo
         if let path = info[Key.file] as? String {
+            guard response.actionIdentifier != UNNotificationDismissActionIdentifier else { return }
+
             let url = URL(fileURLWithPath: path)
-            DispatchQueue.main.async { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+            let reveal = response.actionIdentifier == Key.showInFinder
+            Task { @MainActor in reveal ? ReceivedFile.reveal(url) : ReceivedFile.open(url) }
             return
         }
 
