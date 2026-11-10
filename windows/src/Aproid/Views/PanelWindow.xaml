@@ -159,13 +159,22 @@
                                         <MenuFlyout x:Name="PhoneMenu" Opening="PhoneMenu_Opening" />
                                     </Button.Flyout>
                                 </Button>
-                                <Border Background="{ThemeResource AproidOkTintBrush}" CornerRadius="10" Padding="9,4" HorizontalAlignment="Left">
+                                <Border Background="{ThemeResource AproidOkTintBrush}" CornerRadius="10" Padding="9,4" HorizontalAlignment="Left" ToolTipService.ToolTip="Connected over Wi-Fi">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <Ellipse Width="7" Height="7" Fill="{ThemeResource AproidOkBrush}" VerticalAlignment="Center" />
-                                        <TextBlock Text="Connected over Wi-Fi" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource AproidOkBrush}" />
+                                        <TextBlock Text="Connected" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource AproidOkBrush}" />
+                                        <views:LucideIcon Icon="Wifi" Size="11" Foreground="{ThemeResource AproidOkBrush}" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Border>
-                                <TextBlock Text="{x:Bind Model.PhoneSummary, Mode=OneWay}" FontSize="11" Foreground="#4A4030" TextTrimming="CharacterEllipsis" />
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button Width="24" Height="24" Padding="0" CornerRadius="12" Style="{StaticResource AproidPlainButton}" Background="{x:Bind StatusBackground(Model.MirrorsNotifications), Mode=OneWay}" Click="Notifications_Click"
+                                            ToolTipService.ToolTip="{x:Bind NotificationsHint(Model.MirrorsNotifications), Mode=OneWay}" AutomationProperties.Name="{x:Bind NotificationsHint(Model.MirrorsNotifications), Mode=OneWay}">
+                                        <views:LucideIcon Icon="{x:Bind HeroBell(Model.MirrorsNotifications), Mode=OneWay}" Size="12" Foreground="#4A4030" Opacity="{x:Bind StatusOpacity(Model.MirrorsNotifications), Mode=OneWay}" />
+                                    </Button>
+                                    <Border Width="24" Height="24" CornerRadius="12" Background="#14000000" ToolTipService.ToolTip="Clipboard synced" AutomationProperties.Name="Clipboard synced">
+                                        <views:LucideIcon Icon="Clipboard" Size="12" Foreground="#4A4030" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                </StackPanel>
                             </StackPanel>
                             <views:BatteryRing Grid.Column="2" VerticalAlignment="Center" Charge="{x:Bind BatteryCharge(Model.Focused), Mode=OneWay}" IsCharging="{x:Bind Model.Focused.IsCharging, Mode=OneWay, FallbackValue=False}" />
                         </Grid>

@@ -346,7 +346,12 @@ private fun ConnectedHero(mac: DeviceState, sharedWithOthers: Boolean, modifier:
                 Text(stringResource(R.string.home_connected), color = colors.onHero, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.weight(1f))
-            Text(stringResource(R.string.home_wifi), color = colors.onHero.copy(alpha = 0.8f), fontSize = 13.sp)
+            Icon(
+                painterResource(R.drawable.lucide_wifi),
+                contentDescription = stringResource(R.string.home_wifi),
+                tint = colors.onHero.copy(alpha = 0.8f),
+                modifier = Modifier.size(18.dp),
+            )
         }
 
         LaptopArt(180.dp, Modifier.align(Alignment.CenterHorizontally).padding(vertical = 4.dp)) {
