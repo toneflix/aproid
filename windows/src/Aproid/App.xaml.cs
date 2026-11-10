@@ -18,6 +18,7 @@ public partial class App : Application
     private MessagesWindow? messages;
     private PhotosWindow? photos;
     private ScreenWindow? screen;
+    private RemoteDesktopWindow? desktop;
 
     public App()
     {
@@ -56,6 +57,12 @@ public partial class App : Application
         model.MessagesRequested += number => (messages ??= new MessagesWindow(model)).Present(number);
         model.DialerRequested += () => (messages ??= new MessagesWindow(model)).Present(dial: true);
         model.MirrorRequested += () => (screen ??= new ScreenWindow(model.Mirror)).Present();
+        model.DesktopRequested += () => (desktop ??= new RemoteDesktopWindow(model.Desktop)).Present();
+        model.DesktopPicture += bitmap =>
+        {
+            if (desktop is null) bitmap.Dispose();
+            else desktop.Show(bitmap);
+        };
         model.ScreenStarted += source =>
         {
             screen ??= new ScreenWindow(model.Mirror);

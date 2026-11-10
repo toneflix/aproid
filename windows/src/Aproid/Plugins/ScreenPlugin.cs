@@ -2,18 +2,22 @@ using Aproid.Core;
 
 namespace Aproid.Plugins;
 
-/// Receives the phone's screen stream ("aproid.screen") and hands on each frame.
+/// Receives screen streams ("aproid.screen"). A phone's H.264 frames go to `OnFrame`; another computer's JPEG
+/// pictures go to `OnPicture`.
 internal sealed class ScreenPlugin : IPlugin
 {
     public IReadOnlySet<string> Incoming { get; } = new HashSet<string> { PacketType.Screen };
 
-    /// Called on a network thread when a phone starts streaming, with the picture's size.
+    /// Called on a network thread when a device starts streaming, with the picture's size.
     public Action<Device, Screen.Info>? OnStarted { get; set; }
 
     /// Called on a network thread with each frame, in order.
     public Action<ScreenFrame>? OnFrame { get; set; }
 
-    /// Called on a network thread with the phone's id when its stream ends.
+    /// Called on a network thread with each JPEG picture from a computer, in order.
+    public Action<byte[]>? OnPicture { get; set; }
+
+    /// Called on a network thread with the device's id when its stream ends.
     public Action<string>? OnEnded { get; set; }
 
     public void OnPacket(NetworkPacket packet, Device device)
@@ -28,10 +32,16 @@ internal sealed class ScreenPlugin : IPlugin
         }
 
         OnStarted?.Invoke(device, info);
-        _ = ReadAsync(packet, device);
+        Action<ScreenFrame> handle = info.Codec == Screen.Jpeg
+            ? frame =>
+            {
+                if (!frame.IsAudio) OnPicture?.Invoke(frame.Data);
+            }
+            : frame => OnFrame?.Invoke(frame);
+        _ = ReadAsync(packet, device, handle);
     }
 
-    private async Task ReadAsync(NetworkPacket packet, Device device)
+    private async Task ReadAsync(NetworkPacket packet, Device device, Action<ScreenFrame> handle)
     {
         var reader = new ScreenFrameReader();
 
@@ -39,7 +49,7 @@ internal sealed class ScreenPlugin : IPlugin
         {
             await device.ReceiveStreamAsync(packet, data =>
             {
-                foreach (var frame in reader.Feed(data.Span)) OnFrame?.Invoke(frame);
+                foreach (var frame in reader.Feed(data.Span)) handle(frame);
 
                 return ValueTask.CompletedTask;
             });

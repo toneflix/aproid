@@ -334,6 +334,8 @@ public sealed partial class PanelWindow : Window
     // Function bindings can't turn a bool into Visibility themselves, so these return it directly.
     private static Visibility Shown(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
 
+    public Visibility Hidden(bool hidden) => Shown(!hidden);
+
     public string LocationDetail(PhoneLocation? location)
     {
         if (location is null) return "";
@@ -371,6 +373,13 @@ public sealed partial class PanelWindow : Window
     {
         if (FocusedId is string id) Model.Reject(id);
     }
+
+    private void ViewScreen_Click(object sender, RoutedEventArgs e)
+    {
+        if (FocusedId is string id) Model.StartMirroring(id);
+    }
+
+    private void StopScreenShare_Click(object sender, RoutedEventArgs e) => Model.StopScreenShare();
 
     private void Ring_Click(object sender, RoutedEventArgs e)
     {
@@ -575,7 +584,7 @@ public sealed partial class PanelWindow : Window
             SettingsMenu.Items.Add(share);
         }
 
-        var remote = new ToggleMenuFlyoutItem { Text = "Let my other computers use this PC", IsChecked = Model.AllowsRemoteInput };
+        var remote = new ToggleMenuFlyoutItem { Text = "Let my other computers see and use this PC", IsChecked = Model.AllowsRemoteInput };
         remote.Click += (_, _) => Model.AllowsRemoteInput = remote.IsChecked;
         SettingsMenu.Items.Add(remote);
 

@@ -288,6 +288,26 @@
                         <views:ActionTile Grid.Row="1" Grid.Column="1" Icon="{x:Bind NotificationsIcon(Model.MirrorsNotifications), Mode=OneWay}" Title="Notifications" Subtitle="{x:Bind Model.NotificationsSubtitle, Mode=OneWay}" IsOn="{x:Bind Model.MirrorsNotifications, Mode=OneWay}" Click="Notifications_Click" />
                     </Grid>
 
+                    <!-- The other computer's screen, and whether it is watching this one -->
+                    <Border Style="{StaticResource AproidCard}" Padding="12" Visibility="{x:Bind Model.FocusIsComputer, Mode=OneWay}">
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="34" Height="34" CornerRadius="9" Background="{x:Bind InputChip(Model.FocusWatchesScreen), Mode=OneWay}">
+                                <views:LucideIcon Icon="ScreenShare" Size="14" Foreground="{x:Bind InputGlyph(Model.FocusWatchesScreen), Mode=OneWay}" />
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                <TextBlock Text="Screen" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource AproidTextBrush}" />
+                                <TextBlock Text="{x:Bind Model.ScreenStatus, Mode=OneWay}" Style="{StaticResource AproidCaption}" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="View" Style="{StaticResource AccentButtonStyle}" CornerRadius="8" VerticalAlignment="Center" Click="ViewScreen_Click" Visibility="{x:Bind Hidden(Model.FocusWatchesScreen), Mode=OneWay}" />
+                            <Button Grid.Column="2" Content="Stop" CornerRadius="8" VerticalAlignment="Center" Click="StopScreenShare_Click" Visibility="{x:Bind Model.FocusWatchesScreen, Mode=OneWay}" />
+                        </Grid>
+                    </Border>
+
                     <!-- Where the other computer sits, so the keyboard and mouse move across to it -->
                     <Border Style="{StaticResource AproidCard}" Padding="12" Visibility="{x:Bind Model.FocusIsComputer, Mode=OneWay}">
                         <StackPanel Spacing="10">
