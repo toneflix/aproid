@@ -17,6 +17,8 @@ struct DeviceState: Identifiable, Equatable {
     let battery: BatteryStatus?
     let media: NowPlaying?
     let location: PhoneLocation?
+    /// Runs Aproid with FlyyDrop, so files can go to it without pairing.
+    var canFlyyDrop = false
 
     var isComputer: Bool { type.isComputer }
 }
@@ -49,6 +51,18 @@ final class AppModel: ObservableObject {
             publish()
         }
     }
+
+    /// FlyyDrops from nearby devices waiting for an answer, oldest first.
+    @Published private(set) var flyyDropAsks: [FlyyDropAsk] = []
+
+    /// Our FlyyDrops, by the id of the device they go to.
+    @Published private(set) var flyyDropSends: [String: FlyyDropSend] = [:]
+
+    /// Who may FlyyDrop to this Mac without being paired. Kept across launches.
+    @Published private(set) var flyyDropReceiving = FlyyDrop.Receiving.off
+
+    /// When "Everyone for 10 minutes" ends.
+    @Published private(set) var flyyDropUntil: Date?
 
     /// A paired phone is in Bluetooth range but not reachable over the network.
     @Published private(set) var phoneNearby = false
@@ -128,6 +142,7 @@ final class AppModel: ObservableObject {
     private let inputShare: InputSharePlugin
     private let screenHost = ScreenHostPlugin()
     private let relay: PhoneRelayPlugin
+    private let flyyDropPlugin: FlyyDropPlugin
     /// Carries call audio over Bluetooth, with this Mac as the phone's hands-free device.
     let callAudio = HandsFreeAudio()
     private let callPanel = CallPanel()
@@ -181,7 +196,8 @@ final class AppModel: ObservableObject {
         screenWindow = ScreenWindowController(mirror: screen)
         desktopWindow = RemoteDesktopWindowController(desktop: desktop)
         notifications = NotificationPlugin(devices: connected)
-        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin, find, mediaHost, inputShare, screenHost, relay])
+        flyyDropPlugin = FlyyDropPlugin(share: share, devices: connected)
+        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin, find, mediaHost, inputShare, screenHost, relay, flyyDropPlugin])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
         switcherStyle = UserDefaults.standard.string(forKey: "switcherStyle").flatMap(PhoneSwitcherStyle.init(rawValue:)) ?? .carousel
         opensAtLogin = LoginItem.isEnabled
@@ -264,6 +280,7 @@ final class AppModel: ObservableObject {
         share.onActivity = { [weak self] activity in Task { @MainActor in self?.record(activity) } }
         share.onFileReceived = { [weak notifications] url, device in notifications?.announce(file: url, from: device) }
         share.restore()
+        restoreFlyyDrop()
         start()
         clipboard.startWatching()
         shortcuts.isEnabled = usesShortcuts
@@ -512,6 +529,99 @@ final class AppModel: ObservableObject {
         }
     }
 
+    // MARK: FlyyDrop
+
+    func setFlyyDropReceiving(_ mode: FlyyDrop.Receiving) {
+        flyyDropPlugin.drop.receiving = mode
+        UserDefaults.standard.set(mode.rawValue, forKey: "flyyDropReceiving")
+        UserDefaults.standard.set(flyyDropPlugin.drop.receivingUntil, forKey: "flyyDropUntil")
+        publishFlyyDropReceiving()
+    }
+
+    /// Asks a nearby device to take these files. Its owner sees them and accepts or declines.
+    func flyyDrop(_ urls: [URL], to id: String) {
+        guard let device = connected[id] else { return }
+
+        let plugin = flyyDropPlugin
+        DispatchQueue.global(qos: .userInitiated).async { plugin.send(urls, to: device) }
+    }
+
+    /// Opens a file picker and FlyyDrops what the user picks.
+    func chooseFilesToFlyyDrop(for id: String) {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.prompt = "FlyyDrop"
+        panel.message = "Choose files to FlyyDrop to \(connected[id]?.name ?? "this device"). They'll be asked to accept."
+        panel.begin { [weak self] response in
+            guard response == .OK else { return }
+
+            let urls = panel.urls
+            Task { @MainActor in self?.flyyDrop(urls, to: id) }
+        }
+    }
+
+    func cancelFlyyDrop(to deviceId: String) {
+        guard let send = flyyDropSends[deviceId] else { return }
+
+        flyyDropPlugin.cancel(send.id, to: deviceId)
+        flyyDropSends[deviceId] = nil
+    }
+
+    func acceptFlyyDrop(_ id: String) { flyyDropPlugin.accept(id) }
+
+    func declineFlyyDrop(_ id: String) { flyyDropPlugin.decline(id) }
+
+    private func restoreFlyyDrop() {
+        let defaults = UserDefaults.standard
+        let mode = defaults.string(forKey: "flyyDropReceiving").flatMap(FlyyDrop.Receiving.init(rawValue:)) ?? .off
+        flyyDropPlugin.drop.restore(mode, until: (defaults.object(forKey: "flyyDropUntil") as? NSNumber)?.int64Value)
+        publishFlyyDropReceiving()
+
+        let notifications = notifications
+        flyyDropPlugin.onAsk = { [weak self] ask in
+            notifications.announce(ask)
+            Task { @MainActor in
+                self?.flyyDropAsks.append(ask)
+                NSApplication.shared.requestUserAttention(.informationalRequest)
+            }
+        }
+        flyyDropPlugin.onAskEnded = { [weak self] id in
+            notifications.withdrawFlyyDrop(id)
+            Task { @MainActor in self?.flyyDropAsks.removeAll { $0.id == id } }
+        }
+        flyyDropPlugin.onSend = { [weak self] deviceId, send in
+            Task { @MainActor in
+                guard let self else { return }
+                guard send.stage == .waiting || self.flyyDropSends[deviceId]?.id == send.id else { return }
+
+                self.flyyDropSends[deviceId] = send
+                if send.isFinished { self.forgetFlyyDrop(send, to: deviceId) }
+            }
+        }
+        flyyDropPlugin.onActivity = { [weak self] activity in Task { @MainActor in self?.record(activity) } }
+    }
+
+    /// Clears a finished FlyyDrop from its row after a few seconds.
+    private func forgetFlyyDrop(_ send: FlyyDropSend, to deviceId: String) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 6_000_000_000)
+            if flyyDropSends[deviceId]?.id == send.id { flyyDropSends[deviceId] = nil }
+        }
+    }
+
+    private func tickFlyyDrop() {
+        flyyDropPlugin.tick()
+        if flyyDropPlugin.drop.receiving != flyyDropReceiving { publishFlyyDropReceiving() }
+    }
+
+    private func publishFlyyDropReceiving() {
+        flyyDropReceiving = flyyDropPlugin.drop.receiving
+        flyyDropUntil = flyyDropPlugin.drop.receivingUntil.map { Date(timeIntervalSince1970: TimeInterval($0) / 1000) }
+    }
+
     func clearRecent() {
         recent.removeAll { !$0.isInProgress }
     }
@@ -540,6 +650,7 @@ final class AppModel: ObservableObject {
         let me = identity
         let trustStore = trustStore
         let connected = connected
+        let guests = flyyDropPlugin.drop
 
         Task.detached { [weak self] in
             do {
@@ -552,7 +663,7 @@ final class AppModel: ObservableObject {
                     isConnected: { connected[$0]?.link.isOpen == true }
                 ) { deviceLink in
                     // Create the device right away on the network thread so no early packet is missed.
-                    let device = Device(link: deviceLink, ownCertificate: certificate, trustStore: trustStore)
+                    let device = Device(link: deviceLink, ownCertificate: certificate, trustStore: trustStore, guests: guests)
                     device.delegate = self
                     device.start()
                     Task { @MainActor in self?.add(device) }
@@ -574,6 +685,7 @@ final class AppModel: ObservableObject {
             Task { @MainActor in
                 self?.noteBroadcast(result)
                 self?.connected.all.forEach { $0.tick() }
+                self?.tickFlyyDrop()
                 self?.searchNearbyIfLost()
             }
         }
@@ -730,7 +842,8 @@ final class AppModel: ObservableObject {
                     code: showsCode ? device.verificationCode : nil,
                     battery: battery.status(for: device.id),
                     media: mediaPlugin.nowPlaying(for: device.id),
-                    location: locations.location(for: device.id)
+                    location: locations.location(for: device.id),
+                    canFlyyDrop: device.link.identity.incomingCapabilities.contains(PacketType.flyyDropRequest)
                 )
             }
             .sorted { $0.name < $1.name }

@@ -28,7 +28,17 @@ struct MenuPanel: View {
                     .transition(.opacity)
             }
 
+            ForEach(model.flyyDropAsks.prefix(1)) { ask in
+                FlyyDropAskCard(ask: ask, model: model)
+                    .transition(.scale(scale: 0.96).combined(with: .opacity))
+            }
+
             main
+
+            if model.flyyDropReceiving != .off {
+                FlyyDropReceivingBanner(model: model)
+                    .transition(.opacity)
+            }
 
             let others = model.devices.filter { $0.pairState != .paired && $0.id != focused?.id }
             if !others.isEmpty {
@@ -50,6 +60,7 @@ struct MenuPanel: View {
         .glassBackdrop()
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: model.devices)
         .animation(.easeOut(duration: 0.2), value: model.recent)
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: model.flyyDropAsks)
         .fitsWindowHeight()
     }
 
@@ -118,6 +129,7 @@ private struct PanelHeader: View {
                     get: { model.relaysPhones },
                     set: { model.relaysPhones = $0 }
                 ))
+                FlyyDropReceivingMenu(model: model)
                 Toggle("Open at login", isOn: $model.opensAtLogin)
                 Menu("Keyboard shortcuts") {
                     Toggle("Use shortcuts", isOn: $model.usesShortcuts)

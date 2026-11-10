@@ -14,6 +14,7 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         static let replyable = "phone.notification.reply"
         static let missedCall = "phone.call.missed"
         static let file = "phone.file"
+        static let flyyDrop = "flyydrop.ask"
     }
 
     private enum Key {
@@ -24,6 +25,9 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         static let callBack = "callBack"
         static let actions = "actions"
         static let showInFinder = "showInFinder"
+        static let flyyDrop = "flyyDrop"
+        static let accept = "accept"
+        static let decline = "decline"
     }
 
     /// Notification Center shows at most this many buttons in a notification's Options menu.
@@ -82,6 +86,15 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
                 actions: [UNNotificationAction(identifier: Key.callBack, title: "Call back")],
                 intentIdentifiers: [],
                 options: []
+            ),
+            UNNotificationCategory(
+                identifier: Category.flyyDrop,
+                actions: [
+                    UNNotificationAction(identifier: Key.accept, title: "Accept"),
+                    UNNotificationAction(identifier: Key.decline, title: "Decline", options: [.destructive]),
+                ],
+                intentIdentifiers: [],
+                options: [.customDismissAction]
             ),
             UNNotificationCategory(
                 identifier: Category.file,
@@ -201,6 +214,29 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
     }
 
+    /// Someone nearby wants to FlyyDrop, with Accept and Decline buttons. Clicking it opens the panel to answer there.
+    func announce(_ ask: FlyyDropAsk) {
+        guard let center else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = "\(ask.deviceName) wants to FlyyDrop"
+        content.subtitle = ask.isPaired ? "From a paired device" : "Not paired"
+        content.body = ask.summary
+        content.categoryIdentifier = Category.flyyDrop
+        content.userInfo = [Key.flyyDrop: ask.id]
+        content.sound = .default
+        content.interruptionLevel = .timeSensitive
+
+        center.add(UNNotificationRequest(identifier: Self.flyyDropIdentifier(ask.id), content: content, trigger: nil))
+    }
+
+    /// Takes the FlyyDrop notification away once it is answered or gone.
+    func withdrawFlyyDrop(_ id: String) {
+        let identifier = Self.flyyDropIdentifier(id)
+        center?.removeDeliveredNotifications(withIdentifiers: [identifier])
+        center?.removePendingNotificationRequests(withIdentifiers: [identifier])
+    }
+
     /// A missed call, with a Call back button that dials from the phone.
     func announceMissedCall(from caller: String, number: String, deviceId: String, deviceName: String) {
         guard let center else { return }
@@ -236,6 +272,18 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         defer { completionHandler() }
 
         let info = response.notification.request.content.userInfo
+        if let id = info[Key.flyyDrop] as? String {
+            let action = response.actionIdentifier
+            Task { @MainActor in
+                switch action {
+                case Key.accept: AppModel.shared.acceptFlyyDrop(id)
+                case Key.decline, UNNotificationDismissActionIdentifier: AppModel.shared.declineFlyyDrop(id)
+                default: MenuBarPanel.toggle()
+                }
+            }
+            return
+        }
+
         if let path = info[Key.file] as? String {
             guard response.actionIdentifier != UNNotificationDismissActionIdentifier else { return }
 
@@ -270,6 +318,10 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         if response.actionIdentifier == UNNotificationDismissActionIdentifier {
             _ = send(deviceId, NotificationRequests.dismiss(id))
         }
+    }
+
+    private static func flyyDropIdentifier(_ id: String) -> String {
+        "flyydrop/\(id)"
     }
 
     private static func identifier(device: String, id: String) -> String {
