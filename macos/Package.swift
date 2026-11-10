@@ -20,6 +20,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-certificates.git", from: "1.5.0"),
         .package(url: "https://github.com/apple/swift-asn1.git", from: "1.1.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", "3.0.0"..<"4.0.0"),
+        .package(url: "https://github.com/sparkle-project/Sparkle.git", from: "2.6.0"),
     ],
     targets: [
         // Protocol and networking. No UI, so it can be tested on its own.
@@ -39,11 +40,15 @@ let package = Package(
         // The menu bar app.
         .executableTarget(
             name: "Aproid",
-            dependencies: ["AproidKit"],
+            dependencies: ["AproidKit", .product(name: "Sparkle", package: "Sparkle")],
             swiftSettings: [.unsafeFlags(intentsFlags)],
             linkerSettings: [
                 .linkedFramework("AppIntents"),
-                .unsafeFlags(["-Xlinker", "-dependency_info", "-Xlinker", "\(packageDir)/.build/Aproid_dependency_info.dat"]),
+                .unsafeFlags([
+                    "-Xlinker", "-dependency_info", "-Xlinker", "\(packageDir)/.build/Aproid_dependency_info.dat",
+                    // Sparkle.framework is copied into Contents/Frameworks by bundle.sh.
+                    "-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks",
+                ]),
             ]
         ),
         .testTarget(name: "AproidKitTests", dependencies: ["AproidKit"]),

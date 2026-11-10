@@ -90,6 +90,9 @@ final class AppModel: ObservableObject {
         },
     ])
 
+    /// Looks for new versions of Aproid.
+    let updater = AppUpdater()
+
     /// Sends what is shared from the Share menu.
     private(set) lazy var shareInbox = ShareInbox(model: self)
 

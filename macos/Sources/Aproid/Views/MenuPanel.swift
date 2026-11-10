@@ -106,6 +106,10 @@ private struct PanelHeader: View {
                     }
                 }
                 Button("Open Downloads") { NSWorkspace.shared.open(AppModel.downloads) }
+                if model.updater.isAvailable {
+                    Button("Check for updates…") { model.updater.check() }
+                        .disabled(!model.updater.canCheck)
+                }
 
                 let paired = model.devices.filter { $0.pairState == .paired }
                 if !paired.isEmpty {
@@ -116,6 +120,7 @@ private struct PanelHeader: View {
                 }
 
                 Divider()
+                Text("Aproid \(model.updater.version)")
                 Button("Quit Aproid") { NSApplication.shared.terminate(nil) }
             } label: {
                 Image(lucide: .settings, size: 14, weight: .medium)
