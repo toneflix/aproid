@@ -49,6 +49,10 @@ open build/Aproid.app           # starts the menu bar app
 
 If KDE Connect is running on either device it may hold port 1716. Aproid falls back to the next free port, but discovery is most reliable with KDE Connect closed.
 
+## Releasing
+
+Each app releases on its own tag through `.github/workflows/release.yml`: push `android-v1.2.3`, `macos-v1.2.3` or `windows-v1.2.3` and only that app is built and published. The signing secrets each app needs are listed at the top of the workflow.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

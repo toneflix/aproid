@@ -14,13 +14,29 @@ android {
         applicationId = "com.toneflix.aproid"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 1
+        versionName = findProperty("versionName") as String? ?: "0.1.0"
+    }
+
+    // Release builds are signed only when the keystore is passed in, as the release workflow does.
+    val keystore = System.getenv("ANDROID_KEYSTORE_FILE")
+    if (keystore != null) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(keystore)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (keystore != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

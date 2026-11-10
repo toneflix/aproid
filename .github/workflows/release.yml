@@ -1,20 +1,77 @@
-name: Mac release
+name: Release
 
-# Tag a version as macos-v1.2.3 to publish a signed, notarized Aproid-1.2.3.dmg as a GitHub release.
+# Each app releases on its own tag, and only the matching job runs:
+#   android-v1.2.3  signed Aproid-1.2.3.apk
+#   macos-v1.2.3    signed, notarized Aproid-1.2.3.dmg and update zip
+#   windows-v1.2.3  Aproid-Setup-1.2.3.exe
+#
+# Android secrets: ANDROID_KEYSTORE (base64 .jks), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
+#
+# Mac secrets: MACOS_CERT_P12 (base64 Developer ID Application .p12), MACOS_CERT_PASSWORD,
+# NOTARY_KEY (App Store Connect API .p8 contents), NOTARY_KEY_ID, NOTARY_ISSUER_ID, SPARKLE_PRIVATE_KEY.
+# Mac variable: SPARKLE_PUBLIC_KEY. Without the Sparkle key and variable, the release works but can't auto-update.
 # The Mac app checks the feed in the "macos-appcast" release for updates (Sparkle).
 #
-# Secrets: MACOS_CERT_P12 (base64 Developer ID Application .p12), MACOS_CERT_PASSWORD,
-# NOTARY_KEY (App Store Connect API .p8 contents), NOTARY_KEY_ID, NOTARY_ISSUER_ID, SPARKLE_PRIVATE_KEY.
-# Variable: SPARKLE_PUBLIC_KEY. Without the Sparkle key and variable, the release works but can't auto-update.
+# The Windows app checks the windows-v* releases for updates.
 on:
   push:
-    tags: ["macos-v*"]
+    tags: ["android-v*", "macos-v*", "windows-v*"]
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  android:
+    if: startsWith(github.ref_name, 'android-v')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Protocol tests
+        run: ./gradlew :protocol:test
+      - name: Read the version from the tag
+        id: version
+        run: echo "number=${GITHUB_REF_NAME#android-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Load the signing key
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+        run: |
+          if [ -z "$KEYSTORE" ]; then
+            echo "::error::Add the ANDROID_KEYSTORE, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD secrets first."
+            exit 1
+          fi
+          echo "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.jks"
+
+      - name: Build and sign
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          VERSION: ${{ steps.version.outputs.number }}
+        run: |
+          ./gradlew :app:assembleRelease -PversionName="$VERSION" -PversionCode=${{ github.run_number }}
+          rm "$ANDROID_KEYSTORE_FILE"
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/Aproid-$VERSION.apk"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Aproid for Android ${{ steps.version.outputs.number }}
+          files: android/dist/Aproid-*.apk
+          generate_release_notes: true
+
+  macos:
+    if: startsWith(github.ref_name, 'macos-v')
     runs-on: macos-15
     defaults:
       run:
@@ -160,3 +217,29 @@ jobs:
           body: Aproid for Mac checks this feed for updates. Don't delete it.
           prerelease: true
           files: macos/dist/appcast.xml
+
+  windows:
+    if: startsWith(github.ref_name, 'windows-v')
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Protocol tests
+        run: dotnet test tests/Aproid.Core.Tests
+      - name: Read the version from the tag
+        id: version
+        shell: bash
+        run: echo "number=${GITHUB_REF_NAME#windows-v}" >> "$GITHUB_OUTPUT"
+      - name: Build app and installer
+        run: ./scripts/package.ps1 -Version ${{ steps.version.outputs.number }}
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Aproid for Windows ${{ steps.version.outputs.number }}
+          files: windows/publish/Aproid-Setup-*.exe
+          generate_release_notes: true
