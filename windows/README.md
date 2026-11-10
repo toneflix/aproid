@@ -20,7 +20,7 @@ CI publishes a self-contained build as the `Aproid-windows-x64` artifact (unzip 
 
 ## Releases
 
-Push a tag like `windows-v1.2.3` and the release workflow publishes `Aproid-Setup-1.2.3.exe` on GitHub. Installed copies check those releases twice a day and offer to update. The installer isn't signed, so on first install Windows SmartScreen asks: pick "More info", then "Run anyway".
+Push a tag like `1.2.3` (all apps) or `windows-1.2.3` and the release workflow publishes `Aproid-Setup-1.2.3.exe` on GitHub. Installed copies check those releases twice a day and offer to update. The installer isn't signed, so on first install Windows SmartScreen asks: pick "More info", then "Run anyway".
 
 On first launch Windows Firewall asks whether Aproid may use the network. Allow it on private networks, or the phone can't find this PC.
 
