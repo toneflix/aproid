@@ -6,14 +6,25 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.net.DatagramPacket
+import java.net.DatagramSocket
 import java.net.InetAddress
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
 class LanLinkTest {
-    private class Peer(name: String, type: DeviceType, ports: IntRange) {
-        val identity = DeviceIdentity(DeviceIdentity.newDeviceId(), name, type)
+    private class Peer(
+        name: String,
+        type: DeviceType,
+        ports: IntRange,
+        udpPort: Int = 41716,
+        capabilities: Set<String> = Capabilities.mvp,
+    ) {
+        val identity = DeviceIdentity(
+            DeviceIdentity.newDeviceId(), name, type,
+            incomingCapabilities = capabilities, outgoingCapabilities = capabilities,
+        )
         val certificate = DeviceCertificate.generate(identity.deviceId)
         val trust = InMemoryTrustStore()
         val links = LinkedBlockingQueue<DeviceLink>()
@@ -22,7 +33,7 @@ class LanLinkTest {
         // High ports so the test does not clash with a real KDE Connect install.
         val lan = LanLink(
             { identity }, certificate, trust, { links.put(it) },
-            udpPort = 41716, tcpPorts = ports, isConnected = { it in connected },
+            udpPort = udpPort, tcpPorts = ports, isConnected = { it in connected },
         )
 
         fun nextLink(): DeviceLink = links.poll(10, TimeUnit.SECONDS) ?: error("no link")
@@ -45,6 +56,23 @@ class LanLinkTest {
         phone.lan.connect(mac.identity.copy(tcpPort = mac.lan.tcpPort), InetAddress.getLoopbackAddress())
 
         return phone.nextLink() to mac.nextLink()
+    }
+
+    @Test fun connectsToAPeerWhoseAnnouncementIsLargerThanTwoKilobytes() {
+        val capabilities = (0 until 120).map { "aproid.capability.$it" }.toSet()
+        val big = Peer("Phone", DeviceType.PHONE, 41765..41780, udpPort = 41799, capabilities = capabilities)
+        big.lan.start()
+
+        try {
+            val datagram = big.identity.copy(tcpPort = big.lan.tcpPort).toPacket().serialize().toByteArray()
+            assertTrue(datagram.size > 4096)
+
+            DatagramSocket().use { it.send(DatagramPacket(datagram, datagram.size, InetAddress.getLoopbackAddress(), 41716)) }
+
+            mac.nextLink()
+        } finally {
+            big.lan.stop()
+        }
     }
 
     @Test fun broadcastsToEveryNetworkAndTheLimitedAddress() {
