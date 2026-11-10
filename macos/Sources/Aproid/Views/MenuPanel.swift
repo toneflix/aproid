@@ -114,6 +114,10 @@ private struct PanelHeader: View {
                     get: { model.allowsRemoteInput },
                     set: { model.allowsRemoteInput = $0 }
                 ))
+                Toggle("Pass phone notifications and calls between my computers", isOn: Binding(
+                    get: { model.relaysPhones },
+                    set: { model.relaysPhones = $0 }
+                ))
                 Toggle("Open at login", isOn: $model.opensAtLogin)
                 Menu("Keyboard shortcuts") {
                     Toggle("Use shortcuts", isOn: $model.usesShortcuts)

@@ -127,6 +127,7 @@ final class AppModel: ObservableObject {
     private let mediaHost: MediaHostPlugin
     private let inputShare: InputSharePlugin
     private let screenHost = ScreenHostPlugin()
+    private let relay: PhoneRelayPlugin
     /// Carries call audio over Bluetooth, with this Mac as the phone's hands-free device.
     let callAudio = HandsFreeAudio()
     private let callPanel = CallPanel()
@@ -171,6 +172,7 @@ final class AppModel: ObservableObject {
         battery = BatteryPlugin(devices: connected)
         mediaHost = MediaHostPlugin(devices: connected)
         inputShare = InputSharePlugin(devices: connected)
+        relay = PhoneRelayPlugin(devices: connected)
         clipboard = ClipboardPlugin(devices: connected)
         nearby = NearbyFinder(ownId: identity.deviceId)
         let screen = ScreenMirror()
@@ -179,7 +181,7 @@ final class AppModel: ObservableObject {
         screenWindow = ScreenWindowController(mirror: screen)
         desktopWindow = RemoteDesktopWindowController(desktop: desktop)
         notifications = NotificationPlugin(devices: connected)
-        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin, find, mediaHost, inputShare, screenHost])
+        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin, find, mediaHost, inputShare, screenHost, relay])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
         switcherStyle = UserDefaults.standard.string(forKey: "switcherStyle").flatMap(PhoneSwitcherStyle.init(rawValue:)) ?? .carousel
         opensAtLogin = LoginItem.isEnabled
@@ -190,6 +192,19 @@ final class AppModel: ObservableObject {
         inputShare.onChange = { [weak self] in Task { @MainActor in self?.inputChanged() } }
         let inputShare = inputShare
         screenHost.allows = { [weak inputShare] in inputShare?.allowsControl ?? false }
+        notifications.send = { [weak self] id, packet in self?.sendToPhone(id, packet) ?? false }
+        let shown = notifications
+        relay.onRelayed = { [weak self] message, via in
+            let name = "\(message.phoneName) via \(via)"
+            if message.packet.type == PacketType.notification {
+                shown.presentRelayed(message.packet, phoneId: message.phoneId, phoneName: name)
+                return
+            }
+            guard let state = Call.state(message.packet) else { return }
+
+            let phoneId = message.phoneId
+            Task { @MainActor in self?.handleCall(state, deviceId: phoneId, deviceName: name) }
+        }
         screenHost.onChange = { [weak self] viewer in Task { @MainActor in self?.screenViewer = viewer } }
         mediaPlugin.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         locations.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
@@ -357,7 +372,7 @@ final class AppModel: ObservableObject {
         guard let call else { return }
         if callAudio.carries(call.deviceId), callAudio.answer() { return }
 
-        connected[call.deviceId]?.send(Call.answer())
+        _ = sendToPhone(call.deviceId, Call.answer())
     }
 
     /// Mutes the microphone the call is using: this Mac's when the audio is here, the phone's otherwise.
@@ -368,7 +383,7 @@ final class AppModel: ObservableObject {
         if callAudio.audioOnMac && callAudio.carries(call.deviceId) {
             callAudio.setMuted(call.isMuted)
         } else {
-            connected[call.deviceId]?.send(Call.mute(call.isMuted))
+            _ = sendToPhone(call.deviceId, Call.mute(call.isMuted))
         }
         self.call = call
     }
@@ -380,13 +395,13 @@ final class AppModel: ObservableObject {
 
     func declineCall() {
         guard let call else { return }
-        connected[call.deviceId]?.send(Call.decline())
+        _ = sendToPhone(call.deviceId, Call.decline())
         endCall()
     }
 
     func hangUp() {
         guard let call else { return }
-        connected[call.deviceId]?.send(Call.hangUp())
+        _ = sendToPhone(call.deviceId, Call.hangUp())
         endCall()
     }
 
@@ -397,6 +412,22 @@ final class AppModel: ObservableObject {
 
         call = ActiveCall(deviceId: phone.id, deviceName: phone.name, number: number, name: name, phase: .dialing)
         callPanel.show(self)
+    }
+
+    /// Sends to a phone, directly or through the computer that passed it on.
+    private func sendToPhone(_ id: String, _ packet: NetworkPacket) -> Bool {
+        if let device = connected[id], device.isPaired { return device.send(packet) }
+
+        return relay.send(packet, toPhone: id)
+    }
+
+    /// Whether this Mac passes its phones' notifications and calls to its other computers, and shows theirs.
+    var relaysPhones: Bool {
+        get { relay.isEnabled }
+        set {
+            relay.isEnabled = newValue
+            objectWillChange.send()
+        }
     }
 
     private func handleCall(_ state: Call.State, deviceId: String, deviceName: String) {
@@ -417,16 +448,14 @@ final class AppModel: ObservableObject {
             callPanel.show(self)
         case .missed:
             endCall()
-            if let device = connected[deviceId] {
-                notifications.announceMissedCall(from: state.contactName ?? state.number, number: state.number, device: device)
-            }
+            notifications.announceMissedCall(from: state.contactName ?? state.number, number: state.number, deviceId: deviceId, deviceName: deviceName)
         }
     }
 
     private func endCall() {
         if call?.isMuted == true {
             callAudio.setMuted(false)
-            if let call { connected[call.deviceId]?.send(Call.mute(false)) }
+            if let call { _ = sendToPhone(call.deviceId, Call.mute(false)) }
         }
 
         call = nil
@@ -672,6 +701,7 @@ final class AppModel: ObservableObject {
         mediaPlugin.forget(device.id)
         inputShare.forget(device.id)
         screenHost.stop(device.id)
+        relay.forget(device.id)
         screen.ended(deviceId: device.id)
         desktop.ended(deviceId: device.id)
 
