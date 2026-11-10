@@ -1,7 +1,7 @@
 import AppKit
 import AproidKit
 
-/// Moves files, links and text between the Mac and the phone. Files go to Downloads, links open in the
+/// Moves files, links and text between the Mac and the phone, and any accepted FlyyDrop. Files go to Downloads, links open in the
 /// browser, and text lands on the clipboard. A file that stops halfway resumes when the phone reconnects,
 /// even after Aproid restarts.
 final class SharePlugin: Plugin {
@@ -64,15 +64,24 @@ final class SharePlugin: Plugin {
 
     // MARK: Sending
 
-    /// Offers a file to the phone. Call off the main thread.
-    func send(_ url: URL, to device: Device) {
+    /// Offers a file to the phone. Call off the main thread. With `flyyDropId` the file belongs to an accepted
+    /// FlyyDrop, which can't be resumed; `onBytes` and `onDone` then report how it goes.
+    func send(
+        _ url: URL,
+        to device: Device,
+        flyyDropId: String? = nil,
+        onBytes: ((Int64) -> Void)? = nil,
+        onDone: ((Error?) -> Void)? = nil
+    ) {
         let id = UUID().uuidString
         let activity = report(id, Activity(.sending, title: url.lastPathComponent, detail: "Sending to \(device.name)"))
 
-        _ = store.removeExpired()
-        store.setOffered(id, .init(path: url.path, deviceId: device.id, deviceName: device.name, expires: Date().addingTimeInterval(TransferStore.keep)))
+        if flyyDropId == nil {
+            _ = store.removeExpired()
+            store.setOffered(id, .init(path: url.path, deviceId: device.id, deviceName: device.name, expires: Date().addingTimeInterval(TransferStore.keep)))
+        }
 
-        offer(url, id: id, from: 0, to: device, activity: activity)
+        offer(url, id: id, flyyDropId: flyyDropId, from: 0, to: device, activity: activity, onBytes: onBytes, onDone: onDone)
     }
 
     private func resume(_ id: String, from offset: Int64, to device: Device) {
@@ -89,19 +98,31 @@ final class SharePlugin: Plugin {
         }
     }
 
-    private func offer(_ url: URL, id: String, from offset: Int64, to device: Device, activity: Activity) {
+    private func offer(
+        _ url: URL,
+        id: String,
+        flyyDropId: String? = nil,
+        from offset: Int64,
+        to device: Device,
+        activity: Activity,
+        onBytes: ((Int64) -> Void)? = nil,
+        onDone: ((Error?) -> Void)? = nil
+    ) {
+        let resumable = flyyDropId == nil
         let finish: (Error?) -> Void = { [weak self] error in
             var done = activity
             done.date = Date()
             done.progress = nil
             done.kind = error == nil ? .sent : .failed
-            done.detail = error == nil ? "Sent to \(device.name)" : "Stopped · resumes when \(device.name) reconnects"
-            if error == nil { self?.store.setOffered(id, nil) }
-            self?.report(id, done, finished: error == nil)
+            done.detail = error == nil
+                ? "Sent to \(device.name)"
+                : resumable ? "Stopped · resumes when \(device.name) reconnects" : "Couldn't finish sending to \(device.name)"
+            if error == nil || !resumable { self?.store.setOffered(id, nil) }
+            self?.report(id, done, finished: error == nil || !resumable)
+            onDone?(error)
         }
 
-        guard device.isPaired,
-              let attributes = try? files.attributesOfItem(atPath: url.path),
+        guard let attributes = try? files.attributesOfItem(atPath: url.path),
               let source = try? FileHandle(forReadingFrom: url)
         else {
             finish(ProtocolError("could not open \(url.lastPathComponent)"))
@@ -111,7 +132,8 @@ final class SharePlugin: Plugin {
         let size = (attributes[.size] as? NSNumber)?.int64Value ?? 0
         let start = min(max(offset, 0), size)
         let modified = (attributes[.modificationDate] as? Date).map { Int64($0.timeIntervalSince1970 * 1000) }
-        let packet = Share.filePacket(name: url.lastPathComponent, size: size, lastModifiedMillis: modified, transferId: id, offset: start)
+        let packet = flyyDropId.map { FlyyDrop.file($0, FlyyDrop.Item(name: url.lastPathComponent, size: size)) }
+            ?? Share.filePacket(name: url.lastPathComponent, size: size, lastModifiedMillis: modified, transferId: id, offset: start)
         let progress = TransferProgress(total: size, alreadyDone: start)
 
         do {
@@ -123,6 +145,7 @@ final class SharePlugin: Plugin {
         }
 
         let onProgress: (Int64) -> Void = { [weak self] bytes in
+            onBytes?(bytes)
             guard let reading = progress.advance(bytes) else { return }
 
             var moving = activity
