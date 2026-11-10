@@ -26,6 +26,8 @@ final class AppModel: ObservableObject {
 
     @Published private(set) var devices: [DeviceState] = []
     @Published private(set) var error: String?
+    /// True while macOS stops Aproid from reaching the local network, so the phone can't be found.
+    @Published private(set) var localNetworkBlocked = false
     @Published private(set) var recent: [Activity] = []
     @Published private(set) var clipboardSyncedAt: Date?
     @Published private(set) var notificationsToday = 0
@@ -457,8 +459,9 @@ final class AppModel: ObservableObject {
         self.link = link
         nearby.use(privateKeyPEM: certificate.privateKeyPEM)
         let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
-            link.broadcastIdentity()
+            let result = link.broadcastIdentity()
             Task { @MainActor in
+                self?.noteBroadcast(result)
                 self?.connected.all.forEach { $0.tick() }
                 self?.searchNearbyIfLost()
             }
@@ -466,7 +469,21 @@ final class AppModel: ObservableObject {
         // Common modes keep it running while the menu is open.
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
-        link.broadcastIdentity()
+        noteBroadcast(link.broadcastIdentity())
+    }
+
+    private func noteBroadcast(_ result: LanLink.BroadcastResult) {
+        let blocked = result == .blocked
+        guard blocked != localNetworkBlocked else { return }
+
+        localNetworkBlocked = blocked
+        if blocked { log.error("macOS blocked the identity broadcast; Local Network access is off for Aproid") }
+    }
+
+    func openLocalNetworkSettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocalNetwork") else { return }
+
+        NSWorkspace.shared.open(url)
     }
 
     // MARK: Bluetooth fallback

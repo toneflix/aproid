@@ -14,6 +14,14 @@ struct MenuPanel: View {
                 Banner(icon: .triangleAlert, text: error)
             }
 
+            if model.localNetworkBlocked {
+                Banner(
+                    icon: .wifi,
+                    text: "macOS is blocking Aproid from the local network, so your phone can't find this Mac. Turn on Aproid under Local Network.",
+                    action: ("Open Settings", model.openLocalNetworkSettings)
+                )
+            }
+
             let phones = model.devices.filter { $0.pairState == .paired }
             if phones.count > 1 && model.switcherStyle == .row {
                 PhoneSwitcher(phones: phones, focusedId: focused?.id, model: model)
@@ -239,14 +247,23 @@ private struct HotspotCard: View {
 struct Banner: View {
     let icon: Lucide
     let text: String
+    var action: (label: String, run: () -> Void)?
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Image(lucide: icon, size: 13).foregroundStyle(Theme.warn)
-            Text(text)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(text)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let action {
+                    Button(action.label, action: action.run)
+                        .buttonStyle(.plain)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Theme.accent)
+                }
+            }
             Spacer(minLength: 0)
         }
         .card(padding: 10)
