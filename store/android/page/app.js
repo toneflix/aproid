@@ -117,6 +117,31 @@ class AndroidApp {
     </div>`);
   }
 
+  phoneArt(height) {
+    const width = height * 0.52;
+
+    return `<div class="phone-art" style="width:${width}px;height:${height}px;border-radius:${width * 0.2}px;padding:${width * 0.07}px"><div class="glass" style="border-radius:${width * 0.14}px"></div></div>`;
+  }
+
+  flyyDropCard(selected = 1) {
+    const modes = ['Paired only', '10 minutes', 'Everyone'];
+    const segments = modes.map((mode, i) => `<span class="${i === selected ? 'on' : ''}">${mode}</span>`).join('');
+
+    return `<div class="flyy-card">
+      <div class="row"><span class="chip">${this.icon('radar')}</span><div><div class="title">Who can FlyyDrop to you</div><div class="hint">Everyone nearby for 9 more minutes</div></div></div>
+      <div class="segments">${segments}</div>
+    </div>`;
+  }
+
+  flyyDropSheet(name, { title, detail }) {
+    return this.sheet(`<div class="flyy">
+      <div class="radar"><i></i><i></i><span class="core">${this.phoneArt(52)}</span></div>
+      <div><div class="title">${name} wants to FlyyDrop</div><div class="hint">Not paired. It can only send what you accept here, nothing else.</div></div>
+      <div class="offer"><span class="chip">${this.icon('image')}</span><div><div class="name">${title}</div><div class="detail">${detail}</div></div></div>
+      <div class="buttons"><div class="outlined">Decline</div><div class="filled">Accept</div></div>
+    </div>`);
+  }
+
   toast(text) {
     return `<div class="toast"><img src="${this.assets.appIcon}">${text}</div>`;
   }
