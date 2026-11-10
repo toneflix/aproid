@@ -125,6 +125,7 @@ final class AppModel: ObservableObject {
     private let callAudioPlugin = CallAudioPlugin()
     private let find = FindPlugin()
     private let mediaHost: MediaHostPlugin
+    private let inputShare: InputSharePlugin
     /// Carries call audio over Bluetooth, with this Mac as the phone's hands-free device.
     let callAudio = HandsFreeAudio()
     private let callPanel = CallPanel()
@@ -165,6 +166,7 @@ final class AppModel: ObservableObject {
         )
         battery = BatteryPlugin(devices: connected)
         mediaHost = MediaHostPlugin(devices: connected)
+        inputShare = InputSharePlugin(devices: connected)
         clipboard = ClipboardPlugin(devices: connected)
         nearby = NearbyFinder(ownId: identity.deviceId)
         let screen = ScreenMirror()
@@ -172,7 +174,7 @@ final class AppModel: ObservableObject {
         screenPlugin = ScreenPlugin(decoder: screen.decoder, audio: screen.audio)
         screenWindow = ScreenWindowController(mirror: screen)
         notifications = NotificationPlugin(devices: connected)
-        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin, find, mediaHost])
+        plugins = PluginRouter([notifications, battery, clipboard, share, mediaPlugin, sms, calls, callAudioPlugin, locations, photosPlugin, screenPlugin, find, mediaHost, inputShare])
         mirrorsNotifications = UserDefaults.standard.object(forKey: "mirrorsNotifications") as? Bool ?? true
         switcherStyle = UserDefaults.standard.string(forKey: "switcherStyle").flatMap(PhoneSwitcherStyle.init(rawValue:)) ?? .carousel
         opensAtLogin = LoginItem.isEnabled
@@ -180,6 +182,7 @@ final class AppModel: ObservableObject {
         notifications.isEnabled = mirrorsNotifications
 
         battery.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
+        inputShare.onChange = { [weak self] in Task { @MainActor in self?.inputChanged() } }
         mediaPlugin.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         locations.onChange = { [weak self] in Task { @MainActor in self?.publish() } }
         sms.onMessages = { [weak self] messages, deviceId in Task { @MainActor in self?.messages.ingest(messages, from: deviceId) } }
@@ -269,6 +272,36 @@ final class AppModel: ObservableObject {
 
         screen.begin(deviceId: id, name: device.name)
         screenWindow.show()
+    }
+
+    // MARK: Keyboard and mouse
+
+    /// The computer this Mac's keyboard and mouse work now, or nil.
+    @Published private(set) var inputTarget: String?
+
+    /// The computer working this Mac now, or nil.
+    @Published private(set) var inputController: String?
+
+    /// Bumped when the edge settings change, so views read them again.
+    @Published private(set) var inputEdgesVersion = 0
+
+    var inputNeedsAccess: Bool { !inputShare.hasAccess }
+
+    var allowsRemoteInput: Bool {
+        get { inputShare.allowsControl }
+        set { inputShare.allowsControl = newValue }
+    }
+
+    func inputEdge(for id: String) -> ScreenEdge? { inputShare.edge(for: id) }
+
+    func setInputEdge(_ edge: ScreenEdge?, for id: String) { inputShare.setEdge(edge, for: id) }
+
+    func retryInputAccess() { inputShare.retryAccess() }
+
+    private func inputChanged() {
+        inputTarget = inputShare.capture.remoteId
+        inputController = inputShare.injector.controllerId
+        inputEdgesVersion += 1
     }
 
     func media(_ id: String, _ player: String, _ action: MediaAction) {
@@ -599,6 +632,7 @@ final class AppModel: ObservableObject {
         guard connected.remove(device) else { return }
 
         mediaPlugin.forget(device.id)
+        inputShare.forget(device.id)
         screen.ended(deviceId: device.id)
 
         log.info("Disconnected from \(device.name, privacy: .public): \(device.link.closeReason ?? "unknown", privacy: .public)")
