@@ -62,8 +62,9 @@ public final class LanLink {
         clientContext = try NIOSSLContext(configuration: client)
     }
 
+    // The last reference can be dropped on one of the group's own threads, where a blocking shutdown traps.
     deinit {
-        try? group.syncShutdownGracefully()
+        group.shutdownGracefully { _ in }
     }
 
     /// Binds the TCP listener and the UDP discovery port. Call off the main thread if you can.
