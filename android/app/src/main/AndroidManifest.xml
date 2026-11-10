@@ -136,6 +136,10 @@
             android:name=".FindMyPhonePlugin$StopRingingReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".FlyyDropPlugin$ActionReceiver"
+            android:exported="false" />
+
         <service
             android:name=".LinkService"
             android:exported="false"

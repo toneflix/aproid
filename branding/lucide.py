@@ -22,12 +22,13 @@ MAC = [
     "keyboard", "laptop", "link", "lock", "map-pin", "message-square", "messages-square", "mic", "mic-off", "monitor", "mouse-pointer-2", "music",
     "pause", "phone", "phone-off", "play", "radio", "rotate-cw", "screen-share", "settings", "skip-back", "skip-forward",
     "smartphone", "square-pen", "triangle-alert", "unplug", "video", "volume-2", "volume-x", "wifi", "x", "zap",
+    "radar", "send",
 ]
 
 ANDROID = [
     "battery-charging", "bell", "bell-ring", "bluetooth", "cast", "circle-alert", "circle-check",
     "clipboard", "download", "eye-off", "file-text", "file-up", "image", "keyboard", "link", "lock", "map-pin",
-    "message-square", "pointer", "settings", "wifi",
+    "message-square", "pointer", "settings", "wifi", "radar", "send", "x", "check", "smartphone", "laptop",
 ]
 
 WINDOWS = [
@@ -36,7 +37,7 @@ WINDOWS = [
     "file-archive", "file-text", "file-up", "film", "folder-open", "image", "images", "keyboard", "laptop", "link", "lock", "map-pin",
     "message-square", "messages-square", "mic", "mic-off", "monitor", "mouse-pointer-2", "music", "pause", "phone", "phone-off", "play",
     "rotate-cw", "screen-share", "search", "settings", "skip-back", "skip-forward", "smartphone", "square-pen", "triangle-alert",
-    "unplug", "video", "volume-2", "volume-x", "wifi", "x", "zap",
+    "unplug", "video", "volume-2", "volume-x", "wifi", "x", "zap", "radar", "send",
 ]
 
 # Drawn solid as well as stroked, like the filled media controls people expect.

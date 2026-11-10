@@ -15,7 +15,7 @@ public interface IDeviceDelegate
 }
 
 /// A connected peer: its encrypted link plus pairing. Packets from a device that is not paired are dropped,
-/// except pairing packets. Mirrors Device.kt and Device.swift.
+/// except pairing packets and what `guests` lets through. Mirrors Device.kt and Device.swift.
 public sealed class Device
 {
     /// A link with no packets for this long is treated as dead.
@@ -24,17 +24,19 @@ public sealed class Device
     private readonly DeviceCertificate ownCertificate;
     private readonly ITrustStore trustStore;
     private readonly Func<long> clock;
+    private readonly IGuestAccess? guests;
     private readonly PairingStateMachine pairing;
     private readonly PayloadTransfer payloads;
     private readonly object gate = new();
     private long lastReceived;
 
-    public Device(DeviceLink link, DeviceCertificate ownCertificate, ITrustStore trustStore, Func<long>? clock = null)
+    public Device(DeviceLink link, DeviceCertificate ownCertificate, ITrustStore trustStore, Func<long>? clock = null, IGuestAccess? guests = null)
     {
         Link = link;
         this.ownCertificate = ownCertificate;
         this.trustStore = trustStore;
         this.clock = clock ?? (() => DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        this.guests = guests;
         pairing = new PairingStateMachine(trustStore.IsTrusted(link.Identity.DeviceId) ? PairState.Paired : PairState.NotPaired);
         payloads = new PayloadTransfer(ownCertificate);
         lastReceived = this.clock();
@@ -81,7 +83,7 @@ public sealed class Device
 
     public bool Send(NetworkPacket packet)
     {
-        if (!IsPaired) return false;
+        if (!MaySend(packet)) return false;
 
         Link.Send(packet);
 
@@ -89,10 +91,10 @@ public sealed class Device
     }
 
     /// Sends `packet` with a payload that the peer downloads from us, such as a file.
-    /// Returns false when not paired or the payload could not be offered; `completion` then gets the error.
+    /// Returns false when not allowed to send or the payload could not be offered; `completion` then gets the error.
     public bool SendWithPayload(NetworkPacket packet, long size, Stream source, Action<long>? onProgress = null, Action<Exception?>? completion = null)
     {
-        if (!IsPaired)
+        if (!MaySend(packet))
         {
             completion?.Invoke(new ProtocolException("not paired"));
             return false;
@@ -180,8 +182,10 @@ public sealed class Device
             return;
         }
 
-        if (IsPaired) Delegate?.DeviceReceived(this, packet);
+        if (IsPaired || guests?.AdmitsIncoming(Id, packet) == true) Delegate?.DeviceReceived(this, packet);
     }
+
+    private bool MaySend(NetworkPacket packet) => IsPaired || guests?.AdmitsOutgoing(Id, packet) == true;
 
     private void Run(Func<PairingStateMachine, PairAction> step)
     {

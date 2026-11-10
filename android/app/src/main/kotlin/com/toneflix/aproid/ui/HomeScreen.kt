@@ -145,6 +145,8 @@ fun HomeScreen(phoneName: String) {
 
             SetupCards()
 
+            FlyyDropCard()
+
             if (others.isNotEmpty()) Nearby(others)
 
             if (recent.isNotEmpty()) RecentSection(recent)
@@ -158,6 +160,7 @@ fun HomeScreen(phoneName: String) {
         }
 
         PairSheet()
+        FlyyDropSheet()
     }
 }
 
@@ -608,6 +611,13 @@ private fun SetupCard(@DrawableRes icon: Int, title: String, hint: String, onAll
 
 @Composable
 private fun Nearby(devices: List<DeviceState>) {
+    val context = LocalContext.current
+    var target by remember { mutableStateOf<String?>(null) }
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+        val id = target
+        if (uris.isNotEmpty() && id != null) context.startActivity(ShareActivity.sendFilesIntent(context, uris, target = id))
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionTitle(stringResource(R.string.home_nearby))
 
@@ -620,10 +630,23 @@ private fun Nearby(devices: List<DeviceState>) {
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                LaptopArt(44.dp)
+                DeviceArt(device.type, 44.dp)
                 Column(Modifier.weight(1f)) {
                     Text(device.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(nearbyStatus(device), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (device.canFlyyDrop && device.pairState == PairState.NOT_PAIRED) {
+                    IconButton(onClick = {
+                        target = device.id
+                        pick.launch("*/*")
+                    }) {
+                        Icon(
+                            painterResource(R.drawable.lucide_radar),
+                            contentDescription = stringResource(R.string.flyydrop_send_files, device.name),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
                 }
                 when (device.pairState) {
                     PairState.NOT_PAIRED -> TextButton(onClick = { withDevice(device.id) { it.requestPair() } }) {
