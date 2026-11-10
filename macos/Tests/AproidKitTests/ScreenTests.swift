@@ -14,6 +14,16 @@ final class ScreenTests: XCTestCase {
         XCTAssertEqual(Screen.info(try wire(Screen.stopped()))?.running, false)
     }
 
+    func testSoundIsAskedForAndAnnounced() throws {
+        XCTAssertEqual(Screen.request(try wire(Screen.start()))?.audio, false)
+        XCTAssertEqual(Screen.request(try wire(Screen.start(audio: true)))?.audio, true)
+        XCTAssertEqual(Screen.info(try wire(Screen.started(width: 1080, height: 2400)))?.hasAudio, false)
+
+        let info = Screen.info(try wire(Screen.started(width: 1080, height: 2400, audio: true)))
+        XCTAssertEqual(info, Screen.Info(width: 1080, height: 2400, running: true, audioRate: Screen.audioRate, audioChannels: Screen.audioChannels))
+        XCTAssertEqual(info?.hasAudio, true)
+    }
+
     func testInputRoundTripsAndRejectsNonsense() throws {
         let inputs: [ScreenInput] = [
             .tap(x: 0.5, y: 0.25),
@@ -37,6 +47,7 @@ final class ScreenTests: XCTestCase {
             ScreenFrame(data: Data([0, 0, 0, 1, 0x67]), timeUs: 0, flags: ScreenFrame.config),
             ScreenFrame(data: Data((0..<5000).map { UInt8($0 % 256) }), timeUs: 33_333, flags: ScreenFrame.key),
             ScreenFrame(data: Data([9, 9]), timeUs: 50_000, flags: 0),
+            ScreenFrame(data: Data((0..<3840).map { UInt8(($0 * 3) % 256) }), timeUs: 60_000, flags: ScreenFrame.audio),
         ]
         let stream = frames.reduce(Data()) { $0 + $1.header() + $1.data }
         let reader = ScreenFrameReader()
@@ -47,7 +58,7 @@ final class ScreenTests: XCTestCase {
         }
 
         XCTAssertEqual(out, frames)
-        XCTAssertTrue(out[0].isConfig && out[1].isKey)
+        XCTAssertTrue(out[0].isConfig && out[1].isKey && out[3].isAudio && !out[1].isAudio)
     }
 
     func testHeaderMatchesTheKotlinLayout() {
