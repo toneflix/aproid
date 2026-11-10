@@ -367,10 +367,10 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     /// What the keyboard and mouse card says about the computer the panel shows.
     public string InputStatus => Focused is not { IsComputer: true } device ? ""
-        : InputTarget == device.Id ? $"Working {device.Name} now. Press Esc three times to come back."
-        : InputController == device.Id ? $"{device.Name} is working this PC."
-        : InputEdge(device.Id) is ScreenEdge edge ? $"Move the pointer off the {edge.WireName()} edge to use {device.Name}."
-        : $"Choose which side of this PC {device.Name} sits on.";
+        : InputTarget == device.Id ? $"Using {device.Name}. Press Esc three times to return."
+        : InputController == device.Id ? $"{device.Name} is using this PC."
+        : InputEdge(device.Id) is ScreenEdge edge ? $"Move the pointer off the {edge.WireName()} edge."
+        : $"Which side is {device.Name} on?";
 
     public bool InputActive => Focused is { } device && (InputTarget == device.Id || InputController == device.Id);
 
@@ -384,8 +384,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     /// What the screen card says about the computer the panel shows.
     public string ScreenStatus => Focused is not { IsComputer: true } device ? ""
-        : FocusWatchesScreen ? $"{device.Name} is watching this PC."
-        : $"See and use {device.Name}'s screen.";
+        : FocusWatchesScreen ? $"{device.Name} is watching"
+        : $"View and control {device.Name}";
 
     /// Stops showing this PC's screen to whoever is watching.
     public void StopScreenShare() => screenHost.Stop();
@@ -512,8 +512,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public bool CanJoinHotspot => HotspotStatus is null;
 
     public string HotspotText => HotspotStatus ?? (PhoneHotspotName is null
-        ? "It isn't on this Wi-Fi. Use its hotspot to get online and connect; this PC leaves its current network."
-        : "It isn't on this Wi-Fi. Your phone shows a switch to turn its hotspot on, and this PC joins it.");
+        ? "Not on this Wi-Fi. Join its hotspot to connect."
+        : "Not on this Wi-Fi. Turn on its hotspot to connect.");
 
     /// The name of the phone's hotspot, once this PC has been on it.
     public string? PhoneHotspotName => HotspotPhoneId is string id ? hotspot.Name(id) : null;
@@ -784,8 +784,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public bool ShowsFlyyDropBanner => FlyyDropReceiving != FlyyDrop.Receiving.Off;
 
     public string FlyyDropBannerText => flyyDrop.Drop.ReceivingUntil is long until
-        ? $"Everyone nearby can FlyyDrop to this PC · {Math.Max(1, (int)Math.Ceiling((until - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 60_000.0))} min left"
-        : "Everyone nearby can FlyyDrop to this PC";
+        ? $"Open to everyone · {Math.Max(1, (int)Math.Ceiling((until - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) / 60_000.0))} min left"
+        : "Open to everyone nearby";
 
     /// Asks the unpaired device `id` to take these files.
     public void FlyyDropFiles(IEnumerable<string> paths, string id)
@@ -941,7 +941,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         }
         else
         {
-            Record(new Activity(ActivityKind.Failed, "Nothing was sent", "No phone connected. Open Aproid on your phone and try again."));
+            Record(new Activity(ActivityKind.Failed, "Nothing was sent", "No phone connected"));
         }
 
         waitingFiles.Clear();
@@ -1048,11 +1048,11 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
         if (HotspotPhoneId is not string id)
         {
-            HotspotStatus = "Turn on the hotspot on your phone, then pick it in the Wi-Fi menu. Aproid remembers it for next time.";
+            HotspotStatus = "Turn on your phone's hotspot and pick it in the Wi-Fi menu once.";
             return;
         }
 
-        HotspotStatus = "Asking your phone to turn on its hotspot…";
+        HotspotStatus = "Turning on your phone's hotspot…";
         hotspot.Join(id, status => ui.TryEnqueue(() => HotspotChanged(status)));
     }
 
@@ -1068,10 +1068,10 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
         HotspotStatus = status switch
         {
-            PhoneHotspot.Status.Waiting waiting => $"Waiting for {waiting.Ssid}. Tap the notification on your phone to turn it on.",
+            PhoneHotspot.Status.Waiting waiting => $"Tap the notification on your phone to turn on {waiting.Ssid}.",
             PhoneHotspot.Status.Joining joining => $"Joining {joining.Ssid}…",
             PhoneHotspot.Status.Failed failed => failed.Reason,
-            _ => "Joined. Connecting to your phone…",
+            _ => "Connecting…",
         };
     }
 

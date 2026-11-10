@@ -179,11 +179,6 @@
                             <Button Content="Not now" Style="{StaticResource AproidPillButton}" Click="Reject_Click" />
                             <Button Grid.Column="1" Content="Pair" Style="{StaticResource AproidPillAccentButton}" Click="Accept_Click" />
                         </Grid>
-
-                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                            <views:LucideIcon Icon="Lock" Size="11" Foreground="{ThemeResource AproidSubBrush}" />
-                            <TextBlock Text="End-to-end encrypted on your local network" FontSize="10.5" Foreground="{ThemeResource AproidSubBrush}" />
-                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -258,7 +253,7 @@
                                 <WebView2 x:Name="Map" Visibility="{x:Bind HasLocation(Model.Found), Mode=OneWay}" />
                                 <StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind NoLocation(Model.Found), Mode=OneWay}">
                                     <ProgressRing IsActive="{x:Bind IsLocating(Model.Found), Mode=OneWay}" Width="18" Height="18" />
-                                    <TextBlock Text="Ringing and asking where it is…" Style="{StaticResource AproidCaption}" />
+                                    <TextBlock Text="Ringing…" Style="{StaticResource AproidCaption}" />
                                 </StackPanel>
                             </Grid>
                             <Grid Visibility="{x:Bind HasLocation(Model.Found), Mode=OneWay}">
@@ -390,7 +385,7 @@
                         <Rectangle x:Name="DropOutline" RadiusX="14" RadiusY="14" StrokeThickness="1.5" StrokeDashArray="4,3" Stroke="{ThemeResource AproidDashBrush}" />
                         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <views:LucideIcon Icon="Download" Size="14" Foreground="{ThemeResource AproidSubBrush}" />
-                            <TextBlock x:Name="DropLabel" Text="Drop files or links here to send them" FontSize="12" Foreground="{ThemeResource AproidSubBrush}" />
+                            <TextBlock x:Name="DropLabel" Text="Drop files or links to send" FontSize="12" Foreground="{ThemeResource AproidSubBrush}" />
                         </StackPanel>
                     </Grid>
                 </StackPanel>

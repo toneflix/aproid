@@ -148,9 +148,9 @@ public sealed class RemoteDesktopWindow : Window
         };
         statusHint.Text = phase switch
         {
-            MirrorPhase.Ended => $"{desktop.DeviceName} stopped sharing or went offline. On a Mac, Aproid needs Screen Recording access, and \"Let my other computers see and use\" turned on.",
-            MirrorPhase.Idle => "Choose View screen in the Aproid panel to start.",
-            _ => "Waiting for the first picture.",
+            MirrorPhase.Ended => $"{desktop.DeviceName} stopped sharing. It needs Screen Recording access (on a Mac) and \"Let my computers control\" on.",
+            MirrorPhase.Idle => "Start from View screen in the Aproid panel.",
+            _ => "Connecting…",
         };
         var busy = phase == MirrorPhase.Waiting || (phase == MirrorPhase.Live && !hasPicture);
         waiting.IsActive = busy;
