@@ -34,9 +34,16 @@ let package = Package(
         // The menu bar app.
         .executableTarget(
             name: "Aproid",
+        .executableTarget(
+            name: "Aproid",
             dependencies: ["AproidKit", .product(name: "Sparkle", package: "Sparkle")],
-            // Sparkle.framework is copied into Contents/Frameworks by bundle.sh.
-            linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]
+            linkerSettings: [
+                // Linked by name so Shortcuts' metadata tool sees the app uses App Intents.
+                .linkedFramework("AppIntents"),
+                // Sparkle.framework is copied into Contents/Frameworks by bundle.sh.
+                .unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"]),
+            ]
+        ),
         ),
         .testTarget(name: "AproidKitTests", dependencies: ["AproidKit"]),
     ]
