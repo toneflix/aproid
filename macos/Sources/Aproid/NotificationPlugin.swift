@@ -42,7 +42,6 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
     private var categories: [String: UNNotificationCategory] = [:]
 
     private let log = Logger(subsystem: "com.toneflix.aproid.app", category: "notifications")
-    private let devices: DeviceRegistry
     private let center: UNUserNotificationCenter?
 
     /// What each shown notification said, so a resend after reconnecting or an unchanged update doesn't pop up again.
@@ -60,12 +59,16 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
     /// Called after a phone notification is shown, on any thread.
     var onShown: (() -> Void)?
 
+    /// Sends replies, buttons and dismissals to a phone. Set by the app model, so they also reach phones
+    /// that another computer passed on.
+    var send: (String, NetworkPacket) -> Bool
+
     /// True when running as a bundled app. `swift run` has no bundle, and
     /// Notification Center refuses to work without one.
     static var isAvailable: Bool { Bundle.main.bundleIdentifier != nil }
 
     init(devices: DeviceRegistry) {
-        self.devices = devices
+        send = { [weak devices] id, packet in devices?[id]?.send(packet) ?? false }
         center = Self.isAvailable ? UNUserNotificationCenter.current() : nil
         super.init()
 
@@ -100,10 +103,19 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
     }
 
     func onPacket(_ packet: NetworkPacket, from device: Device) {
+        present(packet, deviceId: device.id, deviceName: device.name, iconsFrom: device)
+    }
+
+    /// A notification another computer passed on from its phone. Relayed notifications come without icons.
+    func presentRelayed(_ packet: NetworkPacket, phoneId: String, phoneName: String) {
+        present(packet, deviceId: phoneId, deviceName: phoneName, iconsFrom: nil)
+    }
+
+    private func present(_ packet: NetworkPacket, deviceId: String, deviceName: String, iconsFrom device: Device?) {
         guard let center else { return }
 
         if let id = PhoneNotification.cancelledId(packet) {
-            let identifier = Self.identifier(device: device.id, id: id)
+            let identifier = Self.identifier(device: deviceId, id: id)
             lock.withLock { _ = shown.removeValue(forKey: identifier) }
             center.removeDeliveredNotifications(withIdentifiers: [identifier])
             return
@@ -111,24 +123,30 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
 
         guard isEnabled, let note = PhoneNotification(packet: packet) else { return }
 
-        let identifier = Self.identifier(device: device.id, id: note.id)
+        let identifier = Self.identifier(device: deviceId, id: note.id)
         let summary = "\(note.title)\n\(note.text)"
         let isRepeat = lock.withLock { shown.updateValue(summary, forKey: identifier) == summary }
         guard !isRepeat else { return }
 
         let content = UNMutableNotificationContent()
         content.title = note.title.isEmpty ? note.appName : note.title
-        content.subtitle = note.title.isEmpty ? device.name : "\(note.appName) · \(device.name)"
+        content.subtitle = note.title.isEmpty ? deviceName : "\(note.appName) · \(deviceName)"
         content.body = note.text
         let actions = Array(note.actions.prefix(Self.maxActions))
         content.categoryIdentifier = category(replyable: note.replyId != nil, actions: actions, in: center)
-        content.userInfo = [Key.device: device.id, Key.id: note.id, Key.replyId: note.replyId ?? "", Key.actions: actions]
-        content.threadIdentifier = "\(device.id).\(note.appName)"
+        content.userInfo = [Key.device: deviceId, Key.id: note.id, Key.replyId: note.replyId ?? "", Key.actions: actions]
+        content.threadIdentifier = "\(deviceId).\(note.appName)"
         if note.silent {
             // Already on the phone before we connected: list it without a banner.
             content.interruptionLevel = .passive
         } else {
             content.sound = .default
+        }
+
+        guard let device else {
+            center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: nil))
+            if !note.silent { onShown?() }
+            return
         }
 
         // The phone sends the app icon, or the sender's photo, as the payload.
@@ -184,15 +202,15 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
     }
 
     /// A missed call, with a Call back button that dials from the phone.
-    func announceMissedCall(from caller: String, number: String, device: Device) {
+    func announceMissedCall(from caller: String, number: String, deviceId: String, deviceName: String) {
         guard let center else { return }
 
         let content = UNMutableNotificationContent()
         content.title = "Missed call"
-        content.subtitle = device.name
+        content.subtitle = deviceName
         content.body = caller
         content.categoryIdentifier = Category.missedCall
-        content.userInfo = [Key.device: device.id, Key.callBack: number]
+        content.userInfo = [Key.device: deviceId, Key.callBack: number]
         content.sound = .default
 
         center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
@@ -232,17 +250,11 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
             return
         }
 
-        guard let deviceId = info[Key.device] as? String,
-              let id = info[Key.id] as? String,
-              let device = devices[deviceId]
-        else {
-            log.warning("Notification response for a device that is not connected")
-            return
-        }
+        guard let deviceId = info[Key.device] as? String, let id = info[Key.id] as? String else { return }
 
         if let text = response as? UNTextInputNotificationResponse,
            let replyId = info[Key.replyId] as? String, !replyId.isEmpty {
-            let sent = device.send(NotificationRequests.reply(to: replyId, message: text.userText))
+            let sent = send(deviceId, NotificationRequests.reply(to: replyId, message: text.userText))
             log.info("Reply to \(id, privacy: .public) sent: \(sent)")
             return
         }
@@ -250,13 +262,13 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         if response.actionIdentifier.hasPrefix(Self.actionPrefix),
            let index = Int(response.actionIdentifier.dropFirst(Self.actionPrefix.count)),
            let actions = info[Key.actions] as? [String], actions.indices.contains(index) {
-            let sent = device.send(NotificationRequests.action(id: id, action: actions[index]))
+            let sent = send(deviceId, NotificationRequests.action(id: id, action: actions[index]))
             log.info("Pressed \(actions[index], privacy: .public) on \(id, privacy: .public): \(sent)")
             return
         }
 
         if response.actionIdentifier == UNNotificationDismissActionIdentifier {
-            device.send(NotificationRequests.dismiss(id))
+            _ = send(deviceId, NotificationRequests.dismiss(id))
         }
     }
 

@@ -588,6 +588,10 @@ public sealed partial class PanelWindow : Window
         remote.Click += (_, _) => Model.AllowsRemoteInput = remote.IsChecked;
         SettingsMenu.Items.Add(remote);
 
+        var relay = new ToggleMenuFlyoutItem { Text = "Pass phone notifications and calls between my computers", IsChecked = Model.RelaysPhones };
+        relay.Click += (_, _) => Model.RelaysPhones = relay.IsChecked;
+        SettingsMenu.Items.Add(relay);
+
         var startup = new ToggleMenuFlyoutItem { Text = "Start with Windows", IsChecked = Model.StartsWithWindows };
         startup.Click += (_, _) => Model.StartsWithWindows = startup.IsChecked;
         SettingsMenu.Items.Add(startup);

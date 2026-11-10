@@ -35,6 +35,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private readonly NotificationSharePlugin notificationShare;
     private readonly InputSharePlugin inputShare;
     private readonly ScreenHostPlugin screenHost = new();
+    private readonly PhoneRelayPlugin relay;
     private LanLink? link;
     private DispatcherQueueTimer? timer;
     private DateOnly notificationsDay = DateOnly.FromDateTime(DateTime.Now);
@@ -165,9 +166,22 @@ public sealed class AppModel : Observable, IDeviceDelegate
         mediaHost = new MediaHostPlugin(connected);
         notificationShare = new NotificationSharePlugin(connected) { IsEnabled = settings.SharesNotifications };
         inputShare = new InputSharePlugin(connected, settings) { OnChange = () => ui.TryEnqueue(InputChanged) };
+        relay = new PhoneRelayPlugin(connected, settings);
+        relay.OnRelayed = (message, via) =>
+        {
+            var name = $"{message.PhoneName} via {via}";
+            if (message.Packet.Type == PacketType.Notification)
+            {
+                notifications.PresentRelayed(message.Packet, message.PhoneId, name);
+                return;
+            }
+
+            if (Core.Call.StateOf(message.Packet) is Core.Call.State state) ui.TryEnqueue(() => HandleCall(state, message.PhoneId, name));
+        };
+        notifications.Send = SendToPhone;
         screenHost.Allows = () => inputShare.AllowsControl;
         screenHost.OnChange = _ => ui.TryEnqueue(ScreenViewerChanged);
-        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find, mediaHost, notificationShare, inputShare, screenHost]);
+        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find, mediaHost, notificationShare, inputShare, screenHost, relay]);
 
         updater = new Updater(toasts) { OnInstalling = () => ui.TryEnqueue(() => UpdateInstalling?.Invoke()) };
         hotspot = new PhoneHotspot(() => settings.PhoneHotspots, settings.RememberHotspot);
@@ -615,14 +629,14 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     public void AnswerCall()
     {
-        if (Call is { } current) connected[current.DeviceId]?.Send(Core.Call.Answer());
+        if (Call is { } current) SendToPhone(current.DeviceId, Core.Call.Answer());
     }
 
     public void DeclineCall()
     {
         if (Call is not { } current) return;
 
-        connected[current.DeviceId]?.Send(Core.Call.Decline());
+        SendToPhone(current.DeviceId, Core.Call.Decline());
         EndCall();
     }
 
@@ -630,7 +644,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     {
         if (Call is not { } current) return;
 
-        connected[current.DeviceId]?.Send(Core.Call.HangUp());
+        SendToPhone(current.DeviceId, Core.Call.HangUp());
         EndCall();
     }
 
@@ -640,7 +654,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         if (Call is not { } current) return;
 
         var muted = !current.IsMuted;
-        connected[current.DeviceId]?.Send(Core.Call.Mute(muted));
+        SendToPhone(current.DeviceId, Core.Call.Mute(muted));
         Call = current with { IsMuted = muted };
     }
 
@@ -657,6 +671,21 @@ public sealed class AppModel : Observable, IDeviceDelegate
         }
 
         Call = new ActiveCall(phone.Id, phone.Name, trimmed, name, null, CallPhase.Dialing);
+    }
+
+    /// Sends to a phone, directly or through the computer that passed it on.
+    private bool SendToPhone(string id, NetworkPacket packet) =>
+        connected[id] is { IsPaired: true } device ? device.Send(packet) : relay.Send(packet, id);
+
+    /// Whether this PC passes its phones' notifications and calls to its other computers, and shows theirs.
+    public bool RelaysPhones
+    {
+        get => relay.IsEnabled;
+        set
+        {
+            relay.IsEnabled = value;
+            Raise();
+        }
     }
 
     private void HandleCall(Core.Call.State state, string deviceId, string deviceName)
@@ -685,7 +714,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     private void EndCall()
     {
-        if (Call is { IsMuted: true } muted) connected[muted.DeviceId]?.Send(Core.Call.Mute(false));
+        if (Call is { IsMuted: true } muted) SendToPhone(muted.DeviceId, Core.Call.Mute(false));
 
         Call = null;
     }
@@ -938,6 +967,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         media.Forget(device.Id);
         inputShare.Forget(device.Id);
         screenHost.Stop(device.Id);
+        relay.Forget(device.Id);
         Mirror.Ended(device.Id);
         Desktop.Ended(device.Id);
         if (Call?.DeviceId == device.Id) EndCall();

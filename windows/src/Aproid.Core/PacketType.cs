@@ -92,6 +92,9 @@ public static class PacketType
 
     /// Keyboard and mouse shared between computers. Body: {"action", ...}; see `RemoteInput`.
     public const string Input = "aproid.input";
+
+    /// A phone's packet passed on through another computer. Body: {"phoneId", "phoneName", "packet"}; see `Relay`.
+    public const string Relay = "aproid.relay";
 }
 
 public static class Capabilities
@@ -132,5 +135,6 @@ public static class Capabilities
         PacketType.CallAudio,
         PacketType.Heartbeat,
         PacketType.Input,
+        PacketType.Relay,
     };
 }
