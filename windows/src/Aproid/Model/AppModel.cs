@@ -32,6 +32,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private readonly ScreenPlugin screen = new();
     private readonly FindPlugin find;
     private readonly MediaHostPlugin mediaHost;
+    private readonly NotificationSharePlugin notificationShare;
     private LanLink? link;
     private DispatcherQueueTimer? timer;
     private DateOnly notificationsDay = DateOnly.FromDateTime(DateTime.Now);
@@ -139,7 +140,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
         Mirror.Send = (id, packet) => connected[id]?.Send(packet) == true;
         find = new FindPlugin(toasts);
         mediaHost = new MediaHostPlugin(connected);
-        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find, mediaHost]);
+        notificationShare = new NotificationSharePlugin(connected) { IsEnabled = settings.SharesNotifications };
+        plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find, mediaHost, notificationShare]);
 
         updater = new Updater(toasts) { OnInstalling = () => ui.TryEnqueue(() => UpdateInstalling?.Invoke()) };
         hotspot = new PhoneHotspot(() => settings.PhoneHotspots, settings.RememberHotspot);
@@ -267,6 +269,21 @@ public sealed class AppModel : Observable, IDeviceDelegate
             Raise(nameof(NotificationsSubtitle));
         }
     }
+
+    /// Whether this PC's own notifications go to paired computers.
+    public bool SharesNotifications
+    {
+        get => settings.SharesNotifications;
+        set
+        {
+            settings.SharesNotifications = value;
+            notificationShare.IsEnabled = value;
+            Raise();
+        }
+    }
+
+    /// Windows lets only packaged apps read notifications, so sharing them may not be possible.
+    public bool CanShareNotifications => notificationShare.IsAvailable;
 
     public PhoneSwitcherStyle SwitcherStyle
     {
@@ -411,6 +428,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public void Start()
     {
         var me = Identity;
+        _ = notificationShare.StartAsync();
 
         Task.Run(() =>
         {

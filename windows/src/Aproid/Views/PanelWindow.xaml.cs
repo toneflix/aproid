@@ -527,6 +527,13 @@ public sealed partial class PanelWindow : Window
         mirror.Click += (_, _) => Model.MirrorsNotifications = mirror.IsChecked;
         SettingsMenu.Items.Add(mirror);
 
+        if (Model.CanShareNotifications)
+        {
+            var share = new ToggleMenuFlyoutItem { Text = "Send this PC's notifications to my computers", IsChecked = Model.SharesNotifications };
+            share.Click += (_, _) => Model.SharesNotifications = share.IsChecked;
+            SettingsMenu.Items.Add(share);
+        }
+
         var startup = new ToggleMenuFlyoutItem { Text = "Start with Windows", IsChecked = Model.StartsWithWindows };
         startup.Click += (_, _) => Model.StartsWithWindows = startup.IsChecked;
         SettingsMenu.Items.Add(startup);
