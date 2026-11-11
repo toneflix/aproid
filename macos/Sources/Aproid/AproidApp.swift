@@ -18,16 +18,19 @@ struct AproidApp: App {
             MessagesWindow(store: model.messages, model: model)
         }
         .defaultSize(width: 900, height: 620)
+        .handlesExternalEvents(matching: [])
 
         Window("Photos", id: AproidApp.photosWindow) {
             PhotosWindow(store: model.photos, model: model)
         }
         .defaultSize(width: 860, height: 640)
+        .handlesExternalEvents(matching: [])
 
         Window("Call Audio", id: AproidApp.callAudioWindow) {
             CallAudioWindow(audio: model.callAudio)
         }
         .windowResizability(.contentSize)
+        .handlesExternalEvents(matching: [])
     }
 
     static let messagesWindow = "messages"
@@ -37,6 +40,7 @@ struct AproidApp: App {
 
 /// Opens links handed to the app: aproid://share from the Share menu, aproid://open from the widget,
 /// aproid://ring and aproid://mirror for scripts, and tel: numbers, such as one clicked in Safari.
+/// The windows match no links, so SwiftUI hands every link here instead of opening a window for it.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func application(_ application: NSApplication, open urls: [URL]) {
         Task { @MainActor in
