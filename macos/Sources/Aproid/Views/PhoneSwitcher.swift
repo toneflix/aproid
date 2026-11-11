@@ -1,17 +1,17 @@
 import SwiftUI
 import AproidKit
 
-/// How the panel switches between several paired phones.
+/// How the panel switches between several paired devices.
 enum PhoneSwitcherStyle: String, CaseIterable, Identifiable {
     case carousel
-    case row
+    case dropdown = "row"
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .carousel: return "Card carousel"
-        case .row: return "Device list"
+        case .dropdown: return "Dropdown"
         }
     }
 }
@@ -62,85 +62,40 @@ struct PhoneCarousel: View {
     }
 }
 
-/// The paired phones, all connected at once. Picking one shows it in the panel, Messages and Photos.
-struct PhoneSwitcher: View {
-    let phones: [DeviceState]
-    let focusedId: String?
+/// The device's name, which opens a list of the other paired devices in Dropdown mode.
+struct DeviceNameMenu: View {
+    let device: DeviceState
     @ObservedObject var model: AppModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                SectionTitle("Your phones")
-                Spacer()
-                Text("\(phones.count) connected")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Theme.ok)
-                    .padding(.horizontal, 4)
-            }
+        let others = model.devices.filter { $0.pairState == .paired && $0.id != device.id }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(phones) { phone in
-                        PhoneChip(phone: phone, isFocused: phone.id == focusedId) {
-                            model.selectedPhone = phone.id
-                        }
-                    }
+        if model.switcherStyle == .dropdown && !others.isEmpty {
+            Menu {
+                ForEach(others) { other in
+                    Button(other.name) { model.selectedPhone = other.id }
                 }
-                .padding(1)
-            }
-        }
-    }
-}
-
-/// One phone in the switcher: picture, name and battery, outlined in gold when it is the one shown.
-private struct PhoneChip: View {
-    let phone: DeviceState
-    let isFocused: Bool
-    let action: () -> Void
-
-    @State private var hovering = false
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                ZStack(alignment: .bottomTrailing) {
-                    DeviceArt(type: phone.type, width: 14, screen: isFocused ? Theme.accent : Theme.screen)
-                    Circle()
-                        .fill(Theme.ok)
-                        .frame(width: 7, height: 7)
-                        .overlay(Circle().stroke(Theme.card, lineWidth: 1.5))
-                        .offset(x: 3, y: 2)
-                }
-
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(phone.name)
-                        .font(.system(size: 12, weight: .semibold))
-                        .lineLimit(1)
-                    Text(detail)
-                        .font(.system(size: 10))
+            } label: {
+                HStack(spacing: 4) {
+                    name
+                    Image(lucide: .chevronDown, size: 11, weight: .semibold)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
                 }
+                .foregroundStyle(.primary)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .frame(minWidth: 110, alignment: .leading)
-            .glassSurface(cornerRadius: 10, tint: isFocused || hovering ? Theme.tint : nil)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(isFocused ? Theme.goldEdge : .clear, lineWidth: 1.5)
-            )
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("Switch to another device")
+        } else {
+            name
         }
-        .buttonStyle(PressStyle())
-        .onHover { hovering = $0 }
-        .help(isFocused ? "\(phone.name) is shown" : "Show \(phone.name)")
-        .accessibilityAddTraits(isFocused ? .isSelected : [])
     }
 
-    private var detail: String {
-        guard let battery = phone.battery else { return "Connected" }
-        return battery.isCharging ? "\(battery.charge)% · Charging" : "\(battery.charge)%"
+    private var name: some View {
+        Text(device.name)
+            .font(.system(size: 16, weight: .bold))
+            .lineLimit(1)
     }
 }
 

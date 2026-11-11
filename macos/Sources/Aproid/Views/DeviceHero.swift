@@ -11,9 +11,7 @@ struct DeviceHero: View {
             DeviceArt(type: device.type, width: device.isComputer ? 30 : 40)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(device.name)
-                    .font(.system(size: 16, weight: .bold))
-                    .lineLimit(1)
+                DeviceNameMenu(device: device, model: model)
 
                 HStack(spacing: 6) {
                     Circle().fill(Theme.ok).frame(width: 7, height: 7)

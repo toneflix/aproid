@@ -22,12 +22,6 @@ struct MenuPanel: View {
                 )
             }
 
-            let phones = model.devices.filter { $0.pairState == .paired }
-            if phones.count > 1 && model.switcherStyle == .row {
-                PhoneSwitcher(phones: phones, focusedId: focused?.id, model: model)
-                    .transition(.opacity)
-            }
-
             ForEach(model.flyyDropAsks.prefix(1)) { ask in
                 FlyyDropAskCard(ask: ask, model: model)
                     .transition(.scale(scale: 0.96).combined(with: .opacity))
@@ -118,7 +112,7 @@ private struct PanelHeader: View {
             Spacer()
             Menu {
                 Toggle("Show phone notifications", isOn: $model.mirrorsNotifications)
-                Picker("Switch phones with", selection: $model.switcherStyle) {
+                Picker("Switch devices with", selection: $model.switcherStyle) {
                     ForEach(PhoneSwitcherStyle.allCases) { Text($0.title).tag($0) }
                 }
                 Toggle("Let my computers control this Mac", isOn: Binding(
