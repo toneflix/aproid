@@ -77,15 +77,14 @@ struct DeviceNameMenu: View {
                 }
             } label: {
                 HStack(spacing: 4) {
-                    name
                     Image(lucide: .chevronDown, size: 11, weight: .semibold)
                         .foregroundStyle(.secondary)
+                    name
                 }
                 .foregroundStyle(.primary)
             }
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
-            .fixedSize()
             .help("Switch to another device")
         } else {
             name
