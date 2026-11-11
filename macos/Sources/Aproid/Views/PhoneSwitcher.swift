@@ -11,7 +11,7 @@ enum PhoneSwitcherStyle: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .carousel: return "Card carousel"
-        case .row: return "Row of phones"
+        case .row: return "Device list"
         }
     }
 }
