@@ -7,6 +7,7 @@ struct DropZone: View {
     @ObservedObject var model: AppModel
 
     @State private var targeted = false
+    @State private var hovering = false
 
     var body: some View {
         Button { model.chooseFiles(for: deviceId) } label: {
@@ -24,11 +25,12 @@ struct DropZone: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                    .stroke(targeted ? Theme.accent : Theme.dash, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                    .stroke(targeted || hovering ? Theme.accent : Theme.dash, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
             )
             .contentShape(Rectangle())
         }
         .buttonStyle(PressStyle())
+        .onHover { hovering = $0 }
         .scaleEffect(targeted ? 1.02 : 1)
         .animation(.spring(response: 0.25, dampingFraction: 0.7), value: targeted)
         .onDrop(of: [.fileURL], isTargeted: $targeted) { providers in
