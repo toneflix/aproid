@@ -709,7 +709,7 @@ public sealed partial class PanelWindow : Window
         SettingsMenu.Items.Add(photosFolder);
 
         var switcher = new MenuFlyoutSubItem { Text = "Switch devices with" };
-        foreach (var (style, label) in new[] { (PhoneSwitcherStyle.Carousel, "Card carousel"), (PhoneSwitcherStyle.Menu, "Device list") })
+        foreach (var (style, label) in new[] { (PhoneSwitcherStyle.Carousel, "Card carousel"), (PhoneSwitcherStyle.Menu, "Dropdown") })
         {
             var item = new ToggleMenuFlyoutItem { Text = label, IsChecked = Model.SwitcherStyle == style };
             item.Click += (_, _) => Model.SwitcherStyle = style;
