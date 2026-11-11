@@ -783,6 +783,16 @@ public sealed partial class PanelWindow : Window
 
     private void DropZone_DragLeave(object sender, DragEventArgs e) => ResetDropZone();
 
+    private void DropZone_Tapped(object sender, TappedRoutedEventArgs e)
+    {
+        if (FocusedId is string id) ChooseFiles(id);
+    }
+
+    private void DropZone_PointerEntered(object sender, PointerRoutedEventArgs e) =>
+        DropOutline.SetValue(Microsoft.UI.Xaml.Shapes.Shape.StrokeProperty, Application.Current.Resources["AproidAccentBrush"]);
+
+    private void DropZone_PointerExited(object sender, PointerRoutedEventArgs e) => ResetDropZone();
+
     private async void DropZone_Drop(object sender, DragEventArgs e)
     {
         ResetDropZone();
