@@ -142,9 +142,65 @@ fun LinkDialog(mac: DeviceState, initial: String, onDismiss: () -> Unit) {
  * Google Play's prominent disclosure for the accessibility service: says what it does and what it reads
  * before Android's Accessibility settings open. Only [onAccept] leads there.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ControlDisclosureSheet(onAccept: () -> Unit, onDecline: () -> Unit) {
+    DisclosureSheet(
+        icon = R.drawable.lucide_pointer,
+        title = stringResource(R.string.control_disclosure_title),
+        intro = stringResource(R.string.control_disclosure_intro),
+        footnote = stringResource(R.string.control_disclosure_settings),
+        onAccept = onAccept,
+        onDecline = onDecline,
+    ) {
+        DisclosureGroup(stringResource(R.string.control_disclosure_does)) {
+            DisclosurePoint(R.drawable.lucide_pointer, stringResource(R.string.control_disclosure_taps))
+            DisclosurePoint(R.drawable.lucide_keyboard, stringResource(R.string.control_disclosure_typing))
+            DisclosurePoint(R.drawable.lucide_cast, stringResource(R.string.control_disclosure_only))
+        }
+        DisclosureGroup(stringResource(R.string.control_disclosure_data)) {
+            DisclosurePoint(R.drawable.lucide_eye_off, stringResource(R.string.control_disclosure_private))
+            DisclosurePoint(R.drawable.lucide_lock, stringResource(R.string.control_disclosure_local))
+        }
+    }
+}
+
+/**
+ * Google Play's prominent disclosure for location in the background: explains Find my phone before
+ * Android's location prompt. Only [onAccept] leads to the prompt.
+ */
+@Composable
+fun LocationDisclosureSheet(onAccept: () -> Unit, onDecline: () -> Unit) {
+    DisclosureSheet(
+        icon = R.drawable.lucide_map_pin,
+        title = stringResource(R.string.location_disclosure_title),
+        intro = stringResource(R.string.location_disclosure_intro),
+        footnote = stringResource(R.string.location_disclosure_prompt),
+        onAccept = onAccept,
+        onDecline = onDecline,
+    ) {
+        DisclosureGroup(stringResource(R.string.control_disclosure_does)) {
+            DisclosurePoint(R.drawable.lucide_map_pin, stringResource(R.string.location_disclosure_find))
+            DisclosurePoint(R.drawable.lucide_moon, stringResource(R.string.location_disclosure_background))
+        }
+        DisclosureGroup(stringResource(R.string.control_disclosure_data)) {
+            DisclosurePoint(R.drawable.lucide_eye_off, stringResource(R.string.location_disclosure_private))
+            DisclosurePoint(R.drawable.lucide_lock, stringResource(R.string.location_disclosure_local))
+        }
+    }
+}
+
+/** Explains a sensitive permission in plain language, with an explicit choice, before Android asks for it. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DisclosureSheet(
+    @DrawableRes icon: Int,
+    title: String,
+    intro: String,
+    footnote: String,
+    onAccept: () -> Unit,
+    onDecline: () -> Unit,
+    sections: @Composable () -> Unit,
+) {
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
@@ -170,43 +226,30 @@ fun ControlDisclosureSheet(onAccept: () -> Unit, onDecline: () -> Unit) {
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        painterResource(R.drawable.lucide_pointer),
+                        painterResource(icon),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(30.dp),
                     )
                 }
                 Text(
-                    stringResource(R.string.control_disclosure_title),
+                    title,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.4).sp,
                     textAlign = TextAlign.Center,
                 )
                 Text(
-                    stringResource(R.string.control_disclosure_intro),
+                    intro,
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
             }
 
-            DisclosureGroup(stringResource(R.string.control_disclosure_does)) {
-                DisclosurePoint(R.drawable.lucide_pointer, stringResource(R.string.control_disclosure_taps))
-                DisclosurePoint(R.drawable.lucide_keyboard, stringResource(R.string.control_disclosure_typing))
-                DisclosurePoint(R.drawable.lucide_cast, stringResource(R.string.control_disclosure_only))
-            }
+            sections()
 
-            DisclosureGroup(stringResource(R.string.control_disclosure_data)) {
-                DisclosurePoint(R.drawable.lucide_eye_off, stringResource(R.string.control_disclosure_private))
-                DisclosurePoint(R.drawable.lucide_lock, stringResource(R.string.control_disclosure_local))
-            }
-
-            Text(
-                stringResource(R.string.control_disclosure_settings),
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Text(footnote, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button(
