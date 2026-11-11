@@ -25,9 +25,6 @@ class MainActivity : ComponentActivity() {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
         }
 
-        // Opening the app is enough to connect; there is no separate Start button any more.
-        LinkService.start(this)
-
         val me = DeviceStore.identity(this)
 
         setContent {
@@ -38,6 +35,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    /** Opening or returning to the app is enough to connect, including after Disconnect or Stop. */
+    override fun onStart() {
+        super.onStart()
+        LinkService.start(this)
     }
 
     companion object {
