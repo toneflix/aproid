@@ -202,10 +202,10 @@
                             </Grid.ColumnDefinitions>
                             <views:DeviceArt Type="{x:Bind FocusedType(Model.Focused), Mode=OneWay}" ArtWidth="{x:Bind HeroArtWidth(Model.Focused), Mode=OneWay}" VerticalAlignment="Center" />
                             <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
-                                <Button x:Name="PhoneName" Style="{StaticResource AproidPlainButton}" Padding="0" IsEnabled="{x:Bind Model.HasOtherPhones, Mode=OneWay}" ToolTipService.ToolTip="Switch to another device">
+                                <Button x:Name="PhoneName" Style="{StaticResource AproidPlainButton}" Padding="0" IsEnabled="{x:Bind Model.ShowsDeviceList, Mode=OneWay}" ToolTipService.ToolTip="Switch to another device">
                                     <StackPanel Orientation="Horizontal" Spacing="4">
                                         <TextBlock Text="{x:Bind Model.Focused.Name, Mode=OneWay, FallbackValue=''}" FontSize="16" FontWeight="Bold" Foreground="#1B1B1F" TextTrimming="CharacterEllipsis" MaxWidth="150" />
-                                        <views:LucideIcon Icon="ChevronDown" Size="11" Foreground="#5A4A10" VerticalAlignment="Center" Visibility="{x:Bind Model.HasOtherPhones, Mode=OneWay}" />
+                                        <views:LucideIcon Icon="ChevronDown" Size="11" Foreground="#5A4A10" VerticalAlignment="Center" Visibility="{x:Bind Model.ShowsDeviceList, Mode=OneWay}" />
                                     </StackPanel>
                                     <Button.Flyout>
                                         <MenuFlyout x:Name="PhoneMenu" Opening="PhoneMenu_Opening" />
@@ -231,9 +231,15 @@
                             <views:BatteryRing Grid.Column="2" VerticalAlignment="Center" Visibility="{x:Bind ShowsBattery(Model.Focused), Mode=OneWay}" Charge="{x:Bind BatteryCharge(Model.Focused), Mode=OneWay}" IsCharging="{x:Bind Model.Focused.IsCharging, Mode=OneWay, FallbackValue=False}" />
                         </Grid>
                     </Border>
-                    <Button Grid.Column="1" Width="22" Padding="0" VerticalAlignment="Stretch" Style="{StaticResource AproidPlainButton}" Visibility="{x:Bind Model.ShowsCarousel, Mode=OneWay}"
+                    <Button Grid.Column="1" Width="22" Padding="0" VerticalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Style="{StaticResource AproidPlainButton}" Visibility="{x:Bind Model.ShowsCarousel, Mode=OneWay}"
                             Click="NextPhone_Click" ToolTipService.ToolTip="{x:Bind NextTitle(Model.NextPhone), Mode=OneWay}" AutomationProperties.Name="{x:Bind NextTitle(Model.NextPhone), Mode=OneWay}">
-                        <Border Width="22" VerticalAlignment="Stretch" Background="{StaticResource AproidGoldBrush}" CornerRadius="14,0,0,14" Opacity="0.75" />
+                        <Button.Resources>
+                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="Transparent" />
+                            <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="Transparent" />
+                        </Button.Resources>
+                        <Border Background="{StaticResource AproidGoldBrush}" CornerRadius="14,0,0,14" Opacity="0.75" RequestedTheme="Light">
+                            <views:LucideIcon Icon="ChevronRight" Size="12" Foreground="#5A4A10" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4,0,0,0" />
+                        </Border>
                     </Button>
                     </Grid>
 
