@@ -15,7 +15,7 @@
     <string name="clipboard_sent_many">Clipboard sent to %1$d computers</string>
     <string name="clipboard_empty">Clipboard is empty</string>
     <string name="channel_transfers">Files and links</string>
-    <string name="share_label">Send to computer</string>
+    <string name="share_label">Send to devices</string>
 
     <string name="pair">Pair</string>
     <string name="not_now">Not now</string>
@@ -97,7 +97,7 @@
 
     <string name="share_send_to">Send to</string>
     <string name="share_send_all">Send to all</string>
-    <string name="share_looking">Looking for your computer…</string>
+    <string name="share_looking">Looking for devices…</string>
     <string name="share_tap_to_send">Tap to send</string>
     <string name="share_hide">Hide</string>
     <string name="share_starting">Starting…</string>
