@@ -4,6 +4,8 @@
     <string name="channel_link">Connection</string>
     <string name="notification_running">Looking for your computer</string>
     <string name="notification_connected">Connected to %1$s</string>
+    <string name="notification_disconnect">Disconnect</string>
+    <string name="notification_stop">Stop</string>
     <string name="channel_find">Ring my phone</string>
     <string name="find_title">Ringing your phone</string>
     <string name="find_text">From %1$s</string>

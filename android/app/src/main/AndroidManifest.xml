@@ -140,6 +140,10 @@
             android:name=".FlyyDropPlugin$ActionReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".LinkService$DisconnectReceiver"
+            android:exported="false" />
+
         <service
             android:name=".LinkService"
             android:exported="false"
