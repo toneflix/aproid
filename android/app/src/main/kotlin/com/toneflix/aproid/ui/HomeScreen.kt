@@ -1,6 +1,7 @@
 package com.toneflix.aproid.ui
 
 import androidx.annotation.DrawableRes
+import android.app.Activity
 import android.content.ClipboardManager
 import android.content.Context
 import android.net.Uri
@@ -215,6 +216,7 @@ private fun Header(macs: List<DeviceState>, style: SwitcherStyle) {
                     onClick = {
                         menu = false
                         LinkService.stop(context)
+                        (context as? Activity)?.finish()
                     },
                 )
             }
