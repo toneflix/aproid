@@ -252,6 +252,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
             Raise(nameof(HasOtherPhones));
             Raise(nameof(NextPhone));
             Raise(nameof(ShowsCarousel));
+            Raise(nameof(ShowsDeviceList));
         }
     }
 
@@ -266,6 +267,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
             Raise(nameof(HasOtherPhones));
             Raise(nameof(NextPhone));
             Raise(nameof(ShowsCarousel));
+            Raise(nameof(ShowsDeviceList));
             Raise(nameof(ShowsSearching));
             Raise(nameof(ShowsHotspot));
             Raise(nameof(ShowsPairing));
@@ -280,7 +282,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         }
     }
 
-    /// Everything connected apart from the focused device.
+    /// Unpaired devices on the network. Paired ones are reached through the carousel or the device list.
     public IReadOnlyList<DeviceState> Others
     {
         get => others;
@@ -418,6 +420,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
             settings.SwitcherStyle = value;
             Raise();
             Raise(nameof(ShowsCarousel));
+            Raise(nameof(ShowsDeviceList));
         }
     }
 
@@ -425,6 +428,9 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public DeviceState? NextPhone => new DeviceFocus(Focused?.Id).Next(Devices.Where(d => d.IsPaired), d => d.Id, d => d.Name) is { } next && next.Id != Focused?.Id ? next : null;
 
     public bool ShowsCarousel => SwitcherStyle == PhoneSwitcherStyle.Carousel && NextPhone is not null;
+
+    /// The device's name opens a list of the other paired devices.
+    public bool ShowsDeviceList => SwitcherStyle == PhoneSwitcherStyle.Menu && HasOtherPhones;
 
     public void ShowNextPhone()
     {
@@ -877,7 +883,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     {
         Devices = Devices.Select(d => d with { Outgoing = flyyDropSends.GetValueOrDefault(d.Id) }).ToList();
         Focused = Focused is { } focus ? Devices.FirstOrDefault(d => d.Id == focus.Id) : null;
-        Others = Devices.Where(d => d.Id != Focused?.Id).ToList();
+        Others = Devices.Where(d => !d.IsPaired && d.Id != Focused?.Id).ToList();
     }
 
     private void RaiseFlyyDropAsk()
@@ -1156,7 +1162,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         var shown = Shown;
         Focused = Devices.FirstOrDefault(d => d.PairState is PairState.RequestedByPeer or PairState.Requested)
             ?? Devices.FirstOrDefault(d => d.Id == shown?.Id);
-        Others = Devices.Where(d => d.Id != Focused?.Id).ToList();
+        Others = Devices.Where(d => !d.IsPaired && d.Id != Focused?.Id).ToList();
 
         SyncStores(Primary);
         SendWaiting();

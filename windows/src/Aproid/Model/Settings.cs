@@ -8,7 +8,7 @@ public enum PhoneSwitcherStyle
     /// The next phone's card peeks at the edge; clicking it moves on, round and round.
     Carousel,
 
-    /// A menu on the phone's name.
+    /// A list of devices on the device's name.
     Menu,
 }
 

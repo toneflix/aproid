@@ -708,8 +708,8 @@ public sealed partial class PanelWindow : Window
         photosFolder.Click += (_, _) => Model.ShowsPhotosInExplorer = photosFolder.IsChecked;
         SettingsMenu.Items.Add(photosFolder);
 
-        var switcher = new MenuFlyoutSubItem { Text = "Switch phones with" };
-        foreach (var (style, label) in new[] { (PhoneSwitcherStyle.Carousel, "Card carousel"), (PhoneSwitcherStyle.Menu, "Menu on the phone name") })
+        var switcher = new MenuFlyoutSubItem { Text = "Switch devices with" };
+        foreach (var (style, label) in new[] { (PhoneSwitcherStyle.Carousel, "Card carousel"), (PhoneSwitcherStyle.Menu, "Device list") })
         {
             var item = new ToggleMenuFlyoutItem { Text = label, IsChecked = Model.SwitcherStyle == style };
             item.Click += (_, _) => Model.SwitcherStyle = style;

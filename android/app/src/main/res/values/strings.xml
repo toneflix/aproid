@@ -40,7 +40,7 @@
     <string name="home_mac_shown">Shown</string>
     <string name="home_mac_live">Connected</string>
     <string name="home_switch_carousel">Swipe between computers</string>
-    <string name="home_switch_row">Row of computers</string>
+    <string name="home_switch_row">Device list</string>
     <string name="home_show_mac">Show %1$s</string>
     <string name="home_flowing_many">Syncing with all your computers</string>
     <string name="home_recent">Recent</string>
