@@ -282,11 +282,16 @@ public final class LanLink {
 
 /// Captures the peer's certificate during the handshake. Trust is checked after it.
 final class PeerCertificateBox {
-    var certificate: NIOSSLCertificate?
+    private var verified: NIOSSLCertificate?
 
     func verify(_ chain: [NIOSSLCertificate], _ promise: EventLoopPromise<NIOSSLVerificationResult>) {
-        certificate = chain.first
+        verified = chain.first
         promise.succeed(chain.isEmpty ? .failed : .certificateVerified)
+    }
+
+    /// The peer's certificate once the handshake is done. A resumed session skips `verify`, so it then comes from the session.
+    func certificate(_ context: ChannelHandlerContext) -> NIOSSLCertificate? {
+        verified ?? (try? context.pipeline.syncOperations.nioSSL_peerCertificate())
     }
 }
 
@@ -385,7 +390,7 @@ final class LinkHandler: ChannelInboundHandler {
         }
 
         do {
-            guard let peer = box.certificate else { throw ProtocolError("peer sent no certificate") }
+            guard let peer = box.certificate(context) else { throw ProtocolError("peer sent no certificate") }
 
             certificateDER = try peer.toDERBytes()
             publicKeyDER = try peer.extractPublicKey().toSPKIBytes()

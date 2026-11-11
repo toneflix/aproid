@@ -5,6 +5,7 @@ namespace Aproid.Core;
 
 /// Captures the peer's certificate during a TLS handshake. Every device is self-signed, so the handshake
 /// accepts any certificate and the caller checks it afterwards against the device id and the trust store.
+/// Sessions are never resumed, so every handshake sends the certificate again.
 internal sealed class PeerCertificate
 {
     public byte[]? Der { get; private set; }
@@ -24,6 +25,7 @@ internal sealed class PeerCertificate
         ClientCertificateRequired = true,
         RemoteCertificateValidationCallback = peer.Validate,
         CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
+        AllowTlsResume = false,
     };
 
     public static SslClientAuthenticationOptions ClientOptions(DeviceCertificate own, PeerCertificate peer, string targetHost) => new()
@@ -33,5 +35,6 @@ internal sealed class PeerCertificate
         LocalCertificateSelectionCallback = (_, _, _, _, _) => own.Certificate,
         RemoteCertificateValidationCallback = peer.Validate,
         CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
+        AllowTlsResume = false,
     };
 }
