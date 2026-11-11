@@ -73,6 +73,14 @@
     <string name="control_disclosure_settings">Next, turn on "Aproid computer control" in Accessibility settings. You can turn it off there any time.</string>
     <string name="control_disclosure_accept">Agree and continue</string>
     <string name="control_disclosure_decline">No thanks</string>
+
+    <string name="location_disclosure_title">Find your phone from your computer</string>
+    <string name="location_disclosure_intro">Aproid collects your phone\'s location to enable Find my phone, even when the app is closed or not in use.</string>
+    <string name="location_disclosure_find">When a computer you paired asks to find this phone, Aproid sends it the phone\'s current location so it can show it on a map</string>
+    <string name="location_disclosure_background">Works even when Aproid is closed or not in use, which is usually when a phone goes missing</string>
+    <string name="location_disclosure_private">Reads the location only when you ask from your computer. Aproid doesn\'t track you or record where you go</string>
+    <string name="location_disclosure_local">Your location goes only to your own paired computer, encrypted. It is never sent to us or anyone else, or used for ads</string>
+    <string name="location_disclosure_prompt">Next, Android asks for location access. Choose "Allow all the time" so you can find your phone while Aproid is in the background.</string>
     <string name="setup_control">Control your phone from your computer</string>
     <string name="setup_control_stopped">Computer control stopped working</string>
     <string name="setup_control_stopped_hint">Turn \"Aproid computer control\" off and on again</string>

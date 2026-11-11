@@ -484,6 +484,7 @@ private fun SetupCards() {
     }
 
     var location by remember { mutableStateOf(LocationPlugin.hasPermission(context) && LocationPlugin.hasBackgroundPermission(context)) }
+    var locationDisclosure by remember { mutableStateOf(false) }
     // Android asks for "all the time" location separately, after the normal location permission.
     val askBackgroundLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         location = LocationPlugin.hasPermission(context) && LocationPlugin.hasBackgroundPermission(context)
@@ -540,13 +541,7 @@ private fun SetupCards() {
             R.drawable.lucide_map_pin,
             stringResource(R.string.setup_location),
             stringResource(R.string.setup_location_hint),
-        ) {
-            if (LocationPlugin.hasPermission(context) && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                askBackgroundLocation.launch(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-            } else {
-                askLocation.launch(LocationPlugin.permissions)
-            }
-        }
+        ) { locationDisclosure = true }
     }
     AnimatedVisibility(!photos) {
         SetupCard(
@@ -567,6 +562,20 @@ private fun SetupCards() {
             stringResource(if (stopped) R.string.setup_control_stopped else R.string.setup_control),
             if (stopped) stringResource(R.string.setup_control_stopped_hint) else null,
         ) { controlDisclosure = true }
+    }
+
+    if (locationDisclosure) {
+        LocationDisclosureSheet(
+            onAccept = {
+                locationDisclosure = false
+                if (LocationPlugin.hasPermission(context) && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    askBackgroundLocation.launch(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                } else {
+                    askLocation.launch(LocationPlugin.permissions)
+                }
+            },
+            onDecline = { locationDisclosure = false },
+        )
     }
 
     if (controlDisclosure) {
