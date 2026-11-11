@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurper
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -5,6 +6,40 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+/**
+ * The app's version: the base in version.json at the repo root, raised by each release.
+ * A release passes -PbuildNumber (added to the base build number) and -PversionName.
+ */
+class AppVersion(baseFile: File, buildNumber: String?, name: String?) {
+    private val base = (JsonSlurper().parse(baseFile) as Map<*, *>)["android"] as Map<*, *>
+    private val baseCode = (base["versionCode"] as Number).toInt()
+    private val baseName = base["versionName"] as String
+
+    val code = baseCode + (buildNumber?.toInt() ?: 0)
+    val name = name ?: baseName
+
+    init {
+        require(compare(this.name, baseName) >= 0) {
+            "Version ${this.name} is below the base $baseName in version.json."
+        }
+    }
+
+    private fun compare(a: String, b: String): Int {
+        val left = a.split('.').map { it.toIntOrNull() ?: 0 }
+        val right = b.split('.').map { it.toIntOrNull() ?: 0 }
+
+        return (0 until maxOf(left.size, right.size))
+            .map { (left.getOrNull(it) ?: 0).compareTo(right.getOrNull(it) ?: 0) }
+            .firstOrNull { it != 0 } ?: 0
+    }
+}
+
+val appVersion = AppVersion(
+    rootProject.file("../version.json"),
+    findProperty("buildNumber") as String?,
+    findProperty("versionName") as String?,
+)
 
 android {
     namespace = "com.toneflix.aproid"
@@ -14,8 +49,8 @@ android {
         applicationId = "com.toneflix.aproid"
         minSdk = 26
         targetSdk = 36
-        versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 1
-        versionName = findProperty("versionName") as String? ?: "0.1.0"
+        versionCode = appVersion.code
+        versionName = appVersion.name
     }
 
     // Release builds are signed only when the keystore is passed in, as the release workflow does.
