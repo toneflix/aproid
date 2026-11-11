@@ -233,7 +233,7 @@ private final class UploadHandler: ChannelInboundHandler {
             return
         }
 
-        guard let der = try? box.certificate?.toDERBytes(), der == expected else {
+        guard let der = try? box.certificate(context)?.toDERBytes(), der == expected else {
             fail(context, ProtocolError("payload peer is not the paired device"))
             return
         }
@@ -372,7 +372,7 @@ private final class StreamUploadHandler: ChannelInboundHandler {
             return
         }
 
-        guard let der = try? box.certificate?.toDERBytes(), der == expected else {
+        guard let der = try? box.certificate(context)?.toDERBytes(), der == expected else {
             context.close(promise: nil)
             done.call(ProtocolError("payload peer is not the paired device"))
             return
@@ -429,7 +429,7 @@ private final class DownloadHandler: ChannelInboundHandler {
             return
         }
 
-        guard let der = try? box.certificate?.toDERBytes(), der == expected else {
+        guard let der = try? box.certificate(context)?.toDERBytes(), der == expected else {
             finish(context, ProtocolError("payload peer is not the paired device"))
             return
         }
