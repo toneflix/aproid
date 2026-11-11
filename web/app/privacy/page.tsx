@@ -12,7 +12,7 @@ const permissions = [
   ["SMS (read and send)", "Shows your text conversations on your paired computer and sends the replies you write there."],
   ["Contacts", "Shows names instead of numbers for texts and calls on your paired computer."],
   ["Phone, call log and answering calls", "Tells your computer who is calling, lets you answer, decline or start calls from it, and shows recent callers."],
-  ["Location, including in the background", "Only used when you ask a paired computer to find your phone. The phone sends its current location to that computer so it can be shown on a map."],
+  ["Location, including in the background", "Used only for Find my phone. When you ask a paired computer to find your phone, the phone sends its current location to that computer so it can be shown on a map. This works even when Aproid is closed or not in use. Aproid does not track you, keep a location history, or send your location to us or anyone else, and it is never used for advertising. Aproid explains this and asks for your agreement before Android asks for location access."],
   ["Photos and videos", "Lets you browse recent photos and screenshots from your computer and copy the ones you pick."],
   ["Screen capture", "Streams your phone's screen to your paired computer when you start screen mirroring. Android asks for your consent every time."],
   ["Audio recording", "Captures the sound your phone is playing (not the microphone) while you mirror the screen, so you can hear it on your computer."],
