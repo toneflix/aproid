@@ -5,6 +5,7 @@ import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -35,6 +36,7 @@ class LinkService : Service() {
     private var scheduler: ScheduledExecutorService? = null
     private val scope = MainScope()
     private var statusText: String? = null
+    private var connected = false
     private var beacon: NearbyBeacon? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -146,6 +148,7 @@ class LinkService : Service() {
                     getString(R.string.notification_connected, names.joinToString())
                 }
                 statusText = text
+                connected = names.isNotEmpty()
                 manager.notify(NOTIFICATION_ID, buildNotification(text))
             }
         }
@@ -156,6 +159,10 @@ class LinkService : Service() {
             this, 0, Intent(this, ClipboardActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE,
         )
+        val disconnect = PendingIntent.getBroadcast(
+            this, 0, Intent(this, DisconnectReceiver::class.java), PendingIntent.FLAG_IMMUTABLE,
+        )
+        val stopLabel = if (connected) R.string.notification_disconnect else R.string.notification_stop
 
         return Notification.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.app_name))
@@ -165,6 +172,7 @@ class LinkService : Service() {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .addAction(Notification.Action.Builder(null, getString(R.string.clipboard_send), sendClipboard).build())
+            .addAction(Notification.Action.Builder(null, getString(stopLabel), disconnect).build())
             .build()
     }
 
@@ -175,6 +183,11 @@ class LinkService : Service() {
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
+    }
+
+    /** Drops every connection and stops Aproid until the app is opened again. */
+    class DisconnectReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) = stop(context)
     }
 
     companion object {
