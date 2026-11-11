@@ -38,6 +38,11 @@ struct PhoneCarousel: View {
                     DeviceHero(device: next, model: model)
                         .frame(width: Self.cardWidth)
                         .opacity(0.8)
+                        .overlay(alignment: .leading) {
+                            Image(lucide: .chevronRight, size: 12, weight: .semibold)
+                                .foregroundStyle(.secondary)
+                                .padding(.leading, 8)
+                        }
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(PressStyle())
