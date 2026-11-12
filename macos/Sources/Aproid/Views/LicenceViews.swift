@@ -87,7 +87,6 @@ struct LicenceCard: View {
             } else {
                 TextField("Email", text: $licence.email)
                     .textFieldStyle(.roundedBorder)
-                    .textContentType(.emailAddress)
                     .focused($focused)
                     .onSubmit { licence.sendCode() }
                 Button("Send code") { licence.sendCode() }
