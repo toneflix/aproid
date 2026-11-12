@@ -8,8 +8,24 @@
     "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/download/*", "/releases/*", "/updates/*"]
+    "run_worker_first": ["/download/*", "/releases/*", "/updates/*", "/api/*"]
   },
   "r2_buckets": [{ "binding": "RELEASES", "bucket_name": "aproid-releases" }],
+  "d1_databases": [
+    {
+      "binding": "LICENCES",
+      "database_name": "aproid-licences",
+      "database_id": "dfb12d7a-ce96-41cd-a4d3-0693675e575a",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Secrets, set with `wrangler secret put`: LICENCE_SIGNING_KEY, CODE_SECRET, PADDLE_WEBHOOK_SECRET,
+  // PADDLE_API_KEY, RESEND_API_KEY. See web/README.md.
+  "vars": {
+    "PADDLE_CLIENT_TOKEN": "",
+    "PADDLE_PRICE_ID": "",
+    "PADDLE_SANDBOX": "true",
+    "MAIL_FROM": "Aproid <hello@toneflix.net>"
+  },
   "previews": {}
 }

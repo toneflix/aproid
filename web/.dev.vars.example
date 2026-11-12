@@ -1,0 +1,7 @@
+# Copy to .dev.vars for `npm run preview`. Make the signing key with `node scripts/licence-keys.mjs`.
+MAIL_MODE=log
+LICENCE_SIGNING_KEY=
+CODE_SECRET=dev-only
+PADDLE_WEBHOOK_SECRET=dev-only
+PADDLE_API_KEY=
+RESEND_API_KEY=
