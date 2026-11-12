@@ -124,7 +124,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Signing in.</strong> To sign in on the website or a computer, we email you a short code, sent through
-          Resend. The code expires after 10 minutes.
+          SendPulse. The code expires after 10 minutes.
         </li>
         <li>
           <strong>Your computers.</strong> For each computer you sign in on, we keep its name, whether it is a Mac or
