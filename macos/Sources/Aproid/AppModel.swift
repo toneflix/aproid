@@ -114,6 +114,10 @@ final class AppModel: ObservableObject {
     /// Looks for new versions of Aproid.
     let updater = AppUpdater()
 
+    /// Whether this Mac may connect, and the sign-in card.
+    let licence = LicenceModel()
+    private var licenceChanges: AnyCancellable?
+
     /// Sends what is shared from the Share menu.
     private(set) lazy var shareInbox = ShareInbox(model: self)
 
@@ -163,6 +167,7 @@ final class AppModel: ObservableObject {
     private var lastNearbySearch = Date.distantPast
     private var notificationsDay = Calendar.current.startOfDay(for: Date())
     private var link: LanLink?
+    private var linking = false
     private var timer: Timer?
     private let trustStore = DefaultsTrustStore()
     private let log = Logger(subsystem: "com.toneflix.aproid.app", category: "link")
@@ -281,7 +286,10 @@ final class AppModel: ObservableObject {
         share.onFileReceived = { [weak notifications] url, device in notifications?.announce(file: url, from: device) }
         share.restore()
         restoreFlyyDrop()
-        start()
+        licenceChanges = licence.objectWillChange.sink { [weak self] in self?.objectWillChange.send() }
+        licence.onLockChange = { [weak self] in self?.licenceChanged() }
+        licence.start()
+        if !licence.isLocked { start() }
         clipboard.startWatching()
         shortcuts.isEnabled = usesShortcuts
     }
@@ -647,7 +655,11 @@ final class AppModel: ObservableObject {
         notificationsToday += 1
     }
 
+    /// Finds and connects to devices. Runs only while the licence allows it.
     private func start() {
+        guard link == nil, !linking else { return }
+
+        linking = true
         let me = identity
         let trustStore = trustStore
         let connected = connected
@@ -679,6 +691,12 @@ final class AppModel: ObservableObject {
     }
 
     private func started(_ link: LanLink, certificate: DeviceCertificate) {
+        linking = false
+        guard !licence.isLocked else {
+            link.stop()
+            return
+        }
+
         self.link = link
         nearby.use(privateKeyPEM: certificate.privateKeyPEM)
         let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
@@ -694,6 +712,19 @@ final class AppModel: ObservableObject {
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
         noteBroadcast(link.broadcastIdentity())
+    }
+
+    private func licenceChanged() {
+        guard licence.isLocked else {
+            start()
+            return
+        }
+
+        timer?.invalidate()
+        timer = nil
+        link?.stop()
+        link = nil
+        connected.all.forEach { $0.link.close(reason: "licence locked") }
     }
 
     private func noteBroadcast(_ result: LanLink.BroadcastResult) {
@@ -783,6 +814,7 @@ final class AppModel: ObservableObject {
     }
 
     private func failed(_ message: String) {
+        linking = false
         error = message
     }
 

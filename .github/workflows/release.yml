@@ -93,6 +93,7 @@ jobs:
       FEED_URL: ${{ env.SITE_URL }}/updates/mac/appcast.xml
       SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
       SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+      LICENCE_PUBLIC_KEY: ${{ vars.LICENCE_PUBLIC_KEY }}
     steps:
       - uses: actions/checkout@v7
       - name: Pick Xcode

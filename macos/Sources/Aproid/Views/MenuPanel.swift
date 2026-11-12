@@ -10,41 +10,14 @@ struct MenuPanel: View {
         VStack(alignment: .leading, spacing: 12) {
             PanelHeader(model: model)
 
-            if let error = model.error {
-                Banner(icon: .triangleAlert, text: error)
-            }
-
-            if model.localNetworkBlocked {
-                Banner(
-                    icon: .wifi,
-                    text: "Turn on Aproid under Local Network so your phone can find this Mac.",
-                    action: ("Open Settings", model.openLocalNetworkSettings)
-                )
-            }
-
-            ForEach(model.flyyDropAsks.prefix(1)) { ask in
-                FlyyDropAskCard(ask: ask, model: model)
+            if model.licence.showsCard {
+                LicenceCard(licence: model.licence)
                     .transition(.scale(scale: 0.96).combined(with: .opacity))
-            }
-
-            main
-
-            if model.flyyDropReceiving != .off {
-                FlyyDropReceivingBanner(model: model)
-                    .transition(.opacity)
-            }
-
-            let others = model.devices.filter { $0.pairState != .paired && $0.id != focused?.id }
-            if !others.isEmpty {
-                NearbyList(devices: others, model: model)
-            }
-
-            if !model.recent.isEmpty {
-                RecentList(items: model.recent) { model.clearRecent() }
-            }
-
-            if !model.notificationsAvailable {
-                Banner(icon: .bellOff, text: "Notifications need the app bundle. Build it with macos/scripts/bundle.sh.")
+            } else {
+                if model.licence.showsTrialBanner {
+                    TrialBanner(licence: model.licence)
+                }
+                content
             }
 
             PanelFooter(name: model.identity.deviceName)
@@ -55,7 +28,47 @@ struct MenuPanel: View {
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: model.devices)
         .animation(.easeOut(duration: 0.2), value: model.recent)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: model.flyyDropAsks)
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: model.licence.showsCard)
         .fitsWindowHeight()
+    }
+
+    @ViewBuilder private var content: some View {
+        if let error = model.error {
+            Banner(icon: .triangleAlert, text: error)
+        }
+
+        if model.localNetworkBlocked {
+            Banner(
+                icon: .wifi,
+                text: "Turn on Aproid under Local Network so your phone can find this Mac.",
+                action: ("Open Settings", model.openLocalNetworkSettings)
+            )
+        }
+
+        ForEach(model.flyyDropAsks.prefix(1)) { ask in
+            FlyyDropAskCard(ask: ask, model: model)
+                .transition(.scale(scale: 0.96).combined(with: .opacity))
+        }
+
+        main
+
+        if model.flyyDropReceiving != .off {
+            FlyyDropReceivingBanner(model: model)
+                .transition(.opacity)
+        }
+
+        let others = model.devices.filter { $0.pairState != .paired && $0.id != focused?.id }
+        if !others.isEmpty {
+            NearbyList(devices: others, model: model)
+        }
+
+        if !model.recent.isEmpty {
+            RecentList(items: model.recent) { model.clearRecent() }
+        }
+
+        if !model.notificationsAvailable {
+            Banner(icon: .bellOff, text: "Notifications need the app bundle. Build it with macos/scripts/bundle.sh.")
+        }
     }
 
     /// The device the big cards are about: one asking to pair first, then the first paired one.
@@ -131,6 +144,11 @@ private struct PanelHeader: View {
                     ForEach(model.shortcuts.shortcuts, id: \.symbol) { shortcut in
                         Text("\(shortcut.symbol)   \(shortcut.title)")
                     }
+                }
+                if let owner = model.licence.licensedTo {
+                    Button("Licensed to \(owner)") { LicenceModel.manageComputers() }
+                } else if model.licence.canSignIn {
+                    Button("Sign in to your licence") { model.licence.openCard() }
                 }
                 Button("Open Downloads") { NSWorkspace.shared.open(AppModel.downloads) }
                 if model.updater.isAvailable {

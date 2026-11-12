@@ -6,6 +6,7 @@
 #   VERSION, BUILD_NUMBER          the version shown and the one Sparkle compares
 #   SIGN_IDENTITY                  a "Developer ID Application" identity in the keychain
 #   SPARKLE_FEED_URL, SPARKLE_PUBLIC_KEY   turn on automatic updates
+#   LICENCE_PUBLIC_KEY             turns on the licence check; without it the build is unlimited
 set -eu
 
 cd "$(dirname "$0")/.."
@@ -103,6 +104,10 @@ if [ -n "${SPARKLE_FEED_URL:-}" ] && [ -n "${SPARKLE_PUBLIC_KEY:-}" ]; then
     /usr/libexec/PlistBuddy -c "Add :SUFeedURL string $SPARKLE_FEED_URL" "$APP/Contents/Info.plist"
     /usr/libexec/PlistBuddy -c "Add :SUPublicEDKey string $SPARKLE_PUBLIC_KEY" "$APP/Contents/Info.plist"
     /usr/libexec/PlistBuddy -c "Add :SUEnableAutomaticChecks bool true" "$APP/Contents/Info.plist"
+fi
+
+if [ -n "${LICENCE_PUBLIC_KEY:-}" ]; then
+    /usr/libexec/PlistBuddy -c "Add :AproidLicenceKey string $LICENCE_PUBLIC_KEY" "$APP/Contents/Info.plist"
 fi
 
 # Sign from the inside out. Ad hoc is enough for this Mac; a Developer ID release also needs the
