@@ -6,13 +6,12 @@ export function Footer() {
     <footer className="footer">
       <div className="container footer-inner">
         <span>
-          © {new Date().getFullYear()} {site.legalEntity}. Aproid is open source under the MIT license.
+          © {new Date().getFullYear()} {site.legalEntity}.
         </span>
 
         <nav>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
-          <a href={site.github}>GitHub</a>
           <a href={`mailto:${site.contactEmail}`}>Contact</a>
         </nav>
       </div>

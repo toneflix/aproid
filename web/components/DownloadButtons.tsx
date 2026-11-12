@@ -1,16 +1,11 @@
-import { CodeXml, Download } from "lucide-react";
-import { site } from "@/content/site";
+import { Download } from "lucide-react";
 
 export function DownloadButtons() {
   return (
     <div className="hero-actions">
-      <a className="button button-primary" href={site.releases}>
+      <a className="button button-primary" href="/#download">
         <Download size={18} />
         Download Aproid
-      </a>
-      <a className="button button-ghost" href={site.github}>
-        <CodeXml size={18} />
-        View on GitHub
       </a>
     </div>
   );

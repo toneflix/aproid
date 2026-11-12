@@ -147,8 +147,6 @@ export default function PrivacyPage() {
       <h2>8. Security</h2>
       <p>
         Connections between paired devices are encrypted and authenticated with each device&apos;s own certificate.
-        Aproid is open source, so anyone can check how it handles data at{" "}
-        <a href={site.github}>{site.github.replace("https://", "")}</a>.
       </p>
 
       <h2>9. Changes to this policy</h2>

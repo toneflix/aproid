@@ -90,9 +90,9 @@ export const features: Feature[] = [
 ];
 
 export const platforms = [
-  { name: "Android", needs: "Android 8.0 or later", detail: "APK now, Google Play soon" },
-  { name: "Mac", needs: "macOS 13 Ventura or later", detail: "Updates itself" },
-  { name: "Windows", needs: "Windows 10 (1809) or later", detail: "Updates itself" },
+  { name: "Android", slug: "android", needs: "Android 8.0 or later", detail: "APK now, Google Play soon" },
+  { name: "Mac", slug: "mac", needs: "macOS 13 Ventura or later", detail: "Updates itself" },
+  { name: "Windows", slug: "windows", needs: "Windows 10 (1809) or later", detail: "Updates itself" },
 ];
 
 export const steps = [

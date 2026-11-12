@@ -20,7 +20,7 @@ The protocol code exists three times, in Kotlin, Swift and C#, with the same nam
 
 It already solves discovery, pairing, encryption and file transfer, and it is documented and widely used. Speaking it means Aproid works with KDE Connect on Linux, Windows and Android from day one. We add our own packet types (prefixed `aproid.`) for features KDE Connect lacks. A peer only gets those if it lists them in its capabilities, so plain KDE Connect clients are unaffected.
 
-We do not copy KDE Connect's code, which is GPL. We implement the protocol ourselves, which keeps this repository MIT.
+We do not copy KDE Connect's code, which is GPL. We implement the protocol ourselves, so the code is all ours to license.
 
 ## Protocol summary (version 8)
 

@@ -18,10 +18,9 @@ export default function TermsPage() {
 
       <h2>1. The software</h2>
       <p>
-        Aproid is free, open source software released under the{" "}
-        <a href={`${site.github}/blob/main/LICENSE`}>MIT license</a>. The license governs how you may copy, modify and
-        redistribute the source code. These terms cover your use of the apps we publish, including through Google
-        Play.
+        Aproid is owned by {site.legalEntity}. We grant you a personal, non-transferable license to install and use
+        the apps we publish, including through Google Play. You may not copy, modify, resell or redistribute them, or
+        reverse engineer them except where the law allows it.
       </p>
 
       <h2>2. Using Aproid</h2>
