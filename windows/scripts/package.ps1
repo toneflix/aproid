@@ -6,7 +6,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-dotnet publish src/Aproid -c Release -r win-x64 -p:Platform=x64 --self-contained true -p:Version=$Version -o publish/Aproid
+# LICENCE_PUBLIC_KEY turns on the licence check; without it the build is unlimited.
+dotnet publish src/Aproid -c Release -r win-x64 -p:Platform=x64 --self-contained true -p:Version=$Version "-p:LicencePublicKey=$env:LICENCE_PUBLIC_KEY" -o publish/Aproid
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $iscc = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"

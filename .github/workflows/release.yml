@@ -238,6 +238,8 @@ jobs:
           tag="${GITHUB_REF_NAME#windows-}"
           echo "number=${tag#v}" >> "$GITHUB_OUTPUT"
       - name: Build app and installer
+        env:
+          LICENCE_PUBLIC_KEY: ${{ vars.LICENCE_PUBLIC_KEY }}
         run: ./scripts/package.ps1 -Version ${{ steps.version.outputs.number }}
       - uses: actions/upload-artifact@v7
         with:

@@ -669,6 +669,32 @@ public sealed partial class PanelWindow : Window
 
     private void Quit_Click(object sender, RoutedEventArgs e) => QuitRequested?.Invoke();
 
+    private void LicenceSignIn_Click(object sender, RoutedEventArgs e) => Model.Licence.OpenCard();
+
+    private void LicenceClose_Click(object sender, RoutedEventArgs e) => Model.Licence.CloseCard();
+
+    private void LicenceBuy_Click(object sender, RoutedEventArgs e) => LicenceModel.Buy();
+
+    private void LicenceAccount_Click(object sender, RoutedEventArgs e) => LicenceModel.ManageComputers();
+
+    private void LicenceRetry_Click(object sender, RoutedEventArgs e) => Model.Licence.Retry();
+
+    private void LicenceSendCode_Click(object sender, RoutedEventArgs e) => Model.Licence.SendCode();
+
+    private void LicenceActivate_Click(object sender, RoutedEventArgs e) => Model.Licence.Activate();
+
+    private void LicenceOtherEmail_Click(object sender, RoutedEventArgs e) => Model.Licence.UseAnotherEmail();
+
+    private void LicenceEmail_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter && Model.Licence.IsIdle) Model.Licence.SendCode();
+    }
+
+    private void LicenceCode_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter && Model.Licence.IsIdle) Model.Licence.Activate();
+    }
+
     private void SettingsMenu_Opening(object sender, object e)
     {
         SettingsMenu.Items.Clear();
@@ -730,6 +756,19 @@ public sealed partial class PanelWindow : Window
             flyyDrop.Items.Add(item);
         }
         SettingsMenu.Items.Add(flyyDrop);
+
+        if (Model.Licence.LicensedTo is string owner)
+        {
+            var account = new MenuFlyoutItem { Text = $"Licensed to {owner}" };
+            account.Click += (_, _) => LicenceModel.ManageComputers();
+            SettingsMenu.Items.Add(account);
+        }
+        else if (Model.Licence.CanSignIn)
+        {
+            var signIn = new MenuFlyoutItem { Text = "Sign in to your licence" };
+            signIn.Click += (_, _) => Model.Licence.OpenCard();
+            SettingsMenu.Items.Add(signIn);
+        }
 
         var updates = new MenuFlyoutItem { Text = $"Check for updates (you have {Model.VersionText})" };
         updates.Click += (_, _) => Model.CheckForUpdates();

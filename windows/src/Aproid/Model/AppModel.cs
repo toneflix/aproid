@@ -40,6 +40,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
     private readonly Dictionary<string, FlyyDropSend> flyyDropSends = [];
     private IReadOnlyList<FlyyDropAsk> flyyDropAsks = [];
     private LanLink? link;
+    private bool linking;
     private DispatcherQueueTimer? timer;
     private DateOnly notificationsDay = DateOnly.FromDateTime(DateTime.Now);
 
@@ -196,6 +197,12 @@ public sealed class AppModel : Observable, IDeviceDelegate
         plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find, mediaHost, notificationShare, inputShare, screenHost, relay, flyyDrop]);
 
         updater = new Updater(toasts) { OnInstalling = () => ui.TryEnqueue(() => UpdateInstalling?.Invoke()) };
+        Licence = new LicenceModel(ui);
+        Licence.LockChanged += () =>
+        {
+            if (Licence.IsLocked) StopLink();
+            else StartLink();
+        };
         hotspot = new PhoneHotspot(() => settings.PhoneHotspots, settings.RememberHotspot);
 
         share.Restore();
@@ -554,11 +561,24 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public string ThisComputer => $"This PC: {Identity.DeviceName}";
 
     /// Starts listening for phones. Call once, on the UI thread.
+    /// Whether this PC may connect, and the sign-in card.
+    public LicenceModel Licence { get; }
+
     public void Start()
     {
-        var me = Identity;
         _ = notificationShare.StartAsync();
+        updater.Start();
+        Licence.Start();
+        if (!Licence.IsLocked) StartLink();
+    }
 
+    /// Finds and connects to devices. Runs only while the licence allows it.
+    private void StartLink()
+    {
+        if (link is not null || linking) return;
+
+        linking = true;
+        var me = Identity;
         Task.Run(() =>
         {
             try
@@ -580,11 +600,14 @@ public sealed class AppModel : Observable, IDeviceDelegate
                 lan.Start();
 
                 ui.TryEnqueue(() => Started(lan));
-                updater.Start();
             }
             catch (Exception e)
             {
-                ui.TryEnqueue(() => Error = $"Could not start: {e.Message}");
+                ui.TryEnqueue(() =>
+                {
+                    linking = false;
+                    Error = $"Could not start: {e.Message}";
+                });
             }
         });
     }
@@ -601,13 +624,19 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     public void Stop()
     {
-        timer?.Stop();
-        link?.Stop();
+        StopLink();
         folder.Disconnect();
         Audio.Dispose();
         status.Disconnected().Save();
-        foreach (var device in connected.All) device.Link.Close("Aproid quit");
         toasts.Unregister();
+    }
+
+    private void StopLink()
+    {
+        timer?.Stop();
+        link?.Stop();
+        link = null;
+        foreach (var device in connected.All) device.Link.Close("Aproid stopped");
     }
 
     /// Something was copied on this PC.
@@ -992,6 +1021,13 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     private void Started(LanLink lan)
     {
+        linking = false;
+        if (Licence.IsLocked)
+        {
+            lan.Stop();
+            return;
+        }
+
         link = lan;
         timer = ui.CreateTimer();
         timer.Interval = TimeSpan.FromSeconds(5);
