@@ -477,6 +477,7 @@ private fun SetupCards() {
     var notifications by remember { mutableStateOf(NotificationPlugin.hasAccess(context)) }
     var background by remember { mutableStateOf(LinkService.isUnrestricted(context)) }
     var phone by remember { mutableStateOf(CallPlugin.hasPermissions(context)) }
+    var phoneDisclosure by remember { mutableStateOf(false) }
     val askPhone = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         phone = CallPlugin.hasPermissions(context)
         SmsPlugin.start(context)
@@ -534,7 +535,7 @@ private fun SetupCards() {
         SetupCard(
             R.drawable.lucide_message_square,
             stringResource(R.string.setup_phone),
-        ) { askPhone.launch(CallPlugin.permissions) }
+        ) { phoneDisclosure = true }
     }
     AnimatedVisibility(!location) {
         SetupCard(
@@ -562,6 +563,16 @@ private fun SetupCards() {
             stringResource(if (stopped) R.string.setup_control_stopped else R.string.setup_control),
             if (stopped) stringResource(R.string.setup_control_stopped_hint) else null,
         ) { controlDisclosure = true }
+    }
+
+    if (phoneDisclosure) {
+        PhoneDisclosureSheet(
+            onAccept = {
+                phoneDisclosure = false
+                askPhone.launch(CallPlugin.permissions)
+            },
+            onDecline = { phoneDisclosure = false },
+        )
     }
 
     if (locationDisclosure) {

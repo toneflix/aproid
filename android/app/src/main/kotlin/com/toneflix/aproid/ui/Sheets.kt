@@ -189,6 +189,31 @@ fun LocationDisclosureSheet(onAccept: () -> Unit, onDecline: () -> Unit) {
     }
 }
 
+/**
+ * Disclosure for the SMS, call log, phone and contacts permissions: explains texts and calls on the computer
+ * before Android asks for them. Only [onAccept] leads to the prompts.
+ */
+@Composable
+fun PhoneDisclosureSheet(onAccept: () -> Unit, onDecline: () -> Unit) {
+    DisclosureSheet(
+        icon = R.drawable.lucide_message_square,
+        title = stringResource(R.string.phone_disclosure_title),
+        intro = stringResource(R.string.phone_disclosure_intro),
+        footnote = stringResource(R.string.phone_disclosure_prompt),
+        onAccept = onAccept,
+        onDecline = onDecline,
+    ) {
+        DisclosureGroup(stringResource(R.string.control_disclosure_does)) {
+            DisclosurePoint(R.drawable.lucide_message_square, stringResource(R.string.phone_disclosure_texts))
+            DisclosurePoint(R.drawable.lucide_phone, stringResource(R.string.phone_disclosure_calls))
+            DisclosurePoint(R.drawable.lucide_smartphone, stringResource(R.string.phone_disclosure_contacts))
+        }
+        DisclosureGroup(stringResource(R.string.control_disclosure_data)) {
+            DisclosurePoint(R.drawable.lucide_lock, stringResource(R.string.phone_disclosure_local))
+        }
+    }
+}
+
 /** Explains a sensitive permission in plain language, with an explicit choice, before Android asks for it. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
