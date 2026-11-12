@@ -18,39 +18,8 @@ dotnet run --project src/Aproid -r win-x64 -p:Platform=x64
 
 CI publishes a self-contained build as the `Aproid-windows-x64` artifact (unzip it and run `Aproid.exe`) and the installer as `Aproid-windows-setup`.
 
-## Releases
+## More
 
-Push a tag like `1.2.3` (all apps) or `windows-1.2.3` and the release workflow publishes `Aproid-Setup-1.2.3.exe` on the website. Installed copies check `/updates/windows.json` there twice a day and offer to update. The installer isn't signed, so on first install Windows SmartScreen asks: pick "More info", then "Run anyway".
-
-Release builds check a licence: 14 days free, then the panel asks the user to sign in with the email they bought Aproid with. The release workflow passes the `LICENCE_PUBLIC_KEY` repo variable to `package.ps1`; builds without it, like local ones, skip the check. The rules are in `Aproid.Core/Licence.cs` and `Model/LicenceModel.cs`.
-
-On first launch Windows Firewall asks whether Aproid may use the network. Allow it on private networks, or the phone can't find this PC.
-
-## What works
-
-Pairing with the verification code, phone notifications with replies, shared clipboard (text, pictures and files), sending and receiving files with resume, links and text, battery level, and ringing the phone with its location on a map.
-
-Texts in the Messages window, calls with a banner to answer, mute and hang up, media controls for what the phone plays, the phone's photos in the Photos window, and several paired phones with a card carousel.
-
-Mirror and control the phone's screen from the panel's Mirror tile. When the phone is off your Wi-Fi but in Bluetooth range, Aproid finds it over Bluetooth and can ask it to turn on its hotspot and join it. Windows only shares the Wi-Fi name with apps when location is allowed for apps, so turn that on if Aproid doesn't remember the hotspot.
-
-Your phone's 2,000 most recent photos show in Explorer under `Phone Photos` in your user folder. They take no space until opened, when Aproid fetches the original from the phone. Turn it off in the panel's settings menu.
-
-Win+Shift+A opens the panel from anywhere, and Ctrl+Alt+C, F, M and R send the clipboard, send files, mirror and ring the phone (turn them off under Settings, Keyboard shortcuts). Pin Aproid to the taskbar for jump list shortcuts to Messages, Photos, mirroring, ringing your phone and sending the clipboard or files.
-
-Scripts, Task Scheduler and Power Automate can drive the shown phone through `Aproid.exe`:
-
-| Command | Does |
-| --- | --- |
-| `--ring` | Rings the phone |
-| `--mirror` | Mirrors its screen |
-| `--send-clipboard` | Sends what's copied |
-| `--send-text "text"` | Opens a link on the phone, or puts other text on its clipboard |
-| `--send <files>` | Sends files |
-| `--battery` | Prints the battery level, 0 to 100 (in PowerShell, `Aproid.exe --battery \| Out-String` waits for it) |
-
-The connected phones' battery is also kept in `%LOCALAPPDATA%\Aproid\status.json`.
-
-Right-click files in Explorer and pick "Send to phone" (on Windows 11 it's under "Show more options"). To call `tel:` links from your phone, pick Aproid for TEL in Settings > Apps > Default apps.
-
-Phone notifications need Windows notifications turned on for Aproid.
+- [docs/WINDOWS.md](../docs/WINDOWS.md): what the app does, shortcuts and command-line options.
+- [docs/RELEASING.md](../docs/RELEASING.md): tags, the installer and updates.
+- [docs/LICENCES.md](../docs/LICENCES.md): the licence check (`Aproid.Core/Licence.cs`, `Model/LicenceModel.cs`).

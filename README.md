@@ -65,7 +65,7 @@ Aproid is three native apps sharing one protocol.
 | `windows/src/Aproid` | The Windows tray app (WinUI 3). |
 | `web` | The website (Next.js). |
 | `branding` | The logo and the scripts that generate every app icon. |
-| `docs` | [Architecture](docs/ARCHITECTURE.md) and [roadmap](docs/ROADMAP.md). |
+| `docs` | [Architecture](docs/ARCHITECTURE.md), [roadmap](docs/ROADMAP.md), [releasing](docs/RELEASING.md), [licences](docs/LICENCES.md), [website hosting](docs/WEBSITE.md) and the [Windows app](docs/WINDOWS.md). |
 
 **Android** (JDK 17 and the Android SDK):
 
@@ -93,7 +93,7 @@ cd windows
 dotnet test tests/Aproid.Core.Tests    # runs on any OS
 ```
 
-See [windows/README.md](windows/README.md) for building the app and the installer.
+See [windows/README.md](windows/README.md) for building the app and the installer, and [docs/WINDOWS.md](docs/WINDOWS.md) for what it does.
 
 **Website** (Node 20 or later):
 
@@ -105,7 +105,7 @@ npm run dev
 
 ### Releasing
 
-Push a tag like `1.2.3` to release all three apps, or `android-1.2.3`, `macos-1.2.3`, `windows-1.2.3` for one. The workflow uploads the files to the website, which serves the download links and both computer apps' update feeds. `.github/workflows/release.yml` lists the secrets.
+Push a tag like `1.2.3` to release all three apps, or `android-1.2.3`, `macos-1.2.3`, `windows-1.2.3` for one. See [docs/RELEASING.md](docs/RELEASING.md) for the secrets and where the files go.
 
 ## License
 
