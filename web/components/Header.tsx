@@ -14,6 +14,7 @@ export function Header() {
           <Link href="/#features">Features</Link>
           <Link href="/#privacy">Privacy</Link>
           <Link href="/#download">Download</Link>
+          <Link href="/buy">Buy</Link>
         </nav>
       </div>
     </header>

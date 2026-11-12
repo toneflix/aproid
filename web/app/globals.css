@@ -695,3 +695,145 @@ h3 {
     padding: 20px;
   }
 }
+
+/* Buy and account */
+.licence-page {
+  padding: 80px 0 120px;
+}
+
+.licence-page .container {
+  width: min(560px, 100% - 32px);
+  display: grid;
+  gap: 20px;
+}
+
+.licence-page h1 {
+  font-size: clamp(36px, 6vw, 56px);
+  font-weight: 800;
+}
+
+.licence-panel {
+  display: grid;
+  gap: 18px;
+  padding: 32px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  min-height: 120px;
+}
+
+.licence-panel h2 {
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+
+.licence-panel h3 {
+  font-size: 18px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.licence-panel .eyebrow {
+  margin-bottom: 0;
+}
+
+.licence-panel .button {
+  justify-content: center;
+  border: 0;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.licence-panel .button-ghost {
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+
+.licence-panel .button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+}
+
+.price {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1;
+  margin: 0;
+}
+
+.price-note {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.input {
+  font: inherit;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.input:focus {
+  outline: 2px solid var(--cyan);
+  outline-offset: 1px;
+}
+
+.form-error {
+  margin: 0;
+  color: #d0342c;
+  font-size: 15px;
+}
+
+.account-head {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.computers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.computers li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface-2);
+}
+
+.computers li div {
+  display: grid;
+  min-width: 0;
+}
+
+.computers strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.computers span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.computers .button {
+  padding: 8px 14px;
+  font-size: 14px;
+}

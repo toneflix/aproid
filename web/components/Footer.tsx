@@ -10,6 +10,7 @@ export function Footer() {
         </span>
 
         <nav>
+          <Link href="/account">Account</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
           <a href={`mailto:${site.contactEmail}`}>Contact</a>
