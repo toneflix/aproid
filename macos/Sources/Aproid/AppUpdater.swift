@@ -2,7 +2,7 @@ import AppKit
 import Combine
 import Sparkle
 
-/// Keeps Aproid up to date with Sparkle. Releases are signed builds published on GitHub; the feed and
+/// Keeps Aproid up to date with Sparkle. Releases are signed builds served by the website; the feed and
 /// its public key are written into Info.plist by the release build, so local builds skip updates.
 @MainActor
 final class AppUpdater: NSObject, ObservableObject, SPUStandardUserDriverDelegate {

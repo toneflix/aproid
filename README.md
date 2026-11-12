@@ -32,7 +32,7 @@ No servers, no account, no tracking. Your devices talk to each other directly, e
 
 ## Get it
 
-Download from [Releases](https://github.com/toneflix/aproid/releases).
+Download from [aproid.toneflix.com](https://aproid.toneflix.com/#download).
 
 | | Needs | How it installs |
 | --- | --- | --- |
@@ -105,8 +105,8 @@ npm run dev
 
 ### Releasing
 
-Push a tag like `1.2.3` to release all three apps, or `android-1.2.3`, `macos-1.2.3`, `windows-1.2.3` for one. `.github/workflows/release.yml` lists the signing secrets.
+Push a tag like `1.2.3` to release all three apps, or `android-1.2.3`, `macos-1.2.3`, `windows-1.2.3` for one. The workflow uploads the files to the website, which serves the download links and both computer apps' update feeds. `.github/workflows/release.yml` lists the secrets.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Proprietary. © Toneflix Technologies Limited. See [LICENSE](LICENSE).

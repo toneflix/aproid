@@ -135,7 +135,7 @@ export default function Home() {
 
           <div className="platforms">
             {platforms.map((platform) => (
-              <a className="platform" href={site.releases} key={platform.name}>
+              <a className="platform" href={`/download/${platform.slug}`} key={platform.name}>
                 <strong>{platform.name}</strong>
                 <span>{platform.needs}</span>
                 <span>{platform.detail}</span>
@@ -152,7 +152,6 @@ export default function Home() {
         <div className="container">
           <img src="/icon.svg" alt="" width={96} height={96} />
           <h2>Give it a try.</h2>
-          <p className="lead">Free and open source.</p>
           <DownloadButtons />
         </div>
       </section>
