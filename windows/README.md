@@ -22,6 +22,8 @@ CI publishes a self-contained build as the `Aproid-windows-x64` artifact (unzip 
 
 Push a tag like `1.2.3` (all apps) or `windows-1.2.3` and the release workflow publishes `Aproid-Setup-1.2.3.exe` on the website. Installed copies check `/updates/windows.json` there twice a day and offer to update. The installer isn't signed, so on first install Windows SmartScreen asks: pick "More info", then "Run anyway".
 
+Release builds check a licence: 14 days free, then the panel asks the user to sign in with the email they bought Aproid with. The release workflow passes the `LICENCE_PUBLIC_KEY` repo variable to `package.ps1`; builds without it, like local ones, skip the check. The rules are in `Aproid.Core/Licence.cs` and `Model/LicenceModel.cs`.
+
 On first launch Windows Firewall asks whether Aproid may use the network. Allow it on private networks, or the phone can't find this PC.
 
 ## What works

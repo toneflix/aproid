@@ -88,7 +88,7 @@ public partial class App : Application
 
         var first = LaunchArguments.Parse(Environment.GetCommandLineArgs().Skip(1));
         if (!first.IsEmpty) Handle(first);
-        else if (!first.Background && !model.HasPaired) panel.ShowNear(tray.Bounds);
+        else if (!first.Background && (!model.HasPaired || model.Licence.IsLocked)) panel.ShowNear(tray.Bounds);
     }
 
     /// Sends files or calls a number handed over by Windows, or just opens the panel.
