@@ -90,6 +90,7 @@ export default function Home() {
         <Showcase
           eyebrow="Screen mirroring"
           title="Use your phone from your computer."
+          body="Aproid uses Android's AccessibilityService API to pass your clicks and typing to the phone. It's off until you agree and turn it on, works only while you mirror, and collects or shares no data."
           points={["With sound", "Mouse and keyboard"]}
           reverse
           media={<img className="tall" src="/screens/android-home.png" alt="Aproid on Android, showing a paired MacBook Pro" />}
