@@ -81,6 +81,14 @@
     <string name="location_disclosure_private">Reads the location only when you ask from your computer. Aproid doesn\'t track you or record where you go</string>
     <string name="location_disclosure_local">Your location goes only to your own paired computer, encrypted. It is never sent to us or anyone else, or used for ads</string>
     <string name="location_disclosure_prompt">Next, Android asks for location access. Choose "Allow all the time" so you can find your phone while Aproid is in the background.</string>
+
+    <string name="phone_disclosure_title">Texts and calls on your computer</string>
+    <string name="phone_disclosure_intro">Aproid syncs your phone\'s texts and calls with your paired Mac or PC, so you can read, reply and answer from your computer.</string>
+    <string name="phone_disclosure_texts">Reads your SMS conversations to show them on your computer, and sends the replies you write there</string>
+    <string name="phone_disclosure_calls">Shows who is calling, lets you answer, decline or start calls from your computer, and lists recent calls from the call log</string>
+    <string name="phone_disclosure_contacts">Uses your contacts to show names instead of numbers</string>
+    <string name="phone_disclosure_local">Texts, calls and contacts go only to your own paired computers, encrypted. They are never sent to us or anyone else</string>
+    <string name="phone_disclosure_prompt">Next, Android asks for access to SMS, calls, call logs and contacts.</string>
     <string name="setup_control">Control your phone from your computer</string>
     <string name="setup_control_stopped">Computer control stopped working</string>
     <string name="setup_control_stopped_hint">Turn \"Aproid computer control\" off and on again</string>

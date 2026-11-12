@@ -27,7 +27,7 @@ MAC = [
 
 ANDROID = [
     "battery-charging", "bell", "bell-ring", "bluetooth", "cast", "circle-alert", "circle-check",
-    "clipboard", "download", "eye-off", "file-text", "file-up", "image", "keyboard", "link", "lock", "map-pin", "moon",
+    "clipboard", "download", "eye-off", "file-text", "file-up", "image", "keyboard", "link", "lock", "map-pin", "moon", "phone",
     "message-square", "pointer", "settings", "wifi", "radar", "send", "x", "check", "smartphone", "laptop",
 ]
 
