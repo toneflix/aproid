@@ -58,7 +58,7 @@ A packet that carries a file adds `payloadSize` and `payloadTransferInfo: {"port
 
 ## Licence
 
-The Android app is free. The Mac and Windows apps need a lifetime licence after a 14-day trial; the licence belongs to an email account and covers up to 5 computers. The website's worker (`web/worker/licence`) sells it through Paddle, signs people in with emailed codes, and hands each computer an ECDSA P-256 token naming its scrambled hardware ID (`MachineId`). The apps check the token offline with a public key built in at release (`LICENCE_PUBLIC_KEY`), renew it every few hours, and keep working 37 days without the internet. `LicenceRules` (Swift and C#, same tests and fixtures) decides between unlimited (no key built in), trial, licensed and locked. While locked, the app doesn't start `LanLink`, so it neither finds nor connects to devices.
+The Android app is free. The Mac and Windows apps need a lifetime licence after a 14-day trial; the licence belongs to an email account and covers up to 5 computers. The website's worker (`web/worker/licence`, setup in [LICENCES.md](LICENCES.md)) sells it through Paddle, signs people in with emailed codes, and hands each computer an ECDSA P-256 token naming its scrambled hardware ID (`MachineId`). The apps check the token offline with a public key built in at release (`LICENCE_PUBLIC_KEY`), renew it every few hours, and keep working 37 days without the internet. `LicenceRules` (Swift and C#, same tests and fixtures) decides between unlimited (no key built in), trial, licensed and locked. While locked, the app doesn't start `LanLink`, so it neither finds nor connects to devices.
 
 ## What is done and what is next
 
