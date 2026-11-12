@@ -6,7 +6,7 @@
 
 <p align="center"><strong>Your Android phone and your computer, finally on speaking terms.</strong></p>
 
-<p align="center">For Android, Mac and Windows. Free, no account.</p>
+<p align="center">For Android, Mac and Windows. Free on Android. Mac and PC: 14 days free, then pay once.</p>
 
 ---
 
@@ -28,11 +28,11 @@
 
 ## Privacy
 
-No servers, no account, no tracking. Your devices talk to each other directly, encrypted.
+Nothing goes through us, and no tracking. Your devices talk to each other directly, encrypted.
 
 ## Get it
 
-Download from [aproid.toneflix.com](https://aproid.toneflix.com/#download).
+Download from [aproid.toneflix.com](https://aproid.toneflix.com/#download), and [buy a lifetime licence](https://aproid.toneflix.com/buy) for your computers.
 
 | | Needs | How it installs |
 | --- | --- | --- |

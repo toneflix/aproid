@@ -28,7 +28,7 @@ export class LicenceApi {
 
   register(router: Router): void {
     router
-      .get("/api/checkout", () => Response.json(this.checkout))
+      .get("/api/checkout", () => this.checkoutConfig())
       .post("/api/paddle/webhook", (request) => this.paddle.handle(request, now()))
       .post("/api/code", (request) => this.sendCode(request))
       .post("/api/activate", (request) => this.activate(request))
@@ -38,6 +38,12 @@ export class LicenceApi {
       .post("/api/session/end", (request) => this.signOut(request))
       .get("/api/account", (request) => this.account(request))
       .post("/api/account/computers/:machine/remove", (request, { machine }) => this.remove(request, machine));
+  }
+
+  private checkoutConfig(): Response {
+    if (!this.checkout.clientToken || !this.checkout.priceId) throw new HttpError(503, "not_open");
+
+    return Response.json(this.checkout);
   }
 
   private async sendCode(request: Request): Promise<Response> {

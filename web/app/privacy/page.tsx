@@ -29,8 +29,8 @@ export default function PrivacyPage() {
       <div className="summary">
         <p>
           <strong>The short version:</strong> Aproid moves information between devices that you own and pair yourself.
-          It does not send your data to us or to anyone else. We have no servers that receive it, no accounts, no
-          advertising and no analytics.
+          It does not send that information to us or to anyone else. If you buy Aproid, we keep your email address and
+          the list of computers you use it on, so your licence works. No advertising and no analytics.
         </p>
       </div>
 
@@ -54,8 +54,8 @@ export default function PrivacyPage() {
         name to other Aproid devices on the same network.
       </p>
       <p>
-        Nothing passes through servers run by us or by anyone else. Aproid does not need, and does not have, an
-        account system.
+        Nothing you send between your devices passes through servers run by us or by anyone else. The only account is
+        the one for your licence, described in section 5.
       </p>
 
       <h2>2. Information Aproid accesses</h2>
@@ -108,13 +108,39 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h2>5. Services Aproid contacts on the internet</h2>
-      <p>Aproid works without an internet connection. A few optional features contact outside services:</p>
+      <h2>5. Your licence</h2>
+      <p>The Android app is free and never contacts us. The Mac and Windows apps need a licence after a 14-day trial.</p>
       <ul>
         <li>
-          <strong>Updates.</strong> The Mac and Windows apps check GitHub for new versions of Aproid. This request
-          shares your IP address and app version with GitHub, as any download does. Android updates come through
-          Google Play or the file you downloaded.
+          <strong>Trial.</strong> When the trial starts, the computer app sends us a one-way scrambled code made from
+          your computer&apos;s hardware ID, so the trial can&apos;t simply be restarted. We can&apos;t work out the
+          hardware ID from it.
+        </li>
+        <li>
+          <strong>Buying.</strong> Paddle.com sells Aproid for us as the merchant of record. Paddle handles your
+          payment details, address and tax under{" "}
+          <a href="https://www.paddle.com/legal/privacy">its own privacy policy</a>. We receive your email address and
+          the order number, and keep them for as long as your licence exists.
+        </li>
+        <li>
+          <strong>Signing in.</strong> To sign in on the website or a computer, we email you a short code, sent through
+          SendPulse. The code expires after 10 minutes.
+        </li>
+        <li>
+          <strong>Your computers.</strong> For each computer you sign in on, we keep its name, whether it is a Mac or
+          PC, the scrambled hardware code, and when it was added and last checked its licence. The app checks in about
+          once a day, which shares your IP address with Cloudflare, who host our website. You can see and remove your
+          computers on the <a href="/account">account page</a>.
+        </li>
+      </ul>
+
+      <h2>6. Services Aproid contacts on the internet</h2>
+      <p>Apart from the licence, Aproid works without an internet connection. A few optional features contact outside services:</p>
+      <ul>
+        <li>
+          <strong>Updates.</strong> The Mac and Windows apps check our website for new versions of Aproid. This
+          shares your IP address and app version with Cloudflare, who host it. Android updates come through Google Play
+          or the file you downloaded.
         </li>
         <li>
           <strong>Maps.</strong> When you look up your phone&apos;s location on your computer, the map is drawn by
@@ -127,35 +153,35 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h2>6. Children</h2>
+      <h2>7. Children</h2>
       <p>
         Aproid is a general purpose tool and is not directed at children under 13. We do not knowingly collect
-        information from anyone, including children.
+        information from children.
       </p>
 
-      <h2>7. Your choices</h2>
+      <h2>8. Your choices</h2>
       <ul>
         <li>Revoke any permission in your phone&apos;s settings. The matching feature simply stops working.</li>
         <li>Unpair a device in Aproid to stop it from connecting and remove its certificate.</li>
         <li>Uninstall Aproid to remove everything it stored on that device.</li>
       </ul>
       <p>
-        Because we do not receive or hold your personal data, there is nothing for us to export or delete on our side.
+        To get a copy of your licence details or have them deleted, write to us from the email you bought with.
         If you have a question about your rights under laws such as the Nigeria Data Protection Act 2023, the GDPR or the CCPA, contact us and we will help.
       </p>
 
-      <h2>8. Security</h2>
+      <h2>9. Security</h2>
       <p>
         Connections between paired devices are encrypted and authenticated with each device&apos;s own certificate.
       </p>
 
-      <h2>9. Changes to this policy</h2>
+      <h2>10. Changes to this policy</h2>
       <p>
         If we change how Aproid handles information, we will update this page and the date at the top. Significant
         changes will also be mentioned in the app&apos;s release notes.
       </p>
 
-      <h2>10. Contact</h2>
+      <h2>11. Contact</h2>
       <p>
         {site.legalEntity}
         <br />
