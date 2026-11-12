@@ -1,22 +1,24 @@
+import nodemailer, { type Transporter } from "nodemailer";
+import { SendPulseTransport } from "nodemailer-sendpulse-transport";
+
 export interface Mailer {
   send(to: string, subject: string, text: string): Promise<void>;
 }
 
-/** Sends mail through Resend's HTTP API. */
-export class ResendMailer implements Mailer {
+/** Sends mail with Nodemailer through SendPulse's SMTP API. */
+export class SendPulseMailer implements Mailer {
+  private readonly transport: Transporter;
+
   constructor(
-    private readonly apiKey: string,
+    clientId: string,
+    clientSecret: string,
     private readonly from: string,
-  ) {}
+  ) {
+    this.transport = nodemailer.createTransport(new SendPulseTransport({ clientId, clientSecret }));
+  }
 
   async send(to: string, subject: string, text: string): Promise<void> {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${this.apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: this.from, to, subject, text }),
-    });
-
-    if (!response.ok) throw new Error(`Resend answered ${response.status}: ${await response.text()}`);
+    await this.transport.sendMail({ from: this.from, to, subject, text });
   }
 }
 
