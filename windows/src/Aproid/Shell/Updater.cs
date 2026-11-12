@@ -7,12 +7,10 @@ using Microsoft.Windows.AppNotifications.Builder;
 
 namespace Aproid.Shell;
 
-/// Looks for a newer Windows release on GitHub and installs it when the user agrees.
-/// Releases are tagged 1.2.3 (all apps) or windows-1.2.3 and carry Aproid-Setup-1.2.3.exe.
+/// Looks for a newer Windows release on the website and installs it when the user agrees.
 internal sealed class Updater(ToastCenter toasts)
 {
-    private const string Releases = "https://api.github.com/repos/toneflix/aproid/releases?per_page=30";
-    private static readonly string[] TagPrefixes = ["windows-v", "windows-", "v", ""];
+    private const string Feed = "https://aproid.toneflix.com/updates/windows.json";
     private static readonly TimeSpan FirstCheck = TimeSpan.FromMinutes(2);
     private static readonly TimeSpan CheckEvery = TimeSpan.FromHours(12);
 
@@ -70,17 +68,12 @@ internal sealed class Updater(ToastCenter toasts)
 
     private static async Task<Release?> NewestAsync()
     {
-        var releases = await Http.GetFromJsonAsync<List<GitHubRelease>>(Releases) ?? [];
+        var feed = await Http.GetFromJsonAsync<FeedEntry>(Feed);
+        if (feed is null || !Version.TryParse(feed.Version, out var version)) return null;
 
-        return releases
-            .Where(r => !r.Draft && !r.Prerelease)
-            .Select(r => (Release: r, Version: ParseTag(r.Tag)))
-            .Where(r => r.Version is not null && r.Version > Current)
-            .Select(r => (r.Version, Asset: r.Release.Assets.FirstOrDefault(a => a.Name.StartsWith("Aproid-Setup", StringComparison.Ordinal) && a.Name.EndsWith(".exe", StringComparison.Ordinal)), r.Release.Page))
-            .Where(r => r.Asset is not null)
-            .OrderByDescending(r => r.Version)
-            .Select(r => new Release(r.Version!, r.Asset!.Url, r.Page))
-            .FirstOrDefault();
+        version = Trim(version);
+
+        return version > Current ? new Release(version, feed.Installer, feed.Notes) : null;
     }
 
     private void Offer(Release release) => toasts.Show(
@@ -121,36 +114,20 @@ internal sealed class Updater(ToastCenter toasts)
 
     private void Say(string title, string text) => toasts.Show(key => new AppNotificationBuilder().AddText(title).AddText(text), tag: "update", group: "aproid");
 
-    private static Version? ParseTag(string tag)
-    {
-        var prefix = TagPrefixes.FirstOrDefault(p => tag.StartsWith(p, StringComparison.Ordinal));
-
-        return prefix is not null && Version.TryParse(tag[prefix.Length..], out var version) ? Trim(version) : null;
-    }
-
     private static Version Trim(Version version) => new(version.Major, version.Minor, Math.Max(version.Build, 0));
 
     private static HttpClient CreateClient()
     {
         var client = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
         client.DefaultRequestHeaders.UserAgent.ParseAdd($"Aproid-Windows/{CurrentText}");
-        client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
 
         return client;
     }
 
-    private sealed class GitHubRelease
+    private sealed class FeedEntry
     {
-        [JsonPropertyName("tag_name")] public string Tag { get; set; } = "";
-        [JsonPropertyName("html_url")] public string Page { get; set; } = "";
-        [JsonPropertyName("draft")] public bool Draft { get; set; }
-        [JsonPropertyName("prerelease")] public bool Prerelease { get; set; }
-        [JsonPropertyName("assets")] public List<GitHubAsset> Assets { get; set; } = [];
-    }
-
-    private sealed class GitHubAsset
-    {
-        [JsonPropertyName("name")] public string Name { get; set; } = "";
-        [JsonPropertyName("browser_download_url")] public string Url { get; set; } = "";
+        [JsonPropertyName("version")] public string Version { get; set; } = "";
+        [JsonPropertyName("installer")] public string Installer { get; set; } = "";
+        [JsonPropertyName("notes")] public string Notes { get; set; } = "";
     }
 }

@@ -16,9 +16,11 @@ name: Release
 # Mac secrets: MACOS_CERT_P12 (base64 Developer ID Application .p12), MACOS_CERT_PASSWORD,
 # NOTARY_KEY (App Store Connect API .p8 contents), NOTARY_KEY_ID, NOTARY_ISSUER_ID, SPARKLE_PRIVATE_KEY.
 # Mac variable: SPARKLE_PUBLIC_KEY. Without the Sparkle key and variable, the release works but can't auto-update.
-# The Mac app checks the feed in the "macos-appcast" release for updates (Sparkle).
 #
-# The Windows app checks the 1.2.3 and windows-1.2.3 releases for updates.
+# Website secrets: CLOUDFLARE_API_TOKEN (with R2 edit access) and CLOUDFLARE_ACCOUNT_ID. Every file is uploaded
+# to the aproid-releases bucket, which the website serves at /download/<platform> and /releases/<file>.
+# The Mac app reads its update feed from /updates/mac/appcast.xml and the Windows app from /updates/windows.json.
+# Builds from before the move still read the GitHub releases, so those are published too.
 # Digits after the prefix keep the macos-appcast tag from starting a release.
 on:
   push:
@@ -26,6 +28,9 @@ on:
 
 permissions:
   contents: write
+
+env:
+  SITE_URL: https://aproid.toneflix.com
 
 jobs:
   android:
@@ -85,7 +90,7 @@ jobs:
       run:
         working-directory: macos
     env:
-      FEED_URL: https://github.com/${{ github.repository }}/releases/download/macos-appcast/appcast.xml
+      FEED_URL: ${{ env.SITE_URL }}/updates/mac/appcast.xml
       SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
       SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
     steps:
@@ -189,7 +194,7 @@ jobs:
           # Prints: sparkle:edSignature="..." length="..."
           signature=$("$RUNNER_TEMP/sparkle/bin/sign_update" --ed-key-file "$RUNNER_TEMP/sparkle.key" "dist/Aproid-$VERSION.zip")
           rm "$RUNNER_TEMP/sparkle.key"
-          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/Aproid-$VERSION.zip"
+          url="$SITE_URL/releases/Aproid-$VERSION.zip"
           cat > dist/appcast.xml <<EOF
           <?xml version="1.0" encoding="utf-8"?>
           <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
@@ -201,7 +206,7 @@ jobs:
                 <sparkle:version>$BUILD_NUMBER</sparkle:version>
                 <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
                 <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-                <link>https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}</link>
+                <link>$SITE_URL/#download</link>
                 <enclosure url="$url" type="application/octet-stream" $signature />
               </item>
             </channel>
@@ -255,6 +260,7 @@ jobs:
             windows-*) app=" for Windows"; tag="${tag#windows-}" ;;
           esac
           echo "title=Aproid$app ${tag#v}" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/download-artifact@v8
         with:
@@ -283,3 +289,40 @@ jobs:
           body: Aproid for Mac checks this feed for updates. Don't delete it.
           prerelease: true
           files: dist/appcast.xml
+
+      - name: Publish downloads to the website
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          VERSION: ${{ steps.name.outputs.version }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Add the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets first."
+            exit 1
+          fi
+
+          r2() { npx --yes wrangler@4 r2 object "$@" --remote; }
+          put() { r2 put "aproid-releases/$1" --file "$2"; }
+
+          r2 get aproid-releases/latest.json --file latest.json || echo '{}' > latest.json
+
+          record() {
+            jq --arg p "$1" --arg v "$VERSION" --arg d "$2" --arg u "${3:-}" \
+              '.[$p] = ({version: $v, download: $d} + (if $u == "" then {} else {update: $u} end))' \
+              latest.json > latest.next && mv latest.next latest.json
+          }
+
+          for file in dist/Aproid-*.apk dist/Aproid-*.dmg dist/Aproid-*.zip dist/Aproid-Setup-*.exe; do
+            [ -f "$file" ] || continue
+            put "releases/$(basename "$file")" "$file"
+          done
+
+          [ -f "dist/Aproid-$VERSION.apk" ] && record android "Aproid-$VERSION.apk"
+          [ -f "dist/Aproid-$VERSION.dmg" ] && record mac "Aproid-$VERSION.dmg" "Aproid-$VERSION.zip"
+          [ -f "dist/Aproid-Setup-$VERSION.exe" ] && record windows "Aproid-Setup-$VERSION.exe"
+
+          # The feed goes up after the files it points to, and the download links last.
+          if [ -f dist/appcast.xml ]; then
+            put updates/appcast.xml dist/appcast.xml
+          fi
+          put latest.json latest.json
