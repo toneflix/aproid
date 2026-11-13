@@ -1,4 +1,4 @@
-"""Reads the FlyyLink mark out of aproid-logo.svg and normalises it to a unit square."""
+"""Reads the FlyyLink mark out of flyylink-logo.svg and normalises it to a unit square."""
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -31,7 +31,7 @@ class Mark:
 
     def __init__(self, source: Path):
         root = ET.parse(source).getroot()
-        group = root.find(f".//{SVG}g[@id='logo-aproid']")
+        group = root.find(f".//{SVG}g[@id='logo-flyylink']")
         path = group.find(f"{SVG}path")
         to_user = Affine.parse(group.get("transform"))
 

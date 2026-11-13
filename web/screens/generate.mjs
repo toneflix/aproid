@@ -12,7 +12,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, '../public/screens');
 const { chromium } = createRequire(import.meta.url)('playwright');
 
-/** The Mac menu bar panel, built from the same parts and copy as macos/Sources/Aproid/Views. */
+/** The Mac menu bar panel, built from the same parts and copy as macos/Sources/FlyyLink/Views. */
 class MacPanel {
   constructor(appIcon) {
     this.appIcon = appIcon;

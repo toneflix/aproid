@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key>
-    <string>com.toneflix.aproid.app</string>
+    <string>com.toneflix.flyylink</string>
     <key>CFBundleName</key>
     <string>FlyyLink</string>
     <key>CFBundleDisplayName</key>
@@ -20,8 +20,6 @@
     <string>1</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
-    <key>SUNormalizeInstalledApplicationName</key>
-    <true/>
     <key>LSUIElement</key>
     <true/>
     <key>CFBundleURLTypes</key>

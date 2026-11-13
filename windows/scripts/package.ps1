@@ -1,4 +1,4 @@
-# Publishes the app and builds its installer: windows\publish\Aproid and windows\publish\FlyyLink-Setup-<version>.exe.
+# Publishes the app and builds its installer: windows\publish\FlyyLink and windows\publish\FlyyLink-Setup-<version>.exe.
 # Run from the windows folder: .\scripts\package.ps1 -Version 1.2.3
 param(
     [string]$Version = "0.1.0"
@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 # LICENCE_PUBLIC_KEY turns on the licence check; without it the build is unlimited.
-dotnet publish src/Aproid -c Release -r win-x64 -p:Platform=x64 --self-contained true -p:Version=$Version "-p:LicencePublicKey=$env:LICENCE_PUBLIC_KEY" -o publish/Aproid
+dotnet publish src/FlyyLink -c Release -r win-x64 -p:Platform=x64 --self-contained true -p:Version=$Version "-p:LicencePublicKey=$env:LICENCE_PUBLIC_KEY" -o publish/FlyyLink
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $iscc = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"
@@ -16,5 +16,5 @@ if (-not (Test-Path $iscc)) {
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
-& $iscc /Qp "/DAppVersion=$Version" installer\Aproid.iss
+& $iscc /Qp "/DAppVersion=$Version" installer\FlyyLink.iss
 exit $LASTEXITCODE

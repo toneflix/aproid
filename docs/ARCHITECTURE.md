@@ -1,6 +1,6 @@
 # Architecture
 
-Three apps, one protocol. The Windows app (`windows/`) mirrors the Mac app: `Aproid.Core` is the C# port of AproidKit, and a WinUI 3 tray app takes the place of the menu bar app.
+Three apps, one protocol. The Windows app (`windows/`) mirrors the Mac app: `FlyyLink.Core` is the C# port of FlyyLinkKit, and a WinUI 3 tray app takes the place of the menu bar app.
 
 ```
 Android phone                                  Mac
@@ -9,7 +9,7 @@ Android phone                                  Mac
 │ LinkService (foreground)  │                  │ AppModel                  │
 │ feature plugins           │                  │ feature plugins           │
 ├──────────────────────────┤   Wi-Fi / LAN    ├──────────────────────────┤
-│ protocol (Kotlin)         │ ◀──────────────▶ │ AproidKit (Swift)         │
+│ protocol (Kotlin)         │ ◀──────────────▶ │ FlyyLinkKit (Swift)         │
 │ packets, pairing, LanLink │   TLS over TCP   │ packets, pairing, LanLink │
 └──────────────────────────┘                  └──────────────────────────┘
 ```

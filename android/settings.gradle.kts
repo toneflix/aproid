@@ -21,7 +21,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "aproid"
+rootProject.name = "flyylink"
 
 include(":protocol")
 

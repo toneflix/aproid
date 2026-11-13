@@ -33,6 +33,6 @@ Scripts, Task Scheduler and Power Automate can drive the shown phone through `Fl
 | `--send <files>` | Sends files |
 | `--battery` | Prints the battery level, 0 to 100 (in PowerShell, `FlyyLink.exe --battery \| Out-String` waits for it) |
 
-The connected phones' battery is also kept in `%LOCALAPPDATA%\Aproid\status.json`.
+The connected phones' battery is also kept in `%LOCALAPPDATA%\FlyyLink\status.json`.
 
 Right-click files in Explorer and pick "Send to phone" (on Windows 11 it's under "Show more options"). To call `tel:` links from your phone, pick FlyyLink for TEL in Settings > Apps > Default apps.
