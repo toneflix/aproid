@@ -4,7 +4,7 @@ using Aproid.Shell;
 
 namespace Aproid.Plugins;
 
-/// Shares this PC's keyboard and mouse with paired computers, and lets them share theirs ("aproid.input").
+/// Shares this PC's keyboard and mouse with paired computers, and lets them share theirs ("flyylink.input").
 internal sealed class InputSharePlugin : IPlugin
 {
     private readonly DeviceRegistry devices;

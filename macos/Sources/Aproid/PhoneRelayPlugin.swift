@@ -2,7 +2,7 @@ import Foundation
 import AproidKit
 
 /// Passes a phone's notifications and calls on to paired computers that aren't connected to it, and their
-/// replies and call buttons back to the phone ("aproid.relay").
+/// replies and call buttons back to the phone ("flyylink.relay").
 final class PhoneRelayPlugin: Plugin {
     let incoming: Set<String> = Relay.fromPhone.union([PacketType.relay])
 

@@ -1,7 +1,7 @@
 import Foundation
 
 /// What the Share extension hands to the app: files and text to send to the phone.
-/// The extension saves it in a folder only it and the app write to, and opens `aproid://share/<id>`,
+/// The extension saves it in a folder only it and the app write to, and opens `flyylink://share/<id>`,
 /// so a link alone can't make the app send files.
 struct ShareRequest: Codable {
     var files: [URL] = []
@@ -9,7 +9,7 @@ struct ShareRequest: Codable {
 
     var isEmpty: Bool { files.isEmpty && texts.isEmpty }
 
-    static let scheme = "aproid"
+    static let scheme = "flyylink"
 
     /// Saves the request from inside the extension and returns the link that hands it to the app.
     func save() throws -> URL {

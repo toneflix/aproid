@@ -9,7 +9,7 @@ public sealed record ClipboardFile(string Name, string MimeType)
 }
 
 /// Shared clipboard text ("kdeconnect.clipboard" and "kdeconnect.clipboard.connect"), and copied files
-/// ("aproid.clipboard.file"). Mirrors Clipboard.kt and Clipboard.swift.
+/// ("flyylink.clipboard.file"). Mirrors Clipboard.kt and Clipboard.swift.
 public static class Clipboard
 {
     /// Bigger copies are left alone, so copying a film doesn't start a long transfer.

@@ -22,8 +22,8 @@ public enum Share: Equatable, Sendable {
             "totalPayloadSize": .int(size),
         ]
         if let lastModifiedMillis { body["lastModified"] = .int(lastModifiedMillis) }
-        if let transferId { body["aproid.transferId"] = .string(transferId) }
-        if offset > 0 { body["aproid.offset"] = .int(offset) }
+        if let transferId { body["flyylink.transferId"] = .string(transferId) }
+        if offset > 0 { body["flyylink.offset"] = .int(offset) }
 
         return NetworkPacket(type: PacketType.shareRequest, body: body)
     }
@@ -56,8 +56,8 @@ public enum Share: Equatable, Sendable {
 
         if let name = packet.string("filename") {
             guard let size = packet.payloadSize else { return nil }
-            let offset = max(packet.int("aproid.offset") ?? 0, 0)
-            self = .file(name: name, size: size, transferId: packet.string("aproid.transferId"), offset: offset)
+            let offset = max(packet.int("flyylink.offset") ?? 0, 0)
+            self = .file(name: name, size: size, transferId: packet.string("flyylink.transferId"), offset: offset)
         } else if let url = packet.string("url") {
             self = .link(url)
         } else if let text = packet.string("text") {

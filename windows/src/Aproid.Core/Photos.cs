@@ -49,7 +49,7 @@ public sealed record PhonePhoto(
     }
 }
 
-/// Browsing the phone's gallery. Full photos come back as normal shared files, or as "aproid.photos.file" to view.
+/// Browsing the phone's gallery. Full photos come back as normal shared files, or as "flyylink.photos.file" to view.
 /// Mirrors Photos.kt and Photos.swift.
 public static class Photos
 {

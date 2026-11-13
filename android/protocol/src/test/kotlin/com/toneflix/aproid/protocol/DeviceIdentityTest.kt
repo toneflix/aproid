@@ -13,7 +13,7 @@ class DeviceIdentityTest {
     }
 
     @Test fun announcementFitsInOnePacket() {
-        val capabilities = (0 until 120).map { "aproid.capability.$it" }.toSet()
+        val capabilities = (0 until 120).map { "flyylink.capability.$it" }.toSet()
         val identity = DeviceIdentity(
             DeviceIdentity.newDeviceId(), "x".repeat(32), DeviceType.PHONE,
             incomingCapabilities = capabilities, outgoingCapabilities = capabilities, tcpPort = 1716,

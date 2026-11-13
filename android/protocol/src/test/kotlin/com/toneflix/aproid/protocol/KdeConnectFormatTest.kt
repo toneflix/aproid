@@ -101,10 +101,10 @@ class KdeConnectFormatTest {
         val ours = PacketType::class.java.declaredFields
             .filter { it.type == String::class.java }
             .map { it.get(null) as String }
-            .filter { it.startsWith("aproid.") }
+            .filter { it.startsWith("flyylink.") }
 
         assertTrue(ours.isNotEmpty())
         assertTrue(ours.all { it in Capabilities.mvp })
-        assertTrue(Capabilities.mvp.all { it.startsWith("kdeconnect.") || it.startsWith("aproid.") })
+        assertTrue(Capabilities.mvp.all { it.startsWith("kdeconnect.") || it.startsWith("flyylink.") })
     }
 }

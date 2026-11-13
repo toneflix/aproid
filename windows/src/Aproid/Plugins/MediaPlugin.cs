@@ -20,7 +20,7 @@ public sealed record NowPlaying(MediaPlayer Player, DateTimeOffset ReceivedAt, s
 /// Shows and controls the phone's media players ("kdeconnect.mpris").
 internal sealed class MediaPlugin : IPlugin
 {
-    private const string OwnArtPrefix = "aproid://art/";
+    private const string OwnArtPrefix = "flyylink://art/";
 
     private readonly Dictionary<string, Dictionary<string, NowPlaying>> players = [];
     private readonly object gate = new();

@@ -2,7 +2,7 @@ using Aproid.Core;
 
 namespace Aproid.Plugins;
 
-/// Receives screen streams ("aproid.screen"). A phone's H.264 frames go to `OnFrame`; another computer's JPEG
+/// Receives screen streams ("flyylink.screen"). A phone's H.264 frames go to `OnFrame`; another computer's JPEG
 /// pictures go to `OnPicture`.
 internal sealed class ScreenPlugin : IPlugin
 {

@@ -10,7 +10,7 @@ public enum CallEvent
     Missed,
 }
 
-/// Calls: the phone reports them with "kdeconnect.telephony", and the computer controls them with "aproid.call.request".
+/// Calls: the phone reports them with "kdeconnect.telephony", and the computer controls them with "flyylink.call.request".
 public static class Call
 {
     public enum Action

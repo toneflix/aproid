@@ -5,7 +5,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
 /**
- * A phone's packets passed on by one computer to another that isn't connected to that phone ("aproid.relay").
+ * A phone's packets passed on by one computer to another that isn't connected to that phone ("flyylink.relay").
  * The computer next to the phone wraps what the phone sends, such as notifications and calls. The other computer
  * wraps its answers, such as replies and call buttons, and the first one hands them to the phone. Payloads are not
  * relayed. Phones never send or receive these; the protocol is here to keep the three copies in step.

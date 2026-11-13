@@ -13,7 +13,7 @@ struct BatteryWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "battery", provider: BatteryTimeline()) { entry in
             BatteryWidgetView(snapshot: entry.snapshot)
-                .widgetURL(URL(string: "aproid://open"))
+                .widgetURL(URL(string: "flyylink://open"))
         }
         .configurationDisplayName("Phone battery")
         .description("Your phones' battery, from FlyyLink.")

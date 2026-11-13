@@ -142,7 +142,7 @@ public sealed class LanLinkTests : IDisposable
     [Fact]
     public void ConnectsToAPeerWhoseAnnouncementIsLargerThanTwoKilobytes()
     {
-        var capabilities = Enumerable.Range(0, 120).Select(i => $"aproid.capability.{i}").ToHashSet();
+        var capabilities = Enumerable.Range(0, 120).Select(i => $"flyylink.capability.{i}").ToHashSet();
         using var big = new Peer("Phone", DeviceType.Phone, new PortRange(42765, 42780), udpPort: 42799, capabilities: capabilities);
         big.Lan.Start();
 

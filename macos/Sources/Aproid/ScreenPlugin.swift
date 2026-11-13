@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 import AproidKit
 
-/// Receives screen streams ("aproid.screen"). A phone's H.264 pictures go to the decoder and its sound to the
+/// Receives screen streams ("flyylink.screen"). A phone's H.264 pictures go to the decoder and its sound to the
 /// player; another computer's JPEG pictures go to the remote desktop feed.
 final class ScreenPlugin: Plugin {
     let incoming: Set<String> = [PacketType.screen]

@@ -1,8 +1,8 @@
 import Foundation
 import AproidKit
 
-/// Shows this Mac's screen to a paired computer that asks for it ("aproid.screen.request"), as JPEG pictures.
-/// One computer watches at a time. It works the Mac through "aproid.input", which InputSharePlugin plays.
+/// Shows this Mac's screen to a paired computer that asks for it ("flyylink.screen.request"), as JPEG pictures.
+/// One computer watches at a time. It works the Mac through "flyylink.input", which InputSharePlugin plays.
 final class ScreenHostPlugin: Plugin {
     let incoming: Set<String> = [PacketType.screenRequest]
 

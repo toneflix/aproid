@@ -7,7 +7,7 @@ public enum CallEvent: String, Sendable {
     case missed = "missedCall"
 }
 
-/// Calls: the phone reports them with "kdeconnect.telephony", and the Mac controls them with "aproid.call.request".
+/// Calls: the phone reports them with "kdeconnect.telephony", and the Mac controls them with "flyylink.call.request".
 public enum Call {
     public enum Action: String, Sendable {
         case answer

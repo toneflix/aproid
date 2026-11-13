@@ -153,7 +153,7 @@ final class LanLinkTests: XCTestCase {
     }
 
     func testConnectsToAPeerWhoseAnnouncementIsLargerThanTwoKilobytes() throws {
-        let capabilities = Set((0..<120).map { "aproid.capability.\($0)" })
+        let capabilities = Set((0..<120).map { "flyylink.capability.\($0)" })
         let big = try Peer(name: "Phone", type: .phone, ports: 41765...41780, udpPort: 41799, capabilities: capabilities)
         // Kept until tearDown, so its event loops are shut down from the test thread and not from one of their own.
         extra = big

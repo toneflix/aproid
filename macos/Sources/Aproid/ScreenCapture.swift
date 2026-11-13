@@ -15,7 +15,7 @@ final class ScreenCapture: NSObject, SCStreamOutput, SCStreamDelegate {
     /// Called when capture stops by itself, for example because access was taken away.
     var onStop: ((Error?) -> Void)?
 
-    private let queue = DispatchQueue(label: "aproid.screen-capture")
+    private let queue = DispatchQueue(label: "flyylink.screen-capture")
     private let context = CIContext()
     private let colorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
     private var stream: SCStream?

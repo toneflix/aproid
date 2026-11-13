@@ -49,8 +49,8 @@ final class DeviceIdentityTests: XCTestCase {
             deviceId: DeviceIdentity.newDeviceId(),
             deviceName: String(repeating: "x", count: 32),
             deviceType: .laptop,
-            incomingCapabilities: Set((0..<120).map { "aproid.capability.\($0)" }),
-            outgoingCapabilities: Set((0..<120).map { "aproid.capability.\($0)" }),
+            incomingCapabilities: Set((0..<120).map { "flyylink.capability.\($0)" }),
+            outgoingCapabilities: Set((0..<120).map { "flyylink.capability.\($0)" }),
             tcpPort: 1716
         )
 

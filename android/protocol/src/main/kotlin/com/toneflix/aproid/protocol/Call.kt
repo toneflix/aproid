@@ -11,7 +11,7 @@ enum class CallEvent(val wire: String) {
     }
 }
 
-/** Calls: the phone reports them with "kdeconnect.telephony", and the Mac controls them with "aproid.call.request". */
+/** Calls: the phone reports them with "kdeconnect.telephony", and the Mac controls them with "flyylink.call.request". */
 object Call {
     enum class Action(val wire: String) {
         ANSWER("answer"),

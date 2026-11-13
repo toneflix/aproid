@@ -110,7 +110,7 @@ public class PhoneFeatureTests
         CanGoNext = true,
         CanGoPrevious = true,
         CanSeek = true,
-        AlbumArtUrl = "aproid://art/1f2e",
+        AlbumArtUrl = "flyylink://art/1f2e",
     };
 
     [Fact]
@@ -129,7 +129,7 @@ public class PhoneFeatureTests
             MediaRequest.Act("Spotify", MediaAction.Next),
             MediaRequest.Seek("Spotify", 90_000),
             MediaRequest.SetVolume("Spotify", 140),
-            MediaRequest.AlbumArt("Spotify", "aproid://art/1f2e"),
+            MediaRequest.AlbumArt("Spotify", "flyylink://art/1f2e"),
         ];
 
         foreach (var request in requests) Assert.Equal(request, MediaRequest.FromPacket(Wire(request.ToPacket())));
@@ -151,13 +151,13 @@ public class PhoneFeatureTests
     public void PlayerListAndAlbumArtAreNotPlayers()
     {
         var list = Wire(Media.PlayerListPacket(["Spotify", "YouTube Music"]));
-        var art = Wire(Media.AlbumArtPacket("Spotify", "aproid://art/1f2e"));
+        var art = Wire(Media.AlbumArtPacket("Spotify", "flyylink://art/1f2e"));
 
         Assert.Equal(["Spotify", "YouTube Music"], Media.PlayerList(list));
         Assert.Null(MediaPlayer.FromPacket(list));
         Assert.Null(MediaPlayer.FromPacket(art));
         Assert.Null(Media.PlayerList(Player.ToPacket()));
-        Assert.Equal("aproid://art/1f2e", Media.AlbumArtUrl(art));
+        Assert.Equal("flyylink://art/1f2e", Media.AlbumArtUrl(art));
     }
 
     [Fact]

@@ -15,8 +15,8 @@ public interface IGuestAccess
 
 /// FlyyDrop: AirDrop-style sharing with any nearby FlyyLink device, paired or not.
 ///
-/// The sender asks first with "aproid.flyydrop.request", listing the files or the link or text. The receiver's user
-/// accepts or declines ("aproid.flyydrop.response"), and only then do the items arrive as ordinary
+/// The sender asks first with "flyylink.flyydrop.request", listing the files or the link or text. The receiver's user
+/// accepts or declines ("flyylink.flyydrop.response"), and only then do the items arrive as ordinary
 /// "kdeconnect.share.request" packets tagged with the request's id. An unpaired device gets nothing more: as its
 /// `IGuestAccess`, this class lets in exactly the accepted items, once each. Mirrors FlyyDrop.kt and FlyyDrop.swift.
 public sealed partial class FlyyDrop(Func<long>? clock = null) : IGuestAccess
@@ -65,7 +65,7 @@ public sealed partial class FlyyDrop(Func<long>? clock = null) : IGuestAccess
     public const int MaxText = 64 * 1024;
 
     /// The share packet field that says which request an item belongs to.
-    public const string Tag = "aproid.flyydrop";
+    public const string Tag = "flyylink.flyydrop";
 
     /// The sender waits a little longer than the receiver, so the receiver's answer always wins.
     private const long GraceMs = 5_000;
@@ -312,7 +312,7 @@ public sealed partial class FlyyDrop(Func<long>? clock = null) : IGuestAccess
 
         if (packet.GetString("filename") is string name)
         {
-            if ((packet.GetLong("aproid.offset") ?? 0) != 0 || !transfer.Waiting.Remove(new Item(name, size ?? -1))) return false;
+            if ((packet.GetLong("flyylink.offset") ?? 0) != 0 || !transfer.Waiting.Remove(new Item(name, size ?? -1))) return false;
         }
         else if ((packet.GetString("url") ?? packet.GetString("text")) is string text && transfer.TextWaiting && text == transfer.Offer.Text)
         {

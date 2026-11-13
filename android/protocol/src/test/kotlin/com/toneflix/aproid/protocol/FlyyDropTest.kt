@@ -165,7 +165,7 @@ class FlyyDropTest {
         assertNull(FlyyDrop.offer("d", NetworkPacket(PacketType.FLYYDROP_REQUEST, NetworkPacket.body("id" to "x"))))
         assertNull(FlyyDrop.offer("d", NetworkPacket(PacketType.FLYYDROP_REQUEST, NetworkPacket.body("text" to "hi"))))
 
-        val negative = NetworkPacket.parse("""{"id":1,"type":"aproid.flyydrop.request","body":{"id":"x","files":[{"name":"a","size":-1}]}}""")
+        val negative = NetworkPacket.parse("""{"id":1,"type":"flyylink.flyydrop.request","body":{"id":"x","files":[{"name":"a","size":-1}]}}""")
         assertNull(FlyyDrop.offer("d", negative))
         assertEquals("passwd", FlyyDrop.Item("../../etc/passwd", 1).safeName)
     }

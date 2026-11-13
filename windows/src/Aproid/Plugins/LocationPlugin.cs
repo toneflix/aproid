@@ -2,7 +2,7 @@ using Aproid.Core;
 
 namespace Aproid.Plugins;
 
-/// Remembers where each phone last said it was ("aproid.location").
+/// Remembers where each phone last said it was ("flyylink.location").
 internal sealed class LocationPlugin : IPlugin
 {
     private readonly Dictionary<string, PhoneLocation> locations = [];

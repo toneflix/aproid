@@ -3,7 +3,7 @@ using Aproid.Model;
 
 namespace Aproid.Plugins;
 
-/// Receives pages of the phone's gallery ("aproid.photos") and full photos to view ("aproid.photos.file").
+/// Receives pages of the phone's gallery ("flyylink.photos") and full photos to view ("flyylink.photos.file").
 internal sealed class PhotosPlugin : IPlugin
 {
     /// Viewed photos are only kept until the next launch.

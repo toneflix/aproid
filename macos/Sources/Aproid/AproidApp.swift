@@ -38,8 +38,8 @@ struct AproidApp: App {
     static let callAudioWindow = "callAudio"
 }
 
-/// Opens links handed to the app: aproid://share from the Share menu, aproid://open from the widget,
-/// aproid://ring and aproid://mirror for scripts, and tel: numbers, such as one clicked in Safari.
+/// Opens links handed to the app: flyylink://share from the Share menu, flyylink://open from the widget,
+/// flyylink://ring and flyylink://mirror for scripts, and tel: numbers, such as one clicked in Safari.
 /// The windows match no links, so SwiftUI hands every link here instead of opening a window for it.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func application(_ application: NSApplication, open urls: [URL]) {

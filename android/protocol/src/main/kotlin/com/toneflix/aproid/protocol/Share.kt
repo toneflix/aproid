@@ -31,8 +31,8 @@ sealed interface Share {
                 "lastModified" to lastModifiedMillis,
                 "numberOfFiles" to 1,
                 "totalPayloadSize" to size,
-                "aproid.transferId" to transferId,
-                "aproid.offset" to offset.takeIf { it > 0 },
+                "flyylink.transferId" to transferId,
+                "flyylink.offset" to offset.takeIf { it > 0 },
             ),
         )
 
@@ -58,8 +58,8 @@ sealed interface Share {
 
             packet.string("filename")?.let { name ->
                 val size = packet.payloadSize ?: return null
-                val offset = packet.long("aproid.offset")?.coerceAtLeast(0) ?: 0
-                return File(name, size, packet.string("aproid.transferId"), offset)
+                val offset = packet.long("flyylink.offset")?.coerceAtLeast(0) ?: 0
+                return File(name, size, packet.string("flyylink.transferId"), offset)
             }
             packet.string("url")?.let { return Link(it) }
             packet.string("text")?.let { return Text(it) }

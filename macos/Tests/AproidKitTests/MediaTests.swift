@@ -14,7 +14,7 @@ final class MediaTests: XCTestCase {
         player.canGoNext = true
         player.canGoPrevious = true
         player.canSeek = true
-        player.albumArtUrl = "aproid://art/1f2e"
+        player.albumArtUrl = "flyylink://art/1f2e"
         return player
     }
 
@@ -33,7 +33,7 @@ final class MediaTests: XCTestCase {
             .action("Spotify", .next),
             .seek("Spotify", to: 90_000),
             .volume("Spotify", 140),
-            .albumArt("Spotify", url: "aproid://art/1f2e"),
+            .albumArt("Spotify", url: "flyylink://art/1f2e"),
         ]
 
         for request in requests {
@@ -54,12 +54,12 @@ final class MediaTests: XCTestCase {
 
     func testPlayerListAndAlbumArtAreNotPlayers() throws {
         let list = try wire(Media.playerListPacket(["Spotify", "YouTube Music"]))
-        let art = try wire(Media.albumArtPacket(player: "Spotify", url: "aproid://art/1f2e"))
+        let art = try wire(Media.albumArtPacket(player: "Spotify", url: "flyylink://art/1f2e"))
 
         XCTAssertEqual(Media.playerList(list), ["Spotify", "YouTube Music"])
         XCTAssertNil(MediaPlayer(packet: list))
         XCTAssertNil(MediaPlayer(packet: art))
         XCTAssertNil(Media.playerList(player.toPacket()))
-        XCTAssertEqual(Media.albumArtUrl(art), "aproid://art/1f2e")
+        XCTAssertEqual(Media.albumArtUrl(art), "flyylink://art/1f2e")
     }
 }

@@ -12,7 +12,7 @@ public let tcpPortRange: ClosedRange<UInt16> = 1716...1764
 /// TCP ports a sender opens for payloads such as files.
 public let payloadPortRange: ClosedRange<UInt16> = 1739...1764
 
-/// Packet types. Standard KDE Connect ones use "kdeconnect.", our extensions use "aproid.".
+/// Packet types. Standard KDE Connect ones use "kdeconnect.", our extensions use "flyylink.".
 /// Keep in sync with android/protocol/.../PacketType.kt.
 public enum PacketType {
     public static let identity = "kdeconnect.identity"
@@ -37,64 +37,64 @@ public enum PacketType {
     public static let telephony = "kdeconnect.telephony"
 
     /// Asks the sender to send the rest of a file that stopped. Body: {"transferId", "offset"}.
-    public static let shareResume = "aproid.share.resume"
+    public static let shareResume = "flyylink.share.resume"
 
     /// Asks for a page of the phone's photos and videos. Body: {"before"?: ms, "count": n}.
-    public static let photosRequest = "aproid.photos.request"
+    public static let photosRequest = "flyylink.photos.request"
 
     /// A page of photos with small thumbnails. Body: {"photos": [...], "more": bool}.
-    public static let photos = "aproid.photos"
+    public static let photos = "flyylink.photos"
 
     /// Asks the phone to send one photo in full: as a normal shared file, or as `photosFile` to view. Body: {"id", "preview"?}.
-    public static let photosDownload = "aproid.photos.download"
+    public static let photosDownload = "flyylink.photos.download"
 
     /// One photo or video in full, for the Mac to show rather than keep. Body: {"id", "name", "mimeType"}, with a payload.
-    public static let photosFile = "aproid.photos.file"
+    public static let photosFile = "flyylink.photos.file"
 
     /// Starts or stops mirroring the phone's screen. Body: {"action": "start"|"stop", "maxSize"?, "bitrate"?}.
-    public static let screenRequest = "aproid.screen.request"
+    public static let screenRequest = "flyylink.screen.request"
 
     /// The screen stream, as a payload of size -1. Body: {"width", "height", "codec", "running"}.
-    public static let screen = "aproid.screen"
+    public static let screen = "flyylink.screen"
 
     /// A tap, swipe, key or text for the mirrored screen. Body: {"action", ...}.
-    public static let screenInput = "aproid.screen.input"
+    public static let screenInput = "flyylink.screen.input"
 
     /// Asks the phone where it is. Body: {}.
-    public static let locationRequest = "aproid.location.request"
+    public static let locationRequest = "flyylink.location.request"
 
     /// Where the phone is. Body: {"latitude", "longitude", "accuracy" (metres), "time" (ms)}.
-    public static let location = "aproid.location"
+    public static let location = "flyylink.location"
 
     /// A copied picture or file, sent as the payload. Body: {"name": ..., "mimeType": ...}.
-    public static let clipboardFile = "aproid.clipboard.file"
+    public static let clipboardFile = "flyylink.clipboard.file"
 
     /// Answer, decline, hang up, mute or unmute a call, or dial a number. Body: {"action": ..., "number"?: ...}.
-    public static let callRequest = "aproid.call.request"
+    public static let callRequest = "flyylink.call.request"
 
     /// Asks the phone about the Bluetooth link for call audio, or to pair with this Mac. Body: {"action": "status"|"pair", "address", "name"?}.
-    public static let callAudioRequest = "aproid.callaudio.request"
+    public static let callAudioRequest = "flyylink.callaudio.request"
 
     /// The phone's side of the call audio link. Body: {"bluetoothOn", "allowed", "paired", "connected", "name"?}.
-    public static let callAudio = "aproid.callaudio"
+    public static let callAudio = "flyylink.callaudio"
 
     /// Keeps the link alive and detects a dead one. Body: {"pong": bool}.
-    public static let heartbeat = "aproid.heartbeat"
+    public static let heartbeat = "flyylink.heartbeat"
 
     /// Keyboard and mouse shared between computers. Body: {"action", ...}; see `RemoteInput`.
-    public static let input = "aproid.input"
+    public static let input = "flyylink.input"
 
     /// A phone's packet passed on through another computer. Body: {"phoneId", "phoneName", "packet"}; see `Relay`.
-    public static let relay = "aproid.relay"
+    public static let relay = "flyylink.relay"
 
     /// Asks to send files, or a link or text, to a device that may not be paired. Body: {"id", "files": [{"name", "size"}], "text"?}; see `FlyyDrop`.
-    public static let flyyDropRequest = "aproid.flyydrop.request"
+    public static let flyyDropRequest = "flyylink.flyydrop.request"
 
     /// Accepts or declines a FlyyDrop request. Body: {"id", "accept", "reason"?}.
-    public static let flyyDropResponse = "aproid.flyydrop.response"
+    public static let flyyDropResponse = "flyylink.flyydrop.response"
 
     /// Stops a FlyyDrop request from either side. Body: {"id"}.
-    public static let flyyDropCancel = "aproid.flyydrop.cancel"
+    public static let flyyDropCancel = "flyylink.flyydrop.cancel"
 }
 
 public enum Capabilities {

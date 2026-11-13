@@ -101,7 +101,7 @@ public class KdeConnectFormatTests
     [Fact]
     public void OurOwnPacketsAreNamespacedAndAdvertised()
     {
-        Assert.All(Capabilities.Mvp, type => Assert.True(type.StartsWith("kdeconnect.") || type.StartsWith("aproid.")));
+        Assert.All(Capabilities.Mvp, type => Assert.True(type.StartsWith("kdeconnect.") || type.StartsWith("flyylink.")));
         Assert.Superset(new HashSet<string>
         {
             PacketType.Photos, PacketType.PhotosRequest, PacketType.PhotosDownload, PacketType.PhotosFile,

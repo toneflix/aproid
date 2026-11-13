@@ -24,7 +24,7 @@ final class CallAudioTests: XCTestCase {
 
     /// The same packet the Kotlin test reads.
     func testReadsSharedStatus() throws {
-        let packet = try NetworkPacket.parse(#"{"id":1,"type":"aproid.callaudio","body":{"bluetoothOn":true,"allowed":false,"paired":false,"connected":false}}"#)
+        let packet = try NetworkPacket.parse(#"{"id":1,"type":"flyylink.callaudio","body":{"bluetoothOn":true,"allowed":false,"paired":false,"connected":false}}"#)
 
         XCTAssertEqual(CallAudio.status(packet), CallAudio.Status(bluetoothOn: true, allowed: false, paired: false, connected: false))
     }
@@ -37,7 +37,7 @@ final class CallAudioTests: XCTestCase {
     }
 
     func testRequestNeedsAnAddress() throws {
-        let packet = try NetworkPacket.parse(#"{"id":1,"type":"aproid.callaudio.request","body":{"action":"pair","address":"nope"}}"#)
+        let packet = try NetworkPacket.parse(#"{"id":1,"type":"flyylink.callaudio.request","body":{"action":"pair","address":"nope"}}"#)
 
         XCTAssertNil(CallAudio.request(packet))
     }

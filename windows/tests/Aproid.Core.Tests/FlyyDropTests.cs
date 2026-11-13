@@ -205,7 +205,7 @@ public class FlyyDropTests
         Assert.Null(FlyyDrop.OfferOf("d", new NetworkPacket(PacketType.FlyyDropRequest, new() { ["id"] = "x" })));
         Assert.Null(FlyyDrop.OfferOf("d", new NetworkPacket(PacketType.FlyyDropRequest, new() { ["text"] = "hi" })));
 
-        var negative = NetworkPacket.Parse("""{"id":1,"type":"aproid.flyydrop.request","body":{"id":"x","files":[{"name":"a","size":-1}]}}""");
+        var negative = NetworkPacket.Parse("""{"id":1,"type":"flyylink.flyydrop.request","body":{"id":"x","files":[{"name":"a","size":-1}]}}""");
         Assert.Null(FlyyDrop.OfferOf("d", negative));
         Assert.Equal("passwd", new FlyyDrop.Item("../../etc/passwd", 1).SafeName);
     }

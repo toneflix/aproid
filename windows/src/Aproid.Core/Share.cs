@@ -23,8 +23,8 @@ public abstract record Share
             ["totalPayloadSize"] = size,
         };
         if (lastModifiedMillis is long modified) body["lastModified"] = modified;
-        if (transferId is not null) body["aproid.transferId"] = transferId;
-        if (offset > 0) body["aproid.offset"] = offset;
+        if (transferId is not null) body["flyylink.transferId"] = transferId;
+        if (offset > 0) body["flyylink.offset"] = offset;
 
         return new NetworkPacket(PacketType.ShareRequest, body);
     }
@@ -54,7 +54,7 @@ public abstract record Share
         {
             if (packet.PayloadSize is not long size) return null;
 
-            return new File(name, size, packet.GetString("aproid.transferId"), Math.Max(packet.GetLong("aproid.offset") ?? 0, 0));
+            return new File(name, size, packet.GetString("flyylink.transferId"), Math.Max(packet.GetLong("flyylink.offset") ?? 0, 0));
         }
 
         if (packet.GetString("url") is string url) return new Link(url);

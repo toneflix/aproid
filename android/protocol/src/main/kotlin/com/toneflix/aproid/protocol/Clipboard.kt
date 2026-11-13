@@ -5,7 +5,7 @@ data class ClipboardFile(val name: String, val mimeType: String) {
     val safeName: String get() = Share.File(name, 0).safeName
 }
 
-/** Shared clipboard text ("kdeconnect.clipboard" and "kdeconnect.clipboard.connect"), and copied files ("aproid.clipboard.file"). */
+/** Shared clipboard text ("kdeconnect.clipboard" and "kdeconnect.clipboard.connect"), and copied files ("flyylink.clipboard.file"). */
 object Clipboard {
     /** Bigger copies are left alone, so copying a film in Finder doesn't start a long transfer. */
     const val FILE_LIMIT = 50L * 1024 * 1024

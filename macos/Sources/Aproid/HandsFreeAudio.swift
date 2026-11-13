@@ -318,7 +318,7 @@ extension HandsFreeAudio: IOBluetoothHandsFreeDeviceDelegate {
     }
 }
 
-/// Hears the phone's reports about its side of the call audio link ("aproid.callaudio").
+/// Hears the phone's reports about its side of the call audio link ("flyylink.callaudio").
 final class CallAudioPlugin: Plugin {
     let incoming: Set<String> = [PacketType.callAudio]
 

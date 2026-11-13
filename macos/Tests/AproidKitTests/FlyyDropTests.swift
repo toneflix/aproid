@@ -177,7 +177,7 @@ final class FlyyDropTests: XCTestCase {
         XCTAssertNil(FlyyDrop.offer(from: "d", NetworkPacket(type: PacketType.flyyDropRequest, body: ["id": "x"])))
         XCTAssertNil(FlyyDrop.offer(from: "d", NetworkPacket(type: PacketType.flyyDropRequest, body: ["text": "hi"])))
 
-        let negative = try NetworkPacket.parse(#"{"id":1,"type":"aproid.flyydrop.request","body":{"id":"x","files":[{"name":"a","size":-1}]}}"#)
+        let negative = try NetworkPacket.parse(#"{"id":1,"type":"flyylink.flyydrop.request","body":{"id":"x","files":[{"name":"a","size":-1}]}}"#)
         XCTAssertNil(FlyyDrop.offer(from: "d", negative))
         XCTAssertEqual(FlyyDrop.Item(name: "../../etc/passwd", size: 1).safeName, "passwd")
     }

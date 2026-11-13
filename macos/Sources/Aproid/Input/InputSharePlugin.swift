@@ -1,7 +1,7 @@
 import Foundation
 import AproidKit
 
-/// Shares this Mac's keyboard and mouse with paired computers, and lets them share theirs ("aproid.input").
+/// Shares this Mac's keyboard and mouse with paired computers, and lets them share theirs ("flyylink.input").
 final class InputSharePlugin: Plugin {
     let incoming: Set<String> = [PacketType.input]
 

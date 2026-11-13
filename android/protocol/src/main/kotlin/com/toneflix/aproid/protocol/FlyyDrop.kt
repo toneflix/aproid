@@ -20,8 +20,8 @@ interface GuestAccess {
 /**
  * FlyyDrop: AirDrop-style sharing with any nearby FlyyLink device, paired or not.
  *
- * The sender asks first with "aproid.flyydrop.request", listing the files or the link or text. The receiver's user
- * accepts or declines ("aproid.flyydrop.response"), and only then do the items arrive as ordinary
+ * The sender asks first with "flyylink.flyydrop.request", listing the files or the link or text. The receiver's user
+ * accepts or declines ("flyylink.flyydrop.response"), and only then do the items arrive as ordinary
  * "kdeconnect.share.request" packets tagged with the request's id. An unpaired device gets nothing more: as its
  * [GuestAccess], this class lets in exactly the accepted items, once each. Mirrors FlyyDrop.swift and FlyyDrop.cs.
  */
@@ -218,7 +218,7 @@ class FlyyDrop(private val clock: () -> Long = System::currentTimeMillis) : Gues
         val name = packet.string("filename")
         val text = packet.string("url") ?: packet.string("text")
         val admitted = when {
-            name != null -> (packet.long("aproid.offset") ?: 0) == 0L && transfer.waiting.remove(Item(name, size ?: -1))
+            name != null -> (packet.long("flyylink.offset") ?: 0) == 0L && transfer.waiting.remove(Item(name, size ?: -1))
             text != null && transfer.textWaiting && text == transfer.offer.text -> true.also { transfer.textWaiting = false }
             else -> false
         }
@@ -246,7 +246,7 @@ class FlyyDrop(private val clock: () -> Long = System::currentTimeMillis) : Gues
         const val MAX_TEXT = 64 * 1024
 
         /** The share packet field that says which request an item belongs to. */
-        const val TAG = "aproid.flyydrop"
+        const val TAG = "flyylink.flyydrop"
 
         /** The sender waits a little longer than the receiver, so the receiver's answer always wins. */
         private const val GRACE_MS = 5_000L

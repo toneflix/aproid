@@ -4,7 +4,7 @@ using Aproid.Model;
 namespace Aproid.Plugins;
 
 /// Passes a phone's notifications and calls on to paired computers that aren't connected to it, and their
-/// replies and call buttons back to the phone ("aproid.relay").
+/// replies and call buttons back to the phone ("flyylink.relay").
 internal sealed class PhoneRelayPlugin(DeviceRegistry devices, Settings settings) : IPlugin
 {
     private readonly object gate = new();

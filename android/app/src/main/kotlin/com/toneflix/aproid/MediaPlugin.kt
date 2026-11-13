@@ -30,7 +30,7 @@ object MediaPlugin : Plugin {
     override val incoming = setOf(PacketType.MPRIS_REQUEST)
 
     private const val ART_SIZE = 512
-    private const val ART_URL_PREFIX = "aproid://art/"
+    private const val ART_URL_PREFIX = "flyylink://art/"
 
     private class Session(val name: String, val controller: MediaController, val callback: MediaController.Callback)
 

@@ -45,7 +45,7 @@ public enum ScreenEdge: String, Sendable, CaseIterable {
     }
 }
 
-/// Keyboard and mouse shared from one computer to another ("aproid.input"). The controlling computer sends `enter`
+/// Keyboard and mouse shared from one computer to another ("flyylink.input"). The controlling computer sends `enter`
 /// when its pointer leaves through an edge, then moves, buttons, scrolls and keys. The controlled computer sends
 /// `leave` when its pointer goes back out through the edge it came in by. Keys use the W3C `code` names, such as
 /// "KeyA" or "ShiftLeft", so each platform maps them to its own key codes. Mirrors Input.kt and Input.cs.

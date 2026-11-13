@@ -1,7 +1,7 @@
 import Foundation
 import AproidKit
 
-/// Remembers where each phone last said it was ("aproid.location").
+/// Remembers where each phone last said it was ("flyylink.location").
 final class LocationPlugin: Plugin {
     let incoming: Set<String> = [PacketType.location]
 

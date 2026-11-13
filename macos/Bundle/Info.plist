@@ -31,7 +31,7 @@
             <string>FlyyLink share</string>
             <key>CFBundleURLSchemes</key>
             <array>
-                <string>aproid</string>
+                <string>flyylink</string>
             </array>
         </dict>
         <dict>

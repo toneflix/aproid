@@ -3,8 +3,8 @@ using Aproid.Shell;
 
 namespace Aproid.Plugins;
 
-/// Shows this PC's screen to a paired computer that asks for it ("aproid.screen.request"), as JPEG pictures.
-/// One computer watches at a time. It works the PC through "aproid.input", which InputSharePlugin plays.
+/// Shows this PC's screen to a paired computer that asks for it ("flyylink.screen.request"), as JPEG pictures.
+/// One computer watches at a time. It works the PC through "flyylink.input", which InputSharePlugin plays.
 internal sealed class ScreenHostPlugin : IPlugin
 {
     private readonly object gate = new();

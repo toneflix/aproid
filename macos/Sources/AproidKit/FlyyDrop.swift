@@ -11,8 +11,8 @@ public protocol GuestAccess: AnyObject {
 
 /// FlyyDrop: AirDrop-style sharing with any nearby FlyyLink device, paired or not.
 ///
-/// The sender asks first with "aproid.flyydrop.request", listing the files or the link or text. The receiver's user
-/// accepts or declines ("aproid.flyydrop.response"), and only then do the items arrive as ordinary
+/// The sender asks first with "flyylink.flyydrop.request", listing the files or the link or text. The receiver's user
+/// accepts or declines ("flyylink.flyydrop.response"), and only then do the items arrive as ordinary
 /// "kdeconnect.share.request" packets tagged with the request's id. An unpaired device gets nothing more: as its
 /// `GuestAccess`, this class lets in exactly the accepted items, once each. Mirrors FlyyDrop.kt and FlyyDrop.cs.
 public final class FlyyDrop: GuestAccess {
@@ -88,7 +88,7 @@ public final class FlyyDrop: GuestAccess {
     public static let maxText = 64 * 1024
 
     /// The share packet field that says which request an item belongs to.
-    public static let tag = "aproid.flyydrop"
+    public static let tag = "flyylink.flyydrop"
 
     /// The sender waits a little longer than the receiver, so the receiver's answer always wins.
     private static let graceMs: Int64 = 5_000
@@ -310,7 +310,7 @@ public final class FlyyDrop: GuestAccess {
         guard let id = packet.string(Self.tag), let transfer = transfers[id], transfer.matches(deviceId, .accepted) else { return false }
 
         if let name = packet.string("filename") {
-            guard (packet.int("aproid.offset") ?? 0) == 0,
+            guard (packet.int("flyylink.offset") ?? 0) == 0,
                   let index = transfer.waiting.firstIndex(of: Item(name: name, size: size ?? -1))
             else { return false }
 

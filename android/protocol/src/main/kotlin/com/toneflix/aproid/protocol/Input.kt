@@ -48,7 +48,7 @@ enum class ScreenEdge(val wire: String) {
 }
 
 /**
- * Keyboard and mouse shared from one computer to another ("aproid.input"). The controlling computer sends [Enter]
+ * Keyboard and mouse shared from one computer to another ("flyylink.input"). The controlling computer sends [Enter]
  * when its pointer leaves through an edge, then moves, buttons, scrolls and keys. The controlled computer sends
  * [Leave] when its pointer goes back out through the edge it came in by. Keys use the W3C `code` names, such as
  * "KeyA" or "ShiftLeft". Mirrors Input.swift and Input.cs.

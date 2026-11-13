@@ -105,8 +105,8 @@ object ShareSender {
         recent: RecentItem,
         onRead: (Long) -> Unit,
     ): Throwable? {
-        val id = packet.string("aproid.transferId")
-        val start = (packet.long("aproid.offset") ?: 0).coerceIn(0, item.size)
+        val id = packet.string("flyylink.transferId")
+        val start = (packet.long("flyylink.offset") ?: 0).coerceIn(0, item.size)
         val finished = CountDownLatch(1)
         var error: Throwable? = null
         val progress = TransferProgress(item.size, start)

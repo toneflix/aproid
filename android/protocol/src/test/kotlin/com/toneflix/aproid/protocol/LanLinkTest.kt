@@ -59,7 +59,7 @@ class LanLinkTest {
     }
 
     @Test fun connectsToAPeerWhoseAnnouncementIsLargerThanTwoKilobytes() {
-        val capabilities = (0 until 120).map { "aproid.capability.$it" }.toSet()
+        val capabilities = (0 until 120).map { "flyylink.capability.$it" }.toSet()
         val big = Peer("Phone", DeviceType.PHONE, 41765..41780, udpPort = 41799, capabilities = capabilities)
         big.lan.start()
 

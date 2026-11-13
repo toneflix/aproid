@@ -87,7 +87,7 @@ public class DeviceIdentityTests
     [Fact]
     public void AnnouncementFitsInOnePacket()
     {
-        var capabilities = Enumerable.Range(0, 120).Select(i => $"aproid.capability.{i}").ToHashSet();
+        var capabilities = Enumerable.Range(0, 120).Select(i => $"flyylink.capability.{i}").ToHashSet();
         var identity = new DeviceIdentity
         {
             DeviceId = DeviceIdentity.NewDeviceId(),

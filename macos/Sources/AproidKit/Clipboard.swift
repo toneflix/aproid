@@ -14,7 +14,7 @@ public struct ClipboardFile: Equatable, Sendable {
 }
 
 /// Shared clipboard text ("kdeconnect.clipboard" and "kdeconnect.clipboard.connect"), and copied files
-/// ("aproid.clipboard.file"). Mirrors Clipboard.kt.
+/// ("flyylink.clipboard.file"). Mirrors Clipboard.kt.
 public enum Clipboard {
     /// Bigger copies are left alone, so copying a film in Finder doesn't start a long transfer.
     public static let fileLimit: Int64 = 50 * 1024 * 1024

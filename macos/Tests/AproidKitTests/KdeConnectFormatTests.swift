@@ -102,7 +102,7 @@ final class KdeConnectFormatTests: XCTestCase {
     }
 
     func testOurOwnPacketsAreNamespacedAndAdvertised() {
-        XCTAssertTrue(Capabilities.mvp.allSatisfy { $0.hasPrefix("kdeconnect.") || $0.hasPrefix("aproid.") })
+        XCTAssertTrue(Capabilities.mvp.allSatisfy { $0.hasPrefix("kdeconnect.") || $0.hasPrefix("flyylink.") })
         XCTAssertTrue(Capabilities.mvp.isSuperset(of: [
             PacketType.photos, PacketType.photosRequest, PacketType.photosDownload, PacketType.photosFile,
             PacketType.screen, PacketType.screenRequest, PacketType.screenInput,

@@ -12,7 +12,7 @@ val TCP_PORT_RANGE = 1716..1764
 /** TCP ports a sender opens for payloads such as files. */
 val PAYLOAD_PORT_RANGE = 1739..1764
 
-/** Packet types. Standard KDE Connect ones use "kdeconnect.", our extensions use "aproid.". */
+/** Packet types. Standard KDE Connect ones use "kdeconnect.", our extensions use "flyylink.". */
 object PacketType {
     const val IDENTITY = "kdeconnect.identity"
     const val PAIR = "kdeconnect.pair"
@@ -36,64 +36,64 @@ object PacketType {
     const val TELEPHONY = "kdeconnect.telephony"
 
     /** Asks the sender to send the rest of a file that stopped. Body: {"transferId", "offset"}. */
-    const val SHARE_RESUME = "aproid.share.resume"
+    const val SHARE_RESUME = "flyylink.share.resume"
 
     /** Asks for a page of the phone's photos and videos. Body: {"before"?: ms, "count": n}. */
-    const val PHOTOS_REQUEST = "aproid.photos.request"
+    const val PHOTOS_REQUEST = "flyylink.photos.request"
 
     /** A page of photos with small thumbnails. Body: {"photos": [...], "more": bool}. */
-    const val PHOTOS = "aproid.photos"
+    const val PHOTOS = "flyylink.photos"
 
     /** Asks the phone to send one photo in full: as a normal shared file, or as [PHOTOS_FILE] to view. Body: {"id", "preview"?}. */
-    const val PHOTOS_DOWNLOAD = "aproid.photos.download"
+    const val PHOTOS_DOWNLOAD = "flyylink.photos.download"
 
     /** One photo or video in full, for the Mac to show rather than keep. Body: {"id", "name", "mimeType"}, with a payload. */
-    const val PHOTOS_FILE = "aproid.photos.file"
+    const val PHOTOS_FILE = "flyylink.photos.file"
 
     /** Starts or stops mirroring the phone's screen. Body: {"action": "start"|"stop", "maxSize"?, "bitrate"?}. */
-    const val SCREEN_REQUEST = "aproid.screen.request"
+    const val SCREEN_REQUEST = "flyylink.screen.request"
 
     /** The screen stream, as a payload of size -1. Body: {"width", "height", "codec", "running"}. */
-    const val SCREEN = "aproid.screen"
+    const val SCREEN = "flyylink.screen"
 
     /** A tap, swipe, key or text for the mirrored screen. Body: {"action", ...}. */
-    const val SCREEN_INPUT = "aproid.screen.input"
+    const val SCREEN_INPUT = "flyylink.screen.input"
 
     /** Asks the phone where it is. Body: {}. */
-    const val LOCATION_REQUEST = "aproid.location.request"
+    const val LOCATION_REQUEST = "flyylink.location.request"
 
     /** Where the phone is. Body: {"latitude", "longitude", "accuracy" (metres), "time" (ms)}. */
-    const val LOCATION = "aproid.location"
+    const val LOCATION = "flyylink.location"
 
     /** A copied picture or file, sent as the payload. Body: {"name": ..., "mimeType": ...}. */
-    const val CLIPBOARD_FILE = "aproid.clipboard.file"
+    const val CLIPBOARD_FILE = "flyylink.clipboard.file"
 
     /** Answer, decline, hang up, mute or unmute a call, or dial a number. Body: {"action": ..., "number"?: ...}. */
-    const val CALL_REQUEST = "aproid.call.request"
+    const val CALL_REQUEST = "flyylink.call.request"
 
     /** Asks the phone about the Bluetooth link for call audio, or to pair with this Mac. Body: {"action": "status"|"pair", "address", "name"?}. */
-    const val CALL_AUDIO_REQUEST = "aproid.callaudio.request"
+    const val CALL_AUDIO_REQUEST = "flyylink.callaudio.request"
 
     /** The phone's side of the call audio link. Body: {"bluetoothOn", "allowed", "paired", "connected", "name"?}. */
-    const val CALL_AUDIO = "aproid.callaudio"
+    const val CALL_AUDIO = "flyylink.callaudio"
 
     /** Keeps the link alive and detects a dead one. Body: {"pong": bool}. */
-    const val HEARTBEAT = "aproid.heartbeat"
+    const val HEARTBEAT = "flyylink.heartbeat"
 
     /** Keyboard and mouse shared between computers. Body: {"action", ...}; see [RemoteInput]. */
-    const val INPUT = "aproid.input"
+    const val INPUT = "flyylink.input"
 
     /** A phone's packet passed on through another computer. Body: {"phoneId", "phoneName", "packet"}; see [Relay]. */
-    const val RELAY = "aproid.relay"
+    const val RELAY = "flyylink.relay"
 
     /** Asks to send files, or a link or text, to a device that may not be paired. Body: {"id", "files": [{"name", "size"}], "text"?}; see [FlyyDrop]. */
-    const val FLYYDROP_REQUEST = "aproid.flyydrop.request"
+    const val FLYYDROP_REQUEST = "flyylink.flyydrop.request"
 
     /** Accepts or declines a FlyyDrop request. Body: {"id", "accept", "reason"?}. */
-    const val FLYYDROP_RESPONSE = "aproid.flyydrop.response"
+    const val FLYYDROP_RESPONSE = "flyylink.flyydrop.response"
 
     /** Stops a FlyyDrop request from either side. Body: {"id"}. */
-    const val FLYYDROP_CANCEL = "aproid.flyydrop.cancel"
+    const val FLYYDROP_CANCEL = "flyylink.flyydrop.cancel"
 }
 
 /** What this MVP sends and accepts. Kept in one place so both apps advertise the same set. */

@@ -25,7 +25,7 @@ class CallAudioTest {
 
     /** The same packet the Swift test reads. */
     @Test fun readsSharedStatus() {
-        val packet = NetworkPacket.parse("""{"id":1,"type":"aproid.callaudio","body":{"bluetoothOn":true,"allowed":false,"paired":false,"connected":false}}""")
+        val packet = NetworkPacket.parse("""{"id":1,"type":"flyylink.callaudio","body":{"bluetoothOn":true,"allowed":false,"paired":false,"connected":false}}""")
 
         assertEquals(CallAudio.Status(bluetoothOn = true, allowed = false, paired = false, connected = false), CallAudio.status(packet))
     }
@@ -38,7 +38,7 @@ class CallAudioTest {
     }
 
     @Test fun requestNeedsAnAddress() {
-        val packet = NetworkPacket.parse("""{"id":1,"type":"aproid.callaudio.request","body":{"action":"pair","address":"nope"}}""")
+        val packet = NetworkPacket.parse("""{"id":1,"type":"flyylink.callaudio.request","body":{"action":"pair","address":"nope"}}""")
 
         assertNull(CallAudio.request(packet))
     }

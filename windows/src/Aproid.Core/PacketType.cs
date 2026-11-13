@@ -20,7 +20,7 @@ public readonly record struct PortRange(int First, int Last)
     public IEnumerable<int> All => Enumerable.Range(First, Last - First + 1);
 }
 
-/// Packet types. Standard KDE Connect ones use "kdeconnect.", our extensions use "aproid.".
+/// Packet types. Standard KDE Connect ones use "kdeconnect.", our extensions use "flyylink.".
 /// Keep in sync with PacketType.kt and PacketType.swift.
 public static class PacketType
 {
@@ -46,64 +46,64 @@ public static class PacketType
     public const string Telephony = "kdeconnect.telephony";
 
     /// Asks the sender to send the rest of a file that stopped. Body: {"transferId", "offset"}.
-    public const string ShareResume = "aproid.share.resume";
+    public const string ShareResume = "flyylink.share.resume";
 
     /// Asks for a page of the phone's photos and videos. Body: {"before"?: ms, "count": n}.
-    public const string PhotosRequest = "aproid.photos.request";
+    public const string PhotosRequest = "flyylink.photos.request";
 
     /// A page of photos with small thumbnails. Body: {"photos": [...], "more": bool}.
-    public const string Photos = "aproid.photos";
+    public const string Photos = "flyylink.photos";
 
     /// Asks the phone to send one photo in full. Body: {"id", "preview"?}.
-    public const string PhotosDownload = "aproid.photos.download";
+    public const string PhotosDownload = "flyylink.photos.download";
 
     /// One photo or video in full, to show rather than keep. Body: {"id", "name", "mimeType"}, with a payload.
-    public const string PhotosFile = "aproid.photos.file";
+    public const string PhotosFile = "flyylink.photos.file";
 
     /// Starts or stops mirroring the phone's screen. Body: {"action": "start"|"stop", "maxSize"?, "bitrate"?}.
-    public const string ScreenRequest = "aproid.screen.request";
+    public const string ScreenRequest = "flyylink.screen.request";
 
     /// The screen stream, as a payload of size -1. Body: {"width", "height", "codec", "running"}.
-    public const string Screen = "aproid.screen";
+    public const string Screen = "flyylink.screen";
 
     /// A tap, swipe, key or text for the mirrored screen. Body: {"action", ...}.
-    public const string ScreenInput = "aproid.screen.input";
+    public const string ScreenInput = "flyylink.screen.input";
 
     /// Asks the phone where it is. Body: {}.
-    public const string LocationRequest = "aproid.location.request";
+    public const string LocationRequest = "flyylink.location.request";
 
     /// Where the phone is. Body: {"latitude", "longitude", "accuracy" (metres), "time" (ms)}.
-    public const string Location = "aproid.location";
+    public const string Location = "flyylink.location";
 
     /// A copied picture or file, sent as the payload. Body: {"name", "mimeType"}.
-    public const string ClipboardFile = "aproid.clipboard.file";
+    public const string ClipboardFile = "flyylink.clipboard.file";
 
     /// Answer, decline, hang up, mute or unmute a call, or dial a number. Body: {"action", "number"?}.
-    public const string CallRequest = "aproid.call.request";
+    public const string CallRequest = "flyylink.call.request";
 
     /// Asks the phone about the Bluetooth link for call audio, or to pair with this computer. Body: {"action": "status"|"pair", "address", "name"?}.
-    public const string CallAudioRequest = "aproid.callaudio.request";
+    public const string CallAudioRequest = "flyylink.callaudio.request";
 
     /// The phone's side of the call audio link. Body: {"bluetoothOn", "allowed", "paired", "connected", "name"?}.
-    public const string CallAudio = "aproid.callaudio";
+    public const string CallAudio = "flyylink.callaudio";
 
     /// Keeps the link alive and detects a dead one. Body: {"pong": bool}.
-    public const string Heartbeat = "aproid.heartbeat";
+    public const string Heartbeat = "flyylink.heartbeat";
 
     /// Keyboard and mouse shared between computers. Body: {"action", ...}; see `RemoteInput`.
-    public const string Input = "aproid.input";
+    public const string Input = "flyylink.input";
 
     /// A phone's packet passed on through another computer. Body: {"phoneId", "phoneName", "packet"}; see `Relay`.
-    public const string Relay = "aproid.relay";
+    public const string Relay = "flyylink.relay";
 
     /// Asks to send files, or a link or text, to a device that may not be paired. Body: {"id", "files": [{"name", "size"}], "text"?}; see `FlyyDrop`.
-    public const string FlyyDropRequest = "aproid.flyydrop.request";
+    public const string FlyyDropRequest = "flyylink.flyydrop.request";
 
     /// Accepts or declines a FlyyDrop request. Body: {"id", "accept", "reason"?}.
-    public const string FlyyDropResponse = "aproid.flyydrop.response";
+    public const string FlyyDropResponse = "flyylink.flyydrop.response";
 
     /// Stops a FlyyDrop request from either side. Body: {"id"}.
-    public const string FlyyDropCancel = "aproid.flyydrop.cancel";
+    public const string FlyyDropCancel = "flyylink.flyydrop.cancel";
 }
 
 public static class Capabilities

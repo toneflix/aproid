@@ -117,7 +117,7 @@ final class MediaPlugin: Plugin {
 
     /// A safe local file name for an art url: our own urls carry a hash, others get hashed.
     private func artFile(_ url: String) -> URL? {
-        let prefix = "aproid://art/"
+        let prefix = "flyylink://art/"
         let suffix = url.hasPrefix(prefix) ? String(url.dropFirst(prefix.count)) : ""
         let name = suffix.count == 32 && suffix.allSatisfy(\.isHexDigit) ? suffix : PhoneNotification.iconHash(Array(url.utf8))
 

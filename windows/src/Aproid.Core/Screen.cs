@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace Aproid.Core;
 
-/// Mirroring the phone's screen. The computer asks with `Start`; the phone answers with an "aproid.screen" packet
+/// Mirroring the phone's screen. The computer asks with `Start`; the phone answers with an "flyylink.screen" packet
 /// whose payload is a live H.264 stream of `ScreenFrame`s. When the computer asks for sound and the phone can record
 /// it, the stream also carries `ScreenFrame.Audio` frames of 16-bit little-endian PCM at `AudioRate` Hz with
 /// `AudioChannels` channels, interleaved. Mirrors Screen.kt and Screen.swift.

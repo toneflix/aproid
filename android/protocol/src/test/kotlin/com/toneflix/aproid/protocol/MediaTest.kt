@@ -17,7 +17,7 @@ class MediaTest {
         canGoNext = true,
         canGoPrevious = true,
         canSeek = true,
-        albumArtUrl = "aproid://art/1f2e",
+        albumArtUrl = "flyylink://art/1f2e",
     )
 
     private fun wire(packet: NetworkPacket) = NetworkPacket.parse(packet.serialize())
@@ -33,7 +33,7 @@ class MediaTest {
             MediaRequest.action("Spotify", MediaAction.NEXT),
             MediaRequest.seek("Spotify", 90_000),
             MediaRequest.volume("Spotify", 140),
-            MediaRequest.albumArt("Spotify", "aproid://art/1f2e"),
+            MediaRequest.albumArt("Spotify", "flyylink://art/1f2e"),
         )
 
         requests.forEach { assertEquals(it, MediaRequest.fromPacket(wire(it.toPacket()))) }
@@ -51,12 +51,12 @@ class MediaTest {
 
     @Test fun playerListAndAlbumArtAreNotPlayers() {
         val list = wire(Media.playerListPacket(listOf("Spotify", "YouTube Music")))
-        val art = wire(Media.albumArtPacket("Spotify", "aproid://art/1f2e"))
+        val art = wire(Media.albumArtPacket("Spotify", "flyylink://art/1f2e"))
 
         assertEquals(listOf("Spotify", "YouTube Music"), Media.playerList(list))
         assertNull(MediaPlayer.fromPacket(list))
         assertNull(MediaPlayer.fromPacket(art))
         assertNull(Media.playerList(player.toPacket()))
-        assertEquals("aproid://art/1f2e", Media.albumArtUrl(art))
+        assertEquals("flyylink://art/1f2e", Media.albumArtUrl(art))
     }
 }
