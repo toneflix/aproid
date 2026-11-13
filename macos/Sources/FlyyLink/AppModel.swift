@@ -155,6 +155,7 @@ final class AppModel: ObservableObject {
 
     let messages = MessagesStore()
     let photos = PhotosStore()
+    let playOnTv = PlayOnTvModel()
     let screen: ScreenMirror
     private let screenPlugin: ScreenPlugin
     private let screenWindow: ScreenWindowController
