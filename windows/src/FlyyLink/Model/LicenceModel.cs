@@ -200,7 +200,7 @@ public sealed class LicenceModel : Observable
         try
         {
             if (store.Secret is string secret) store.Renewed(await server.RefreshAsync(machine, secret));
-            else if (store.Record.ServerLock is null && LicenceToken.Verify(store.Record.TrialToken, publicKey!) is null) store.TrialStarted(await server.TrialAsync(machine));
+            else if ((store.Record.ServerLock is null or LicenceLock.TrialOver) && LicenceToken.Verify(store.Record.TrialToken, publicKey!) is null) store.TrialStarted(await server.TrialAsync(machine));
 
             return true;
         }

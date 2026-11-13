@@ -65,8 +65,10 @@ struct LicenceStore {
         record.licenceToken = token
     }
 
+    /// A trial the server extended unlocks a Mac whose trial had ended.
     func trialStarted(token: String) {
         record.trialToken = token
+        if record.serverLock == .trialOver { record.serverLock = nil }
     }
 
     /// The server turned this Mac away; forget its licence.

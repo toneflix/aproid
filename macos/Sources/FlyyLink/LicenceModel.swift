@@ -142,7 +142,8 @@ final class LicenceModel: ObservableObject {
         do {
             if let secret = store.secret {
                 store.renewed(token: try await server.refresh(machine: machine, secret: secret))
-            } else if store.record.serverLock == nil, let publicKey, LicenceToken.verify(store.record.trialToken, publicKey: publicKey) == nil {
+            } else if store.record.serverLock == nil || store.record.serverLock == .trialOver,
+                      let publicKey, LicenceToken.verify(store.record.trialToken, publicKey: publicKey) == nil {
                 store.trialStarted(token: try await server.trial(machine: machine))
             }
 
