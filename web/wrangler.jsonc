@@ -21,10 +21,9 @@
     },
   ],
   // Secrets, set with `wrangler secret put`: LICENCE_SIGNING_KEY, CODE_SECRET, PADDLE_WEBHOOK_SECRET,
-  // PADDLE_API_KEY, SENDPULSE_API_KEY. See docs/LICENCES.md.
+  // PADDLE_API_KEY, SENDPULSE_API_KEY. PADDLE_CLIENT_TOKEN and PADDLE_PRICE_ID are dashboard variables,
+  // not listed here, because a var in this file replaces the dashboard's on every deploy. See docs/LICENCES.md.
   "vars": {
-    "PADDLE_CLIENT_TOKEN": "",
-    "PADDLE_PRICE_ID": "",
     "PADDLE_SANDBOX": "true",
     "MAIL_FROM": "FlyyLink <hello@toneflix.net>",
   },
