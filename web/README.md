@@ -21,3 +21,4 @@ For local licence testing, copy `.dev.vars.example` to `.dev.vars`; sign-in code
 - [docs/WEBSITE.md](../docs/WEBSITE.md): Cloudflare hosting and the worker.
 - [docs/LICENCES.md](../docs/LICENCES.md): selling licences, setup and going live.
 - [docs/RELEASING.md](../docs/RELEASING.md): how releases reach the site.
+- [docs/ADMIN.md](../docs/ADMIN.md): the admin CLI.
