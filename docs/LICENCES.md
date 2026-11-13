@@ -20,7 +20,7 @@ Run the `wrangler` commands from `web/`.
    - Checkout settings: approve `flyylink.toneflix.net` as a website, and set the default payment link to `https://flyylink.toneflix.net/buy`.
    - Start with a sandbox account (`PADDLE_SANDBOX` set to `"true"`). When going live, repeat the steps in the live account and set it to `"false"`.
 3. **SendPulse.** Under Settings > API, make an API key and put it in `npx wrangler secret put SENDPULSE_API_KEY`. Under SMTP, verify the `MAIL_FROM` sender in `wrangler.jsonc`.
-4. **Trial length (optional).** Add a `TRIAL_DAYS` variable under the worker's Settings > Variables and Secrets to change the 14 days. It applies to computers that start a trial after the change; trials already running keep their end date. The apps only use their own 14 days until they first reach the server.
+4. **Trial length (optional).** Add a `TRIAL_DAYS` build variable under the worker's Settings > Build > Variables and secrets to change the 14 days. The site copy uses it at build time, and the deploy command hands it to the worker. New trials get the new length; trials already running keep their end date. The apps only use their own 14 days until they first reach the server.
 5. **Sign-in codes.** `npx wrangler secret put CODE_SECRET` with any long random text.
 6. **Cloudflare deploys.** Use the deploy command in [WEBSITE.md](WEBSITE.md) so new migrations run before each deploy.
 7. **Release uploads.** Add the Cloudflare secrets listed in [RELEASING.md](RELEASING.md).

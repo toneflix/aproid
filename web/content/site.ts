@@ -9,4 +9,6 @@ export const site = {
   contactEmail: "support@toneflix.net",
   jurisdiction: "the Federal Republic of Nigeria",
   policyDate: "12 November 2026",
+  /** From the TRIAL_DAYS build variable, which the deploy also hands to the worker. */
+  trialDays: Number(process.env.NEXT_PUBLIC_TRIAL_DAYS) || 14,
 };
