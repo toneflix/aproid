@@ -10,11 +10,10 @@ export class SendPulseMailer implements Mailer {
   private readonly transport: Transporter;
 
   constructor(
-    clientId: string,
-    clientSecret: string,
+    apiKey: string,
     private readonly from: string,
   ) {
-    this.transport = nodemailer.createTransport(new SendPulseTransport({ clientId, clientSecret }));
+    this.transport = nodemailer.createTransport(new SendPulseTransport({ apiKey }));
   }
 
   async send(to: string, subject: string, text: string): Promise<void> {

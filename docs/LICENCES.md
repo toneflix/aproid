@@ -19,7 +19,7 @@ Run the `wrangler` commands from `web/`.
    - Notifications: add a destination for `https://aproid.toneflix.com/api/paddle/webhook` with the events `transaction.completed`, `adjustment.created` and `adjustment.updated`. Put its secret key in `npx wrangler secret put PADDLE_WEBHOOK_SECRET`.
    - Checkout settings: approve `aproid.toneflix.com` as a website, and set the default payment link to `https://aproid.toneflix.com/buy`.
    - Start with a sandbox account (`PADDLE_SANDBOX` set to `"true"`). When going live, repeat the steps in the live account and set it to `"false"`.
-3. **SendPulse.** Under Settings > API, copy the ID and secret into `npx wrangler secret put SENDPULSE_CLIENT_ID` and `SENDPULSE_CLIENT_SECRET`. Under SMTP, verify the `MAIL_FROM` sender in `wrangler.jsonc`.
+3. **SendPulse.** Under Settings > API, make an API key and put it in `npx wrangler secret put SENDPULSE_API_KEY`. Under SMTP, verify the `MAIL_FROM` sender in `wrangler.jsonc`.
 4. **Sign-in codes.** `npx wrangler secret put CODE_SECRET` with any long random text.
 5. **Cloudflare deploys.** Use the deploy command in [WEBSITE.md](WEBSITE.md) so new migrations run before each deploy.
 6. **Release uploads.** Add the Cloudflare secrets listed in [RELEASING.md](RELEASING.md).
