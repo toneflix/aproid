@@ -2,7 +2,7 @@ import XCTest
 @testable import FlyyLinkKit
 
 final class DlnaTests: XCTestCase {
-    private let description = """
+    private let renderer = """
         <?xml version="1.0"?>
         <root xmlns="urn:schemas-upnp-org:device-1-0">
           <specVersion><major>1</major><minor>0</minor></specVersion>
@@ -51,7 +51,7 @@ final class DlnaTests: XCTestCase {
     }
 
     func testReadsRendererDescription() {
-        let tv = TvRenderer.parse(description, location: "http://192.168.1.20:9197/dmr/desc.xml")
+        let tv = TvRenderer.parse(renderer, location: "http://192.168.1.20:9197/dmr/desc.xml")
 
         XCTAssertEqual(
             tv,
@@ -94,7 +94,7 @@ final class DlnaTests: XCTestCase {
     }
 
     func testSkipsDevicesThatCantPlay() {
-        XCTAssertNil(TvRenderer.parse(description.replacingOccurrences(of: "AVTransport", with: "ConnectionManager"), location: "http://192.168.1.20/desc.xml"))
+        XCTAssertNil(TvRenderer.parse(renderer.replacingOccurrences(of: "AVTransport", with: "ConnectionManager"), location: "http://192.168.1.20/desc.xml"))
         XCTAssertNil(TvRenderer.parse("not xml", location: "http://192.168.1.20/desc.xml"))
     }
 
