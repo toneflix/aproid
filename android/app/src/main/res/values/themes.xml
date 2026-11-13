@@ -4,6 +4,11 @@
         <item name="android:windowBackground">@color/window_background</item>
     </style>
 
+    <!-- Full screen and black, for photos and videos on a TV. -->
+    <style name="Theme.FlyyLink.Viewer" parent="android:Theme.Material.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+
     <!-- Shown by the system while the app starts, then swapped for Theme.FlyyLink. -->
     <style name="Theme.FlyyLink.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/toneflix_gold</item>

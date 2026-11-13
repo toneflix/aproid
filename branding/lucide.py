@@ -29,6 +29,8 @@ ANDROID = [
     "battery-charging", "bell", "bell-ring", "bluetooth", "cast", "circle-alert", "circle-check",
     "clipboard", "download", "eye-off", "file-text", "file-up", "image", "keyboard", "link", "lock", "map-pin", "moon", "phone",
     "message-square", "pointer", "settings", "wifi", "radar", "send", "x", "check", "smartphone", "laptop",
+    "tv", "music", "house", "arrow-left", "chevron-up", "chevron-down", "chevron-left", "chevron-right", "ellipsis",
+    "play", "pause", "skip-back", "skip-forward", "volume-1", "volume-2", "volume-x", "delete", "corner-down-left", "film",
 ]
 
 WINDOWS = [

@@ -244,6 +244,7 @@ object FlyyDropPlugin : Plugin {
             .build()
 
         runCatching { context.getSystemService(NotificationManager::class.java).notify(notificationId(id), notification) }
+        MainActivity.bringToFront(context)
     }
 
     /** "3 photos · 12 MB", "report.pdf · 2 MB" or the link itself. */

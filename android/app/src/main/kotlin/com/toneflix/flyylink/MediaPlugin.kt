@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.media.AudioManager
 import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
@@ -11,6 +12,7 @@ import android.media.session.PlaybackState
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.view.KeyEvent
 import com.toneflix.flyylink.protocol.Device
 import com.toneflix.flyylink.protocol.Media
 import com.toneflix.flyylink.protocol.MediaAction
@@ -23,14 +25,16 @@ import com.toneflix.flyylink.protocol.Plugin
 import java.io.ByteArrayOutputStream
 
 /**
- * Lets the Mac see and control what is playing on the phone. Android only shares media
+ * Lets the Mac see and control what is playing on the phone or TV. Android only shares media
  * sessions with apps that have notification access, so [NotificationMirrorService] starts this.
+ * A TV without that access offers one player, [KEYS_PLAYER], worked with media keys.
  */
 object MediaPlugin : Plugin {
     override val incoming = setOf(PacketType.MPRIS_REQUEST)
 
     private const val ART_SIZE = 512
     private const val ART_URL_PREFIX = "flyylink://art/"
+    const val KEYS_PLAYER = "TV"
 
     private class Session(val name: String, val controller: MediaController, val callback: MediaController.Callback)
 
@@ -44,6 +48,9 @@ object MediaPlugin : Plugin {
     private var sessions = listOf<Session>()
     private val art = mutableMapOf<String, Art>()
 
+    /** Set on a TV, so media keys stand in for the sessions until notification access is given. */
+    private var audio: AudioManager? = null
+
     private val sessionsChanged = MediaSessionManager.OnActiveSessionsChangedListener { update(it.orEmpty()) }
 
     fun start(service: NotificationMirrorService) {
@@ -53,6 +60,12 @@ object MediaPlugin : Plugin {
     fun stop() {
         main.post { forget() }
     }
+
+    fun startWithKeys(context: Context) {
+        audio = context.applicationContext.getSystemService(AudioManager::class.java)
+    }
+
+    private val usesKeys: Boolean get() = manager == null && audio != null
 
     private fun listen(service: NotificationMirrorService) {
         if (manager != null) return
@@ -88,6 +101,11 @@ object MediaPlugin : Plugin {
 
     private fun handle(device: Device, request: MediaRequest) {
         if (request.wantsPlayerList) announce(device)
+
+        if (usesKeys && request.player == KEYS_PLAYER) {
+            pressKey(device, request)
+            return
+        }
 
         val session = sessions.firstOrNull { it.name == request.player } ?: return
         val controls = session.controller.transportControls
@@ -136,7 +154,37 @@ object MediaPlugin : Plugin {
         DeviceStore.pairedDevices().forEach { announce(it) }
     }
 
+    private fun pressKey(device: Device, request: MediaRequest) {
+        val audio = audio ?: return
+        val code = when (request.action) {
+            MediaAction.PLAY_PAUSE -> KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+            MediaAction.PLAY -> KeyEvent.KEYCODE_MEDIA_PLAY
+            MediaAction.PAUSE -> KeyEvent.KEYCODE_MEDIA_PAUSE
+            MediaAction.NEXT -> KeyEvent.KEYCODE_MEDIA_NEXT
+            MediaAction.PREVIOUS -> KeyEvent.KEYCODE_MEDIA_PREVIOUS
+            MediaAction.STOP -> KeyEvent.KEYCODE_MEDIA_STOP
+            null -> null
+        }
+
+        code?.let { TvRemotePlugin.media(audio, it) }
+        if (request.wantsNowPlaying || code != null) DeviceStore.send(device, keysPlayer(audio).toPacket())
+    }
+
+    private fun keysPlayer(audio: AudioManager) = MediaPlayer(
+        name = KEYS_PLAYER,
+        isPlaying = audio.isMusicActive,
+        canGoNext = true,
+        canGoPrevious = true,
+    )
+
     private fun announce(device: Device) {
+        val audio = audio
+        if (usesKeys && audio != null) {
+            DeviceStore.send(device, Media.playerListPacket(listOf(KEYS_PLAYER)))
+            DeviceStore.send(device, keysPlayer(audio).toPacket())
+            return
+        }
+
         DeviceStore.send(device, Media.playerListPacket(sessions.map { it.name }))
         sessions.forEach { DeviceStore.send(device, describe(it).toPacket()) }
     }

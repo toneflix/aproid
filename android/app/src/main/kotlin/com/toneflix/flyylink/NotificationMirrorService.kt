@@ -3,7 +3,7 @@ package com.toneflix.flyylink
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 
-/** The system hands us every notification here; [NotificationPlugin] decides what to mirror. */
+/** The system hands us every notification here; [NotificationPlugin] decides what to mirror. A TV only uses it for media. */
 class NotificationMirrorService : NotificationListenerService() {
     override fun onListenerConnected() {
         instance = this
@@ -16,11 +16,11 @@ class NotificationMirrorService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        NotificationPlugin.posted(this, sbn)
+        if (AppForm.of(this) == AppForm.PHONE) NotificationPlugin.posted(this, sbn)
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
-        NotificationPlugin.removed(sbn)
+        if (AppForm.of(this) == AppForm.PHONE) NotificationPlugin.removed(sbn)
     }
 
     companion object {

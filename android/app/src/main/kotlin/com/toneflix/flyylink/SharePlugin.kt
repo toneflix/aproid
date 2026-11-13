@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * Receives what the Mac shares: files go to Downloads, links wait in a notification
  * (Android doesn't let a background app open the browser), and text goes on the clipboard.
+ * A TV opens files and links right away through [TvOpener] and shows text in a popup.
  * A file that stops halfway resumes when the Mac reconnects, even after the app restarts.
  */
 object SharePlugin : Plugin {
@@ -32,6 +33,7 @@ object SharePlugin : Plugin {
 
     private var context: Context? = null
     private var partials: PartialDownloads? = null
+    private var tv: TvOpener? = null
 
     /** The Recent entry of each unfinished file, so a resume updates the same line. */
     private val items = java.util.concurrent.ConcurrentHashMap<String, RecentItem>()
@@ -47,6 +49,7 @@ object SharePlugin : Plugin {
         val app = context.applicationContext
         val partials = PartialDownloads(app).also { this.partials = it }
         this.context = app
+        if (AppForm.of(app) == AppForm.TV) tv = TvOpener(app)
 
         partials.removeExpired()
         partials.all().forEach { (id, entry) ->
@@ -128,7 +131,13 @@ object SharePlugin : Plugin {
             progress = null,
         )
         Recent.put(done)
-        notify(context, file.safeName, context.getString(R.string.share_received_note, device.name), done.openIntent(context))
+
+        val tv = tv
+        if (tv != null) {
+            tv.open(done.openIntent(context), device.name, file.safeName)
+        } else {
+            notify(context, file.safeName, context.getString(R.string.share_received_note, device.name), done.openIntent(context))
+        }
     }
 
     private fun forget(id: String) {
@@ -155,10 +164,22 @@ object SharePlugin : Plugin {
             .copy(uri = uri)
         Recent.put(item)
 
-        notify(context, uri.host ?: url, context.getString(R.string.share_link_tap, device.name), item.openIntent(context))
+        val tv = tv
+        if (tv != null) {
+            tv.open(item.openIntent(context), device.name, uri.host ?: url)
+        } else {
+            notify(context, uri.host ?: url, context.getString(R.string.share_link_tap, device.name), item.openIntent(context))
+        }
     }
 
     private fun text(context: Context, device: Device, text: String) {
+        val tv = tv
+        if (tv != null) {
+            tv.say(device.name, context.getString(R.string.share_text_summary), text)
+            Recent.add(RecentItem.Kind.TEXT, "“${text.lineSequence().first().take(80)}”", context.getString(R.string.tv_from, device.name))
+            return
+        }
+
         main.post {
             context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(device.name, text))
         }
@@ -186,10 +207,17 @@ object SharePlugin : Plugin {
     }
 }
 
-/** Opens a received file or link, or null when there is nothing to open. Files go through [OpenFileActivity]. */
+/**
+ * Opens a received file or link, or null when there is nothing to open. Files go through [OpenFileActivity],
+ * except photos, videos and music on a TV, which [TvViewerActivity] shows full screen.
+ */
 fun RecentItem.openIntent(context: Context): Intent? {
     val uri = uri ?: return null
     if (kind == RecentItem.Kind.LINK) return Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    if (AppForm.of(context) == AppForm.TV && TvViewerActivity.Kind.of(mimeType) != null) {
+        return TvViewerActivity.intent(context, uri, mimeType, title, detail)
+    }
 
     return OpenFileActivity.intent(context, uri, mimeType)
 }

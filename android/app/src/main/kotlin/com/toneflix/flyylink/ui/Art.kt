@@ -62,10 +62,33 @@ fun PhoneArt(height: Dp, modifier: Modifier = Modifier) {
     }
 }
 
-/** A phone or a laptop, drawn about [width] wide, to stand for any device. */
+/** A drawn TV: a wide dark frame with a light screen, on a short stand. */
+@Composable
+fun TvArt(width: Dp, modifier: Modifier = Modifier, content: @Composable () -> Unit = {}) {
+    val colors = FlyyLink.colors
+
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            Modifier
+                .size(width, width * 0.58f)
+                .background(colors.deviceBody, RoundedCornerShape(width * 0.04f))
+                .padding(width * 0.022f),
+        ) {
+            Box(Modifier.fillMaxSize().background(colors.deviceScreen, RoundedCornerShape(width * 0.025f))) { content() }
+        }
+        Box(Modifier.size(width * 0.08f, width * 0.05f).background(colors.deviceBase))
+        Box(Modifier.size(width * 0.36f, width * 0.025f).background(colors.deviceBase, RoundedCornerShape(width * 0.0125f)))
+    }
+}
+
+/** A phone, a TV or a laptop, drawn about [width] wide, to stand for any device. */
 @Composable
 fun DeviceArt(type: DeviceType, width: Dp, modifier: Modifier = Modifier) {
-    if (type.isPhone) PhoneArt(width * 0.75f, modifier) else LaptopArt(width, modifier)
+    when {
+        type.isPhone -> PhoneArt(width * 0.75f, modifier)
+        type == DeviceType.TV -> TvArt(width, modifier)
+        else -> LaptopArt(width, modifier)
+    }
 }
 
 /** The pairing code as big separate characters, split in two halves. */
