@@ -1,34 +1,71 @@
-import type { AdminResult, Listing, Table } from "../../worker/admin/protocol/result";
+import type { LoggerChalk } from "@h3ravel/shared";
+import type { AdminResult, Cell, Listing, Row, Table } from "../../worker/admin/protocol/result";
 import type { CliCommand } from "./CliCommand";
 
-/** Prints an admin command's result: its notes in color, then its fields and tables. */
+/** Values that read as good or bad news, colored so a list can be scanned. */
+const tones: Record<string, LoggerChalk> = {
+  active: "green",
+  yes: "green",
+  ok: "green",
+  sent: "green",
+  revoked: "red",
+  no: "red",
+  failed: "red",
+  sending: "yellow",
+};
+
+/**
+ * Prints an admin command's result: its notes in color, then its fields, and each row of a table or
+ * listing as its own block of labelled values.
+ */
 export class ResultPrinter {
-  static readonly maxCell = 60;
+  static readonly maxValue = 100;
 
   constructor(private readonly cli: CliCommand) {}
 
   print(result: AdminResult): void {
     for (const note of result.notes) this.cli[note.level](note.text);
 
-    if (result.fields?.length) this.cli.fields(result.fields);
+    if (result.fields?.length) this.fields(result.fields);
 
     for (const table of result.tables ?? []) this.table(table);
 
     if (result.listing) this.listing(result.listing);
   }
 
-  /** The table as aligned lines: a dimmed header, then one line per row. */
-  static lines(table: Table): string[] {
-    const cell = (value: unknown) => {
-      const text = value === null || value === undefined ? "-" : String(value).replace(/\s+/g, " ");
+  /** A value as it is shown: on one line, shortened when long, and a dash when empty. */
+  static text(value: Cell | undefined): string {
+    const text = value === null || value === undefined || value === "" ? "-" : String(value).replace(/\s+/g, " ");
 
-      return text.length > ResultPrinter.maxCell ? `${text.slice(0, ResultPrinter.maxCell - 1)}…` : text;
-    };
-    const rows = table.rows.map((row) => table.columns.map((column) => cell(row[column.key])));
-    const widths = table.columns.map((column, i) => Math.max(column.label.length, ...rows.map((row) => row[i].length)));
-    const line = (cells: string[]) => cells.map((text, i) => text.padEnd(widths[i])).join("  ").trimEnd();
+    return text.length > ResultPrinter.maxValue ? `${text.slice(0, ResultPrinter.maxValue - 1)}…` : text;
+  }
 
-    return [line(table.columns.map((column) => column.label)), ...rows.map(line)];
+  /** The label and value pairs of one row, in column order. */
+  static pairs(table: Table, row: Row): [string, string][] {
+    return table.columns.map((column) => [column.label, ResultPrinter.text(row[column.key])]);
+  }
+
+  private fields(pairs: [string, string][], first = false): void {
+    const width = Math.max(...pairs.map(([label]) => label.length));
+
+    pairs.forEach(([label, value], index) => this.cli.line(`${this.cli.paint(label.padEnd(width), "gray")}  ${this.value(value, first && index === 0)}`));
+  }
+
+  private value(text: string, lead: boolean): string {
+    if (lead) return this.cli.paint(text, ["cyan", "bold"]);
+    if (text === "-") return this.cli.paint(text, "gray");
+
+    const tone = tones[text.toLowerCase()];
+
+    return tone ? this.cli.paint(text, tone) : text;
+  }
+
+  private rows(table: Table): void {
+    table.rows.forEach((row, index) => {
+      if (index > 0) this.cli.newLine();
+
+      this.fields(ResultPrinter.pairs(table, row), true);
+    });
   }
 
   private table(table: Table): void {
@@ -42,10 +79,7 @@ export class ResultPrinter {
       return;
     }
 
-    const [header, ...rows] = ResultPrinter.lines(table);
-
-    this.cli.line(this.cli.paint(header, "gray"));
-    rows.forEach((row) => this.cli.line(row));
+    this.rows(table);
   }
 
   private listing(listing: Listing): void {
@@ -55,11 +89,11 @@ export class ResultPrinter {
       return;
     }
 
-    const [header, ...rows] = ResultPrinter.lines(listing);
+    this.rows(listing);
 
-    this.cli.line(this.cli.paint(header, "gray"));
-    rows.forEach((row) => this.cli.line(row));
-
-    if (listing.lastPage > 1) this.cli.line(this.cli.paint(`Page ${listing.page} of ${listing.lastPage}, ${listing.total} in all. Use --page to see more.`, "gray"));
+    if (listing.lastPage > 1) {
+      this.cli.newLine();
+      this.cli.line(this.cli.paint(`Page ${listing.page} of ${listing.lastPage}, ${listing.total} in all. Use --page to see more.`, "gray"));
+    }
   }
 }
