@@ -24,3 +24,7 @@ To change a headline or add a screenshot, edit the `SHOTS` list in `page/shots.j
 ## Android TV on Google Play
 
 The phone and TV apps are the same build. To offer it on TVs, in Play Console turn on the Android TV form factor (Test and release > Advanced settings > Form factors), then add `tv/banner.png` and the `tv/screenshots` to the store listing's Android TV section. Google reviews TV apps on their own, and the accessibility declaration should mention the "FlyyLink remote" use on TVs.
+
+## Fire TV on the Amazon Appstore
+
+Fire TV runs the same APK as the release. Upload it in the Amazon Developer Console, target Fire TV devices, and reuse `tv/banner.png` (1280 x 720) and the `tv/screenshots` (1920 x 1080). Many Fire TVs have no "Display over other apps" screen, so there pop-ups fall back to a plain toast and things that arrive wait in FlyyLink instead of opening on their own.

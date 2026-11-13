@@ -60,15 +60,20 @@ enum class AppForm(val deviceType: DeviceType) {
     }
 
     companion object {
+        /** Some Fire OS versions report this and not Leanback. */
+        private const val FIRE_TV = "amazon.hardware.fire_tv"
+
         @Volatile private var current: AppForm? = null
 
         fun of(context: Context): AppForm = current ?: detect(context).also { current = it }
 
         private fun detect(context: Context): AppForm {
             val mode = context.getSystemService(UiModeManager::class.java)?.currentModeType
-            val leanback = context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+            val features = context.packageManager
+            val leanback = features.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+            val fireTv = features.hasSystemFeature(FIRE_TV)
 
-            return if (mode == Configuration.UI_MODE_TYPE_TELEVISION || leanback) TV else PHONE
+            return if (mode == Configuration.UI_MODE_TYPE_TELEVISION || leanback || fireTv) TV else PHONE
         }
     }
 }
