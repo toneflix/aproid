@@ -16,7 +16,7 @@
     {
       "binding": "LICENCES",
       "database_name": "flyylink-licences",
-      "database_id": "dfb12d7a-ce96-41cd-a4d3-0693675e575a",
+      "database_id": "962f9857-b416-49f2-be08-d1045dff345f",
       "migrations_dir": "migrations",
     },
   ],
