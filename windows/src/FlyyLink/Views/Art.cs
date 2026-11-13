@@ -197,6 +197,23 @@ internal static class ComputerDrawing
         return new StackPanel { Children = { monitor, neck, foot }, VerticalAlignment = VerticalAlignment.Center };
     }
 
+    /// A wide screen on a short stand.
+    public static UIElement Tv(double width)
+    {
+        var screen = Frame(width, width * 0.58, width * 0.04);
+        var neck = new Border { Width = width * 0.08, Height = width * 0.06 };
+        neck.SetValue(Border.BackgroundProperty, Application.Current.Resources["FlyyLinkDeviceBrush"]);
+        var foot = new Border
+        {
+            Width = width * 0.36,
+            Height = Math.Max(2, width * 0.03),
+            CornerRadius = new CornerRadius(width * 0.015),
+            Background = new SolidColorBrush(Color.FromArgb(0x73, 0x80, 0x80, 0x88)),
+        };
+
+        return new StackPanel { Children = { screen, neck, foot }, VerticalAlignment = VerticalAlignment.Center };
+    }
+
     private static Border Frame(double width, double height, double radius)
     {
         var screen = new Border { CornerRadius = new CornerRadius(width * 0.04) };
@@ -240,6 +257,7 @@ public sealed class DeviceArt : UserControl
         Core.DeviceType.Laptop => ComputerDrawing.Laptop(ArtWidth * 1.7),
         Core.DeviceType.Desktop => ComputerDrawing.Desktop(ArtWidth * 1.7),
         Core.DeviceType.Tablet => new PhoneArt { ArtWidth = ArtWidth * 1.4 },
+        Core.DeviceType.Tv => ComputerDrawing.Tv(ArtWidth * 1.9),
         _ => new PhoneArt { ArtWidth = ArtWidth },
     };
 }

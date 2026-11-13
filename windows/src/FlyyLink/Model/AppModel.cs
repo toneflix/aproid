@@ -281,6 +281,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
             Raise(nameof(ShowsPhone));
             Raise(nameof(FocusIsPhone));
             Raise(nameof(FocusIsComputer));
+            Raise(nameof(FocusIsTv));
             Raise(nameof(InputStatus));
             Raise(nameof(InputActive));
             Raise(nameof(FocusWatchesScreen));
@@ -538,7 +539,10 @@ public sealed class AppModel : Observable, IDeviceDelegate
     public bool ShowsPhone => Focused is { IsPaired: true };
 
     /// The paired device the panel shows is a phone, so the phone's own actions apply.
-    public bool FocusIsPhone => Focused is { IsPaired: true, IsComputer: false };
+    public bool FocusIsPhone => Focused is { IsPaired: true, IsPhone: true };
+
+    /// The paired device the panel shows is a TV.
+    public bool FocusIsTv => Focused is { IsPaired: true, IsTv: true };
 
     /// The paired device the panel shows is another Mac or PC.
     public bool FocusIsComputer => Focused is { IsPaired: true, IsComputer: true };
@@ -663,7 +667,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         if (connected[id] is not Device device) return;
 
         device.Send(FindMyPhone.Request());
-        if (device.Link.Identity.DeviceType.IsComputer()) return;
+        if (!device.Link.Identity.DeviceType.IsPhone()) return;
 
         locations.Request(device);
         Finding = id;
@@ -1057,7 +1061,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
         if (connected.Insert(device) is Device old && old != device) old.Link.Close("replaced by a newer link");
         if (device.IsPaired) plugins.OnPaired(device);
-        if (device.IsPaired && !device.Link.Identity.DeviceType.IsComputer())
+        if (device.IsPaired && device.Link.Identity.DeviceType.IsPhone())
         {
             PhoneNearby = false;
             HotspotStatus = null;
@@ -1207,7 +1211,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     private void SaveStatus()
     {
-        var phones = Devices.Where(d => d.IsPaired && !d.IsComputer)
+        var phones = Devices.Where(d => d.IsPaired && d.IsPhone)
             .OrderBy(d => d.Id == Focused?.Id ? 0 : 1)
             .Select(d => new PhoneStatus.Phone(d.Id, d.Name, d.Battery?.Charge, d.IsCharging, IsConnected: true))
             .ToList();

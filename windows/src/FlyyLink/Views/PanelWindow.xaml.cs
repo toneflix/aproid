@@ -261,7 +261,7 @@ public sealed partial class PanelWindow : Window
     public double HeroArtWidth(DeviceState? device) => device?.IsComputer == true ? 30 : 40;
 
     /// Desktops have no battery, so their card leaves the ring out.
-    public Visibility ShowsBattery(DeviceState? device) => Shown(device is { IsComputer: false } || device?.Battery is not null);
+    public Visibility ShowsBattery(DeviceState? device) => Shown(device is { IsPhone: true } || device?.Battery is not null);
 
     public Brush InputChip(bool active) => (Brush)Application.Current.Resources[active ? "FlyyLinkAccentBrush" : "FlyyLinkTintBrush"];
 
@@ -407,6 +407,17 @@ public sealed partial class PanelWindow : Window
     private void Clipboard_Click(object sender, RoutedEventArgs e)
     {
         if (FocusedId is string id) Model.SendClipboard(id);
+    }
+
+    /// Opens the copied link on the TV the panel shows.
+    private async void OpenLink_Click(object sender, RoutedEventArgs e)
+    {
+        if (FocusedId is not string id) return;
+
+        var content = global::Windows.ApplicationModel.DataTransfer.Clipboard.GetContent();
+        if (!content.Contains(global::Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text)) return;
+
+        Model.SendText(await content.GetTextAsync(), id);
     }
 
     private void Notifications_Click(object sender, RoutedEventArgs e) => Model.MirrorsNotifications = !Model.MirrorsNotifications;

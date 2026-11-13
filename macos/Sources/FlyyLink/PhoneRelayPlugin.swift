@@ -59,7 +59,7 @@ final class PhoneRelayPlugin: Plugin {
 
     private func received(_ message: Relay.Message, from computer: Device) {
         if Relay.toPhone.contains(message.packet.type) {
-            guard let phone = devices[message.phoneId], phone.isPaired, !phone.link.identity.deviceType.isComputer else { return }
+            guard let phone = devices[message.phoneId], phone.isPaired, phone.link.identity.deviceType.isPhone else { return }
 
             phone.send(message.packet)
             return

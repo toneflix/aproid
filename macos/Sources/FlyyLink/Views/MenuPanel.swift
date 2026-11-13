@@ -99,7 +99,7 @@ struct MenuPanel: View {
             if device.isComputer {
                 ScreenShareCard(device: device, model: model)
                 KeyboardMouseCard(device: device, model: model)
-            } else {
+            } else if device.isPhone {
                 CallAudioRow(audio: model.callAudio)
             }
             DropZone(deviceId: device.id, model: model)

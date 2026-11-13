@@ -9,7 +9,7 @@ struct PairingCard: View {
     private var isOurRequest: Bool { device.pairState == .requested }
 
     private var hint: String {
-        let other = device.isComputer ? "the other computer" : "your phone"
+        let other = device.isComputer ? "the other computer" : device.isTv ? "the TV" : "your phone"
 
         return isOurRequest ? "Accept on \(other) if the code matches" : "Same code on \(other)?"
     }

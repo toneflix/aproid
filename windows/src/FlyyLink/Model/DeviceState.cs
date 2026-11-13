@@ -21,7 +21,11 @@ public sealed record DeviceState(
 
     public bool IsComputer => Type.IsComputer();
 
-    private string Other => IsComputer ? "the other computer" : "your phone";
+    public bool IsPhone => Type.IsPhone();
+
+    public bool IsTv => Type == DeviceType.Tv;
+
+    private string Other => IsComputer ? "the other computer" : IsTv ? "the TV" : "your phone";
 
     /// We asked to pair and wait for the phone.
     public bool IsOurRequest => PairState == PairState.Requested;
@@ -62,7 +66,7 @@ public sealed record DeviceState(
     public string Subtitle => PairState switch
     {
         PairState.Paired => $"Paired · {Host}",
-        PairState.Requested => IsComputer ? "Waiting for the computer…" : "Waiting for the phone…",
+        PairState.Requested => IsComputer ? "Waiting for the computer…" : IsTv ? "Waiting for the TV…" : "Waiting for the phone…",
         PairState.RequestedByPeer => "Wants to pair",
         _ => Host,
     };

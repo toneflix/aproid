@@ -26,7 +26,7 @@ internal sealed class DeviceRegistry
 
     public IReadOnlyList<Device> Paired => All.Where(d => d.IsPaired).ToList();
 
-    public IReadOnlyList<Device> PairedPhones => Paired.Where(d => !d.Link.Identity.DeviceType.IsComputer()).ToList();
+    public IReadOnlyList<Device> PairedPhones => Paired.Where(d => d.Link.Identity.DeviceType.IsPhone()).ToList();
 
     /// Adds or replaces the device and returns the one it replaced.
     public Device? Insert(Device device)

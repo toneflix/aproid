@@ -12,7 +12,8 @@ struct DeviceArt: View {
         case .laptop: LaptopArt(width: width * 1.7, screen: screen)
         case .desktop: DesktopArt(width: width * 1.7, screen: screen)
         case .tablet: PhoneArt(width: width * 1.4, screen: screen)
-        case .phone, .tv: PhoneArt(width: width, screen: screen)
+        case .phone: PhoneArt(width: width, screen: screen)
+        case .tv: TvArt(width: width * 1.9, screen: screen)
         }
     }
 }
@@ -55,6 +56,31 @@ struct LaptopArt: View {
             Capsule()
                 .fill(Color.secondary.opacity(0.45))
                 .frame(width: width * 1.15, height: max(2, width * 0.075))
+        }
+    }
+}
+
+/// A drawn TV: a wide screen on a short stand.
+struct TvArt: View {
+    var width: CGFloat = 80
+    var screen: Color = Theme.screen
+
+    var body: some View {
+        VStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: width * 0.04, style: .continuous)
+                .fill(Theme.device)
+                .frame(width: width, height: width * 0.58)
+                .overlay(
+                    RoundedRectangle(cornerRadius: width * 0.025, style: .continuous)
+                        .fill(screen)
+                        .padding(max(2, width * 0.025))
+                )
+            Rectangle()
+                .fill(Theme.device)
+                .frame(width: width * 0.08, height: width * 0.06)
+            Capsule()
+                .fill(Color.secondary.opacity(0.45))
+                .frame(width: width * 0.36, height: max(2, width * 0.03))
         }
     }
 }

@@ -12,6 +12,8 @@ struct QuickActions: View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
             if device.isComputer {
                 computerTiles
+            } else if device.isTv {
+                tvTiles
             } else {
                 phoneTiles
             }
@@ -44,6 +46,15 @@ struct QuickActions: View {
             model.ring(device.id)
         }
         sharedTiles
+    }
+
+    @ViewBuilder private var tvTiles: some View {
+        ActionTile(icon: .fileUp, title: "Send file") {
+            model.chooseFiles(for: device.id)
+        }
+        ActionTile(icon: .link, title: "Open link", subtitle: "From your clipboard") {
+            if let text = NSPasteboard.general.string(forType: .string) { model.sendText(text, to: device.id) }
+        }
     }
 
     @ViewBuilder private var sharedTiles: some View {

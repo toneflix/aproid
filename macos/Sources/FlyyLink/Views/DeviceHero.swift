@@ -43,7 +43,7 @@ struct DeviceHero: View {
 
             Spacer(minLength: 0)
 
-            if !device.isComputer || device.battery != nil {
+            if device.isPhone || device.battery != nil {
                 BatteryRing(charge: device.battery?.charge, isCharging: device.battery?.isCharging ?? false)
             }
         }
