@@ -26,7 +26,7 @@ function toBase64(bytes: ArrayBuffer | Uint8Array): string {
   return btoa(text);
 }
 
-function fromBase64(text: string): Uint8Array {
+function fromBase64(text: string): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(atob(text), (c) => c.charCodeAt(0));
 }
 
@@ -38,11 +38,11 @@ export class AdminSignature {
   /** How far a request's timestamp may be from the server's clock, in seconds. */
   static readonly windowSeconds = 300;
 
-  static async payload(parts: SignedParts): Promise<Uint8Array> {
+  static async payload(parts: SignedParts): Promise<Uint8Array<ArrayBuffer>> {
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(parts.body)));
     const bodyHash = [...hash].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 
-    return encoder.encode(["flyylink-admin-v1", parts.method.toUpperCase(), parts.path, parts.timestamp, parts.nonce, bodyHash].join("\n"));
+    return new Uint8Array(encoder.encode(["flyylink-admin-v1", parts.method.toUpperCase(), parts.path, parts.timestamp, parts.nonce, bodyHash].join("\n")));
   }
 
   /** A new key pair: the public key as base64 of its 32 raw bytes, the private key as base64 PKCS#8. */

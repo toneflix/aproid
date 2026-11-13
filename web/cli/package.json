@@ -1,0 +1,31 @@
+{
+  "name": "@toneflix/flyylink-admin",
+  "description": "Manage FlyyLink's users, licences, settings and notices from your machine.",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "bin": {
+    "flyylink-admin": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "tsdown && vitest run"
+  },
+  "dependencies": {
+    "@h3ravel/musket": "^2.2.14",
+    "@h3ravel/shared": "^2.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsdown": "^0.22.14",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

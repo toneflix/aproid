@@ -21,3 +21,11 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run check:worker
+      - name: Worker tests
+        run: npm test
+      - name: Admin CLI
+        working-directory: web/cli
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm test
