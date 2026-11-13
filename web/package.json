@@ -6,7 +6,8 @@
     "build": "next build",
     "preview": "next build && wrangler dev",
     "deploy": "next build && wrangler deploy",
-    "check:worker": "tsc -p worker"
+    "check:worker": "tsc -p worker",
+    "test": "vitest run --root worker"
   },
   "dependencies": {
     "lucide-react": "^1.71.0",
@@ -23,6 +24,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "typescript": "^5",
+    "vitest": "^5.1.0",
     "wrangler": "^4.159.0"
   }
 }

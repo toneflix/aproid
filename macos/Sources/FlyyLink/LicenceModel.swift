@@ -27,6 +27,7 @@ final class LicenceModel: ObservableObject {
 
     private let store = LicenceStore()
     private let server = LicenceServer()
+    private lazy var notices = ServerNotices(server: server)
     private let machine = MachineId.from(LicenceStore.hardwareId())
     private let publicKey = Bundle.main.object(forInfoDictionaryKey: "FlyyLinkLicenceKey") as? String
     private var lastSync = Date.distantPast
@@ -142,9 +143,12 @@ final class LicenceModel: ObservableObject {
         do {
             if let secret = store.secret {
                 store.renewed(token: try await server.refresh(machine: machine, secret: secret))
-            } else if store.record.serverLock == nil, let publicKey, LicenceToken.verify(store.record.trialToken, publicKey: publicKey) == nil {
+            } else if store.record.serverLock == nil || store.record.serverLock == .trialOver,
+                      let publicKey, LicenceToken.verify(store.record.trialToken, publicKey: publicKey) == nil {
                 store.trialStarted(token: try await server.trial(machine: machine))
             }
+
+            await notices.check(machine: machine, secret: store.secret)
 
             return true
         } catch let failure as LicenceServer.Failure {
@@ -154,6 +158,8 @@ final class LicenceModel: ObservableObject {
             case "trial_over": store.locked(.trialOver)
             default: break
             }
+
+            await notices.check(machine: machine, secret: store.secret)
 
             return true
         } catch {

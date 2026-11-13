@@ -9,3 +9,6 @@ SENDPULSE_API_KEY=
 # App store reviewer sign-in (optional)
 REVIEW_EMAILS=
 REVIEW_CODE=
+
+# Admin CLI: the public key `flyylink-admin login` printed, until the first operator is added
+ADMIN_BOOTSTRAP_KEY=

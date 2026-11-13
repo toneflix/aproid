@@ -23,3 +23,4 @@ The worker in `web/worker/` runs before the static files for `/download/*`, `/re
 
 - **Downloads** come from the `flyylink-releases` R2 bucket, which the [release workflow](RELEASING.md) fills.
 - **Licences** use the `flyylink-licences` D1 database (`web/migrations/`) and the `/api/*` routes. See [LICENCES.md](LICENCES.md).
+- **Admin** commands arrive at `/api/admin/run` from `flyylink-admin`, and the computer apps fetch notices from `/api/notices`. See [ADMIN.md](ADMIN.md).

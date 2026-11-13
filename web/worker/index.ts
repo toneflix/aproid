@@ -1,3 +1,12 @@
+import { AdminApi } from "./admin/api";
+import { AuditLog } from "./admin/audit";
+import { AdminAuthenticator } from "./admin/authenticator";
+import { LicenceCommands } from "./admin/commands/licences";
+import { NotifyCommands } from "./admin/commands/notify";
+import { OperatorCommands } from "./admin/commands/operators";
+import { SystemCommands } from "./admin/commands/system";
+import { UserCommands } from "./admin/commands/users";
+import { Operators } from "./admin/operators";
 import { Downloads } from "./downloads";
 import { HttpError } from "./http";
 import { LicenceApi } from "./licence/api";
@@ -10,7 +19,9 @@ import { ReviewAccess } from "./licence/review";
 import { Sessions } from "./licence/sessions";
 import { TokenSigner } from "./licence/signer";
 import { LicenceStore } from "./licence/store";
+import { Notices } from "./notices";
 import { Router } from "./router";
+import { Settings } from "./settings";
 
 export interface Env {
   ASSETS: Fetcher;
@@ -31,9 +42,11 @@ export interface Env {
   LICENCE_SIGNING_KEY: string;
   CODE_SECRET: string;
   PADDLE_WEBHOOK_SECRET: string;
-  /** Comma-separated reviewer emails that sign in with REVIEW_CODE instead of an emailed code. */
+  /** Comma-separated reviewer emails that sign in with REVIEW_CODE, until the review_emails setting replaces them. */
   REVIEW_EMAILS?: string;
   REVIEW_CODE?: string;
+  /** The public key `flyylink-admin login` printed, accepted only until the first operator is added. */
+  ADMIN_BOOTSTRAP_KEY?: string;
   PADDLE_API_KEY: string;
   SENDPULSE_API_KEY: string;
 }
@@ -43,17 +56,36 @@ function router(env: Env): Router {
   const store = new LicenceStore(env.LICENCES);
   const sandbox = env.PADDLE_SANDBOX === "true";
   const mailer = env.MAIL_MODE === "log" ? new LogMailer() : new SendPulseMailer(env.SENDPULSE_API_KEY, env.MAIL_FROM);
+  const emails = new Emails(env.SITE_URL);
+  const settings = new Settings(env.LICENCES, {
+    trial_days: String(Number(env.TRIAL_DAYS) || Licensing.defaultTrialDays),
+    max_computers: String(Licensing.maxComputers),
+    removals_per_month: String(Licensing.removalsPerMonth),
+    review_emails: env.REVIEW_EMAILS ?? "",
+  });
+  const licensing = new Licensing(store, new TokenSigner(env.LICENCE_SIGNING_KEY), settings);
+  const notices = new Notices(env.LICENCES, store, mailer, emails);
+  const operators = new Operators(env.LICENCES);
+  const audit = new AuditLog(env.LICENCES);
 
   new Downloads(env.RELEASES).register(router);
   new LicenceApi(
     store,
-    new Licensing(store, new TokenSigner(env.LICENCE_SIGNING_KEY), Number(env.TRIAL_DAYS) || undefined),
-    new SignInCodes(env.LICENCES, mailer, new Emails(env.SITE_URL), env.CODE_SECRET),
+    licensing,
+    new SignInCodes(env.LICENCES, mailer, emails, env.CODE_SECRET),
     new Sessions(env.LICENCES, store),
     new PaddleWebhook({ webhookSecret: env.PADDLE_WEBHOOK_SECRET, apiKey: env.PADDLE_API_KEY, priceId: env.PADDLE_PRICE_ID ?? "", sandbox }, store),
     { clientToken: env.PADDLE_CLIENT_TOKEN ?? "", priceId: env.PADDLE_PRICE_ID ?? "", sandbox },
-    new ReviewAccess(env.REVIEW_EMAILS, env.REVIEW_CODE),
+    new ReviewAccess(settings, env.REVIEW_CODE),
   ).register(router);
+  notices.register(router);
+  new AdminApi(new AdminAuthenticator(operators, env.ADMIN_BOOTSTRAP_KEY), audit, [
+    new UserCommands(store, licensing),
+    new LicenceCommands(store),
+    new SystemCommands(settings, store),
+    new NotifyCommands(notices),
+    new OperatorCommands(operators, audit),
+  ]).register(router);
 
   return router;
 }

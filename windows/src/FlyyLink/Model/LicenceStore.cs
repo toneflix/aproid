@@ -61,9 +61,11 @@ internal sealed class LicenceStore(string path)
         Save();
     }
 
+    /// A trial the server extended unlocks a PC whose trial had ended.
     public void TrialStarted(string token)
     {
         values.TrialToken = token;
+        if (values.ServerLock is LicenceLock.TrialOver) values.ServerLock = null;
         Save();
     }
 

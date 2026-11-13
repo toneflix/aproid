@@ -14,6 +14,18 @@ struct LicenceServer {
         let secret: String
     }
 
+    struct Notice: Decodable {
+        let id: Int
+        let title: String
+        let message: String
+        let link: String?
+    }
+
+    struct Notices: Decodable {
+        let notices: [Notice]
+        let latest: Int
+    }
+
     private struct TokenReply: Decodable {
         let token: String
     }
@@ -38,6 +50,15 @@ struct LicenceServer {
 
     func refresh(machine: String, secret: String) async throws -> String {
         try await post("/api/refresh", ["machine": machine, "secret": secret], as: TokenReply.self).token
+    }
+
+    /// App notices newer than `after`. With no `after`, only the newest id, to start from.
+    func notices(machine: String, secret: String?, after: Int?) async throws -> Notices {
+        var body: [String: Any] = ["machine": machine]
+        if let secret { body["secret"] = secret }
+        if let after { body["after"] = after }
+
+        return try await post("/api/notices", body, as: Notices.self)
     }
 
     private func post<T: Decodable>(_ path: String, _ body: [String: Any], as type: T.Type) async throws -> T {

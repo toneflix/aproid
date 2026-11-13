@@ -1,5 +1,6 @@
 using System.Reflection;
 using FlyyLink.Core;
+using FlyyLink.Plugins;
 using FlyyLink.Shell;
 using Microsoft.UI.Dispatching;
 
@@ -14,6 +15,7 @@ public sealed class LicenceModel : Observable
     private readonly DispatcherQueue ui;
     private readonly LicenceStore store = new(AppPaths.Licence);
     private readonly LicenceServer server = new();
+    private readonly ServerNotices notices;
     private readonly string machine = MachineId.From(HardwareId.Read());
     private readonly string? publicKey = typeof(LicenceModel).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == "LicencePublicKey")?.Value;
 
@@ -25,9 +27,10 @@ public sealed class LicenceModel : Observable
     private string code = "";
     private string? error;
 
-    internal LicenceModel(DispatcherQueue ui)
+    internal LicenceModel(DispatcherQueue ui, ToastCenter toasts)
     {
         this.ui = ui;
+        notices = new ServerNotices(server, toasts);
         store.Open();
         Evaluate();
     }
@@ -200,7 +203,9 @@ public sealed class LicenceModel : Observable
         try
         {
             if (store.Secret is string secret) store.Renewed(await server.RefreshAsync(machine, secret));
-            else if (store.Record.ServerLock is null && LicenceToken.Verify(store.Record.TrialToken, publicKey!) is null) store.TrialStarted(await server.TrialAsync(machine));
+            else if ((store.Record.ServerLock is null or LicenceLock.TrialOver) && LicenceToken.Verify(store.Record.TrialToken, publicKey!) is null) store.TrialStarted(await server.TrialAsync(machine));
+
+            await notices.CheckAsync(machine, store.Secret);
 
             return true;
         }
@@ -218,6 +223,8 @@ public sealed class LicenceModel : Observable
                     store.Locked(LicenceLock.TrialOver);
                     break;
             }
+
+            await notices.CheckAsync(machine, store.Secret);
 
             return true;
         }

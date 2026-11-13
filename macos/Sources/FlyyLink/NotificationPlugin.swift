@@ -272,6 +272,11 @@ final class NotificationPlugin: NSObject, Plugin, UNUserNotificationCenterDelega
         defer { completionHandler() }
 
         let info = response.notification.request.content.userInfo
+        if let link = info[ServerNotices.linkKey] as? String {
+            if response.actionIdentifier != UNNotificationDismissActionIdentifier { Task { @MainActor in ServerNotices.open(link) } }
+            return
+        }
+
         if let id = info[Key.flyyDrop] as? String {
             let action = response.actionIdentifier
             Task { @MainActor in

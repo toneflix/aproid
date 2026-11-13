@@ -51,7 +51,7 @@ export class LicenceApi {
   private async sendCode(request: Request): Promise<Response> {
     const { email } = await readJson<{ email?: unknown }>(request);
     const address = SignInCodes.normalise(requireString(email, "email"));
-    if (!this.review.covers(address)) await this.codes.send(address, now());
+    if (!(await this.review.covers(address))) await this.codes.send(address, now());
 
     return new Response(null, { status: 204 });
   }
@@ -94,7 +94,7 @@ export class LicenceApi {
       email: account.email,
       licensed: await this.store.hasActiveLicence(account.id),
       computers: await this.licensing.computers(account),
-      limit: Licensing.maxComputers,
+      limit: await this.licensing.limit(),
       removalsLeft: await this.licensing.removalsLeft(account, now()),
     });
   }
@@ -110,7 +110,7 @@ export class LicenceApi {
   private async verify(email: unknown, code: unknown) {
     const address = SignInCodes.normalise(requireString(email, "email"));
     const entered = requireString(code, "code", 64);
-    if (!this.review.accepts(address, entered)) await this.codes.verify(address, entered, now());
+    if (!(await this.review.accepts(address, entered))) await this.codes.verify(address, entered, now());
 
     return this.store.accountFor(address, now());
   }
