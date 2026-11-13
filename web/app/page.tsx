@@ -24,7 +24,7 @@ export default function Home() {
               Texts, calls, notifications, files and photos from your phone, on your Mac or PC.
             </p>
             <DownloadButtons />
-            <p className="hero-note">Free on Android. 14 days free on Mac and PC, then <a href="/buy">pay once</a>.</p>
+            <p className="hero-note">Free on Android. {site.trialDays} days free on Mac and PC, then <a href="/buy">pay once</a>.</p>
           </div>
 
           <div className="hero-visual" aria-hidden="true">

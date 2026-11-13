@@ -25,7 +25,7 @@ export default function TermsPage() {
 
       <h2>2. Buying FlyyLink</h2>
       <p>
-        The Android app is free. The Mac and Windows apps are free for 14 days on each computer, then need a lifetime
+        The Android app is free. The Mac and Windows apps are free for {site.trialDays} days on each computer, then need a lifetime
         licence, bought once.
       </p>
       <ul>

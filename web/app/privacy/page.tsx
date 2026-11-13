@@ -109,7 +109,7 @@ export default function PrivacyPage() {
       </ul>
 
       <h2>5. Your licence</h2>
-      <p>The Android app is free and never contacts us. The Mac and Windows apps need a licence after a 14-day trial.</p>
+      <p>The Android app is free and never contacts us. The Mac and Windows apps need a licence after a {site.trialDays}-day trial.</p>
       <ul>
         <li>
           <strong>Trial.</strong> When the trial starts, the computer app sends us a one-way scrambled code made from

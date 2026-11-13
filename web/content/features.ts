@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { site } from "./site";
 import {
   Bell,
   MapPin,
@@ -91,8 +92,8 @@ export const features: Feature[] = [
 
 export const platforms = [
   { name: "Android", slug: "android", needs: "Android 8.0 or later", detail: "Free" },
-  { name: "Mac", slug: "mac", needs: "macOS 13 Ventura or later", detail: "14 days free, then pay once" },
-  { name: "Windows", slug: "windows", needs: "Windows 10 (1809) or later", detail: "14 days free, then pay once" },
+  { name: "Mac", slug: "mac", needs: "macOS 13 Ventura or later", detail: `${site.trialDays} days free, then pay once` },
+  { name: "Windows", slug: "windows", needs: "Windows 10 (1809) or later", detail: `${site.trialDays} days free, then pay once` },
 ];
 
 export const steps = [

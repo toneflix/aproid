@@ -26,13 +26,15 @@ export interface ComputerView {
 export class Licensing {
   static readonly maxComputers = 5;
   static readonly removalsPerMonth = 3;
-  static readonly trialDays = 14;
+  /** Used when the `TRIAL_DAYS` variable isn't set. */
+  static readonly defaultTrialDays = 14;
   static readonly renewDays = 30;
   static readonly graceDays = 7;
 
   constructor(
     private readonly store: LicenceStore,
     private readonly signer: TokenSigner,
+    private readonly trialDays = Licensing.defaultTrialDays,
   ) {}
 
   /** Activates a computer for a signed-in account and returns its token and refresh secret. */
@@ -67,7 +69,7 @@ export class Licensing {
   /** The trial runs from the first time this computer asked, however often it asks again. */
   async trial(machine: string, now: number): Promise<string> {
     const started = await this.store.trialStart(machine, now);
-    const ends = started + Licensing.trialDays * day;
+    const ends = started + this.trialDays * day;
     if (ends <= now) throw new HttpError(402, "trial_over");
 
     return this.signer.sign({ v: 1, kind: "trial", machine, issued: now, renew: ends, expires: ends });
