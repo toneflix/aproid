@@ -18,7 +18,7 @@ interface GuestAccess {
 }
 
 /**
- * FlyyDrop: AirDrop-style sharing with any nearby Aproid device, paired or not.
+ * FlyyDrop: AirDrop-style sharing with any nearby FlyyLink device, paired or not.
  *
  * The sender asks first with "aproid.flyydrop.request", listing the files or the link or text. The receiver's user
  * accepts or declines ("aproid.flyydrop.response"), and only then do the items arrive as ordinary

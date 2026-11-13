@@ -21,7 +21,7 @@ public enum CallAudio {
         }
     }
 
-    /// `name` is the phone's Bluetooth name. `allowed` is false until the user lets Aproid use Bluetooth.
+    /// `name` is the phone's Bluetooth name. `allowed` is false until the user lets FlyyLink use Bluetooth.
     public struct Status: Equatable, Sendable {
         public var bluetoothOn: Bool
         public var allowed: Bool

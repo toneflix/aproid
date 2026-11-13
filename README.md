@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="branding/app-icon.svg" width="112" alt="Aproid">
+  <img src="branding/app-icon.svg" width="112" alt="FlyyLink">
 </p>
 
-<h1 align="center">Aproid</h1>
+<h1 align="center">FlyyLink</h1>
 
 <p align="center"><strong>Your Android phone and your computer, finally on speaking terms.</strong></p>
 
@@ -10,7 +10,7 @@
 
 ---
 
-![The Aproid panel on a Mac with two phones paired, a call coming in, and the Messages window](web/public/screens/mac-overview.png)
+![The FlyyLink panel on a Mac with two phones paired, a call coming in, and the Messages window](web/public/screens/mac-overview.png)
 
 ## What it does
 
@@ -43,17 +43,17 @@ Download from [aproid.toneflix.com](https://aproid.toneflix.com/#download), and 
 ### Setting up
 
 1. Put your phone and computer on the same Wi-Fi, or join your phone's hotspot.
-2. Open Aproid on both.
+2. Open FlyyLink on both.
 3. Tap **Pair** and check the code matches.
 4. On the phone, allow notification access and any extras you want.
 
-If the connection drops when the phone is idle (common on Tecno, Infinix, itel and Xiaomi), let Aproid run in the background in your battery settings.
+If the connection drops when the phone is idle (common on Tecno, Infinix, itel and Xiaomi), let FlyyLink run in the background in your battery settings.
 
 Close KDE Connect while setting up; both use the same network port.
 
 ## For developers
 
-Aproid is three native apps sharing one protocol.
+FlyyLink is three native apps sharing one protocol.
 
 | Folder | What's inside |
 | --- | --- |
@@ -80,8 +80,8 @@ cd android
 ```sh
 cd macos
 swift test
-./scripts/bundle.sh             # builds macos/build/Aproid.app
-open build/Aproid.app
+./scripts/bundle.sh             # builds macos/build/FlyyLink.app
+open build/FlyyLink.app
 ```
 
 Run it as a bundle, or notifications and the Share menu won't work.

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Files that haven't finished moving, kept on disk so a transfer can still resume after Aproid quits.
+/// Files that haven't finished moving, kept on disk so a transfer can still resume after FlyyLink quits.
 final class TransferStore: @unchecked Sendable {
     /// A file we offered to the phone, which it may ask the rest of.
     struct Offered: Codable {

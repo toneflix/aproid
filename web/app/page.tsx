@@ -83,16 +83,16 @@ export default function Home() {
           eyebrow="All your devices"
           title="All your phones and computers."
           points={["Pair as many as you like", "Switch with a swipe"]}
-          media={<img className="tall" src="/screens/mac-panel.png" alt="The Aproid panel on a Mac with two phones paired" />}
+          media={<img className="tall" src="/screens/mac-panel.png" alt="The FlyyLink panel on a Mac with two phones paired" />}
         />
 
         <Showcase
           eyebrow="Screen mirroring"
           title="Use your phone from your computer."
-          body="Aproid uses Android's AccessibilityService API to pass your clicks and typing to the phone. It's off until you agree and turn it on, works only while you mirror, and collects or shares no data."
+          body="FlyyLink uses Android's AccessibilityService API to pass your clicks and typing to the phone. It's off until you agree and turn it on, works only while you mirror, and collects or shares no data."
           points={["With sound", "Mouse and keyboard"]}
           reverse
-          media={<img className="tall" src="/screens/android-home.png" alt="Aproid on Android, showing a paired MacBook Pro" />}
+          media={<img className="tall" src="/screens/android-home.png" alt="FlyyLink on Android, showing a paired MacBook Pro" />}
         />
       </section>
 

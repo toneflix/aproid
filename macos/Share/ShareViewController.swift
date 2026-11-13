@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The "Aproid" entry in the Share menu. Collects what was shared and hands it to the app to send.
+/// The "FlyyLink" entry in the Share menu. Collects what was shared and hands it to the app to send.
 @objc(ShareViewController)
 final class ShareViewController: NSViewController {
     private let collector = ShareCollector()

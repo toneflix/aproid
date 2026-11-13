@@ -44,7 +44,7 @@ final class InputSharePlugin: Plugin {
         }
     }
 
-    /// macOS has to allow Aproid to watch and post keyboard and mouse events.
+    /// macOS has to allow FlyyLink to watch and post keyboard and mouse events.
     var hasAccess: Bool { InputCapture.hasAccess(prompting: false) }
 
     func edge(for deviceId: String) -> ScreenEdge? {

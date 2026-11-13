@@ -185,7 +185,7 @@ class LinkService : Service() {
         }
     }
 
-    /** Drops every connection and stops Aproid until the app is opened again. */
+    /** Drops every connection and stops FlyyLink until the app is opened again. */
     class DisconnectReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) = stop(context)
     }

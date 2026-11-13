@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Aproid.Shell;
 
-/// The shortcuts in the jump list of Aproid's Start menu and pinned taskbar icon.
+/// The shortcuts in the jump list of FlyyLink's Start menu and pinned taskbar icon.
 internal enum JumpTask
 {
     Panel,
@@ -14,7 +14,7 @@ internal enum JumpTask
     SendFiles,
 }
 
-/// Fills the jump list through the shell's ICustomDestinationList. Each task starts Aproid with `--open <task>`,
+/// Fills the jump list through the shell's ICustomDestinationList. Each task starts FlyyLink with `--open <task>`,
 /// which the running copy receives as a redirected launch.
 internal static class JumpList
 {

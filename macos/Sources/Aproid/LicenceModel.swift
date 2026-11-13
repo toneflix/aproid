@@ -2,7 +2,7 @@ import AppKit
 import AproidKit
 import Foundation
 
-/// Whether this Mac may use Aproid, and the sign-in card that unlocks it. Mirrors LicenceModel.cs.
+/// Whether this Mac may use FlyyLink, and the sign-in card that unlocks it. Mirrors LicenceModel.cs.
 @MainActor
 final class LicenceModel: ObservableObject {
     private static let syncEvery: TimeInterval = 6 * 60 * 60
@@ -76,7 +76,7 @@ final class LicenceModel: ObservableObject {
     }
 
     var body: String {
-        status == .locked(.offline) ? "Aproid needs to check your licence." : "Use the email you bought Aproid with."
+        status == .locked(.offline) ? "FlyyLink needs to check your licence." : "Use the email you bought FlyyLink with."
     }
 
     var canRetry: Bool { status == .locked(.offline) }
@@ -188,9 +188,9 @@ final class LicenceModel: ObservableObject {
         case "bad_email": return "Check the email address."
         case "bad_code": return "That code didn't work. Ask for a new one."
         case "too_many_codes": return "Too many codes. Try again in an hour."
-        case "no_licence": return "This email hasn't bought Aproid yet."
+        case "no_licence": return "This email hasn't bought FlyyLink yet."
         case "computer_limit": return "You're on 5 computers already. Remove one in your account."
-        case "offline": return "Couldn't reach Aproid. Check your connection."
+        case "offline": return "Couldn't reach FlyyLink. Check your connection."
         default: return "Something went wrong. Try again."
         }
     }

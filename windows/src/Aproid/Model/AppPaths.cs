@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Aproid.Model;
 
-/// Where Aproid keeps its files.
+/// Where FlyyLink keeps its files.
 internal static class AppPaths
 {
     private static readonly Guid DownloadsFolder = new("374DE290-123F-4565-9164-39C4925E467B");

@@ -28,13 +28,13 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        // Closing the panel only hides it; Aproid keeps running in the tray until Quit.
+        // Closing the panel only hides it; FlyyLink keeps running in the tray until Quit.
         DispatcherShutdownMode = DispatcherShutdownMode.OnExplicitShutdown;
 
         var ui = DispatcherQueue.GetForCurrentThread();
         model = new AppModel(ui);
         panel = new PanelWindow(model);
-        tray = new TrayIcon(AppPaths.TrayIcon, "Aproid");
+        tray = new TrayIcon(AppPaths.TrayIcon, "FlyyLink");
 
         tray.Clicked += () => panel.Toggle(tray.Bounds);
         tray.MenuRequested += ShowTrayMenu;
@@ -83,6 +83,7 @@ public partial class App : Application
         };
 
         Integration.Register();
+        Startup.Refresh();
         JumpList.Register();
         model.Start();
 
@@ -152,15 +153,15 @@ public partial class App : Application
         tray!.ShowBattery(phone?.Battery);
         tray.Tooltip = phone switch
         {
-            null => "Aproid",
-            { Battery: { } battery } => $"Aproid · {phone.Name} · {battery.Charge}%{(battery.IsCharging ? ", charging" : "")}",
-            _ => $"Aproid · {phone.Name}",
+            null => "FlyyLink",
+            { Battery: { } battery } => $"FlyyLink · {phone.Name} · {battery.Charge}%{(battery.IsCharging ? ", charging" : "")}",
+            _ => $"FlyyLink · {phone.Name}",
         };
     }
 
     private void ShowTrayMenu()
     {
-        switch (tray!.ShowMenu(["Open Aproid", "Messages", "Photos", "Phone Photos folder", "Open Downloads", null, "Quit Aproid"]))
+        switch (tray!.ShowMenu(["Open FlyyLink", "Messages", "Photos", "Phone Photos folder", "Open Downloads", null, "Quit FlyyLink"]))
         {
             case 0:
                 panel!.ShowNear(tray.Bounds);

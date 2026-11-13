@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:views="using:Aproid.Views"
     xmlns:model="using:Aproid.Model"
-    Title="Aproid">
+    Title="FlyyLink">
 
     <Grid x:Name="Root" Background="{ThemeResource AproidGlassBrush}">
         <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Hidden" VerticalScrollMode="Enabled" HorizontalScrollMode="Disabled">
@@ -23,7 +23,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <views:AppGlyph VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1" Text="Aproid" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Foreground="{ThemeResource AproidTextBrush}" />
+                    <TextBlock Grid.Column="1" Text="FlyyLink" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Foreground="{ThemeResource AproidTextBrush}" />
                     <Button Grid.Column="2" Style="{StaticResource AproidPlainButton}" ToolTipService.ToolTip="Settings" AutomationProperties.Name="Settings">
                         <views:LucideIcon Icon="Settings" Size="15" Foreground="{ThemeResource AproidSubBrush}" />
                         <Button.Flyout>
@@ -50,7 +50,7 @@
                     </Grid>
                 </Border>
 
-                <!-- Licence: sign in, or why Aproid is locked -->
+                <!-- Licence: sign in, or why FlyyLink is locked -->
                 <Border Style="{StaticResource AproidCard}" Padding="20" Visibility="{x:Bind Model.Licence.ShowsCard, Mode=OneWay}">
                     <StackPanel Spacing="14">
                         <Grid>
@@ -90,7 +90,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Button Content="Buy Aproid" Style="{StaticResource AproidPillButton}" HorizontalAlignment="Stretch" Click="LicenceBuy_Click" />
+                            <Button Content="Buy FlyyLink" Style="{StaticResource AproidPillButton}" HorizontalAlignment="Stretch" Click="LicenceBuy_Click" />
                             <Button Grid.Column="1" Content="Your computers" Style="{StaticResource AproidPillButton}" HorizontalAlignment="Stretch" Click="LicenceAccount_Click" />
                         </Grid>
                     </StackPanel>
@@ -537,7 +537,7 @@
                     <Border Style="{StaticResource AproidCard}" Padding="10" Visibility="{x:Bind NotificationsMissing}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <views:LucideIcon Icon="BellOff" Size="13" Foreground="{ThemeResource AproidWarnBrush}" />
-                            <TextBlock Text="Windows notifications are off for Aproid." Style="{StaticResource AproidCaption}" TextWrapping="Wrap" />
+                            <TextBlock Text="Windows notifications are off for FlyyLink." Style="{StaticResource AproidCaption}" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
                 </StackPanel>

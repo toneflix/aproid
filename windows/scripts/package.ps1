@@ -1,4 +1,4 @@
-# Publishes the app and builds its installer: windows\publish\Aproid and windows\publish\Aproid-Setup-<version>.exe.
+# Publishes the app and builds its installer: windows\publish\Aproid and windows\publish\FlyyLink-Setup-<version>.exe.
 # Run from the windows folder: .\scripts\package.ps1 -Version 1.2.3
 param(
     [string]$Version = "0.1.0"

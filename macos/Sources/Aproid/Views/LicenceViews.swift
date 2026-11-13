@@ -28,7 +28,7 @@ struct TrialBanner: View {
     }
 }
 
-/// Signs in with an emailed code. While Aproid is locked it is the whole panel.
+/// Signs in with an emailed code. While FlyyLink is locked it is the whole panel.
 struct LicenceCard: View {
     @ObservedObject var licence: LicenceModel
     @FocusState private var focused: Bool
@@ -106,7 +106,7 @@ struct LicenceCard: View {
 
             Divider()
             HStack(spacing: 8) {
-                Button("Buy Aproid") { LicenceModel.buy() }
+                Button("Buy FlyyLink") { LicenceModel.buy() }
                     .buttonStyle(PillStyle(prominent: false))
                 Button("Your computers") { LicenceModel.manageComputers() }
                     .buttonStyle(PillStyle(prominent: false))

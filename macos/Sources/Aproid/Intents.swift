@@ -40,7 +40,7 @@ enum AproidIntentError: Error, CustomLocalizedStringResourceConvertible {
 
     var localizedStringResource: LocalizedStringResource {
         switch self {
-        case .noPhone: return "No paired phone is connected to Aproid."
+        case .noPhone: return "No paired phone is connected to FlyyLink."
         case .noBattery: return "The phone hasn't reported its battery yet."
         }
     }
@@ -124,7 +124,7 @@ struct SendFilesIntent: AppIntent {
         let id = try phoneId(phone)
 
         // Files that only exist in memory, such as a photo from an earlier action, are saved first.
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Aproid Shortcuts", isDirectory: true)
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("FlyyLink Shortcuts", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 
         let urls = try files.map { file -> URL in

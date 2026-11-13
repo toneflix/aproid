@@ -99,7 +99,7 @@ export function AccountPanel() {
 
       {!info.licensed && (
         <a className="button button-primary" href="/buy">
-          Buy Aproid
+          Buy FlyyLink
         </a>
       )}
 

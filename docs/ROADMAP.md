@@ -21,7 +21,7 @@ The goal is an app better than both KDE Connect and Microsoft Phone Link. Each s
 - Call audio on the Mac, with the Mac as a Bluetooth hands-free device (experimental, needs testing on real Macs)
 
 ## 4. Where we beat KDE Connect and Phone Link
-These are the reasons someone would pick Aproid. Packets for them use the `aproid.` prefix.
+These are the reasons someone would pick FlyyLink. Packets for them use the `aproid.` prefix.
 
 - **A native Mac feel.** Notification Center integration, Share menu, Finder sidebar, Handoff-style "continue on Mac" for links and documents. KDE Connect's Mac port is rough and Phone Link has no Mac version.
 - **Works without Wi-Fi.** Bluetooth Low Energy to wake the link and the phone's hotspot as a fallback, so it works on trains and in cafés with captive portals.

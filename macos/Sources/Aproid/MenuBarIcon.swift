@@ -18,7 +18,7 @@ extension NSImage {
         }
 
         image.isTemplate = true
-        image.accessibilityDescription = "Aproid"
+        image.accessibilityDescription = "FlyyLink"
 
         return image
     }()

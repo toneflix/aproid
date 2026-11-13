@@ -122,7 +122,7 @@ private struct EmptyDetail: View {
             Text(hasPhone ? "Pick a conversation" : "Your phone isn't connected")
                 .font(.system(size: 17, weight: .semibold))
             if !hasPhone {
-                Text("Open Aproid on your phone, on the same Wi-Fi.")
+                Text("Open FlyyLink on your phone, on the same Wi-Fi.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }

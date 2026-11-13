@@ -149,7 +149,7 @@ public sealed class RemoteDesktopWindow : Window
         statusHint.Text = phase switch
         {
             MirrorPhase.Ended => $"{desktop.DeviceName} stopped sharing. It needs Screen Recording access (on a Mac) and \"Let my computers control\" on.",
-            MirrorPhase.Idle => "Start from View screen in the Aproid panel.",
+            MirrorPhase.Idle => "Start from View screen in the FlyyLink panel.",
             _ => "Connecting…",
         };
         var busy = phase == MirrorPhase.Waiting || (phase == MirrorPhase.Live && !hasPicture);

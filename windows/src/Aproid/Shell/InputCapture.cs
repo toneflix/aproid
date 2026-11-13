@@ -50,7 +50,7 @@ internal sealed class InputCapture
     {
         if (thread is not null) return;
 
-        thread = new Thread(Run) { IsBackground = true, Name = "Aproid input" };
+        thread = new Thread(Run) { IsBackground = true, Name = "FlyyLink input" };
         thread.Start();
     }
 

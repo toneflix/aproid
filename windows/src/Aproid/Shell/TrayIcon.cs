@@ -34,7 +34,7 @@ internal sealed class TrayIcon : IDisposable
             lpszClassName = ClassName,
         };
         RegisterClassEx(ref windowClass);
-        hwnd = CreateWindowEx(0, ClassName, "Aproid", 0, 0, 0, 0, 0, IntPtr.Zero, IntPtr.Zero, instance, IntPtr.Zero);
+        hwnd = CreateWindowEx(0, ClassName, "FlyyLink", 0, 0, 0, 0, 0, IntPtr.Zero, IntPtr.Zero, instance, IntPtr.Zero);
 
         badge = new TrayBadge(iconPath);
         icon = LoadImage(IntPtr.Zero, iconPath, IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_LOADFROMFILE);

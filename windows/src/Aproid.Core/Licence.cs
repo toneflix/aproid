@@ -82,7 +82,7 @@ public abstract record LicenceStatus
 /// What a computer app saved from the licence server.
 public sealed record LicenceRecord(string? LicenceToken, string? TrialToken, DateTimeOffset FirstLaunch, LicenceLock? ServerLock);
 
-/// Decides, offline, whether this computer may use Aproid. Mirrors LicenceRules.swift.
+/// Decides, offline, whether this computer may use FlyyLink. Mirrors LicenceRules.swift.
 public static class LicenceRules
 {
     public const int TrialDays = 14;

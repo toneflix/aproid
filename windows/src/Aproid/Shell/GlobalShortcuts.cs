@@ -9,7 +9,7 @@ internal sealed class GlobalShortcuts
 
     public static readonly IReadOnlyList<Shortcut> All =
     [
-        new(JumpTask.Panel, MOD_WIN | MOD_SHIFT, 'A', "Win+Shift+A", "Open Aproid"),
+        new(JumpTask.Panel, MOD_WIN | MOD_SHIFT, 'A', "Win+Shift+A", "Open FlyyLink"),
         new(JumpTask.SendClipboard, MOD_CONTROL | MOD_ALT, 'C', "Ctrl+Alt+C", "Send clipboard"),
         new(JumpTask.SendFiles, MOD_CONTROL | MOD_ALT, 'F', "Ctrl+Alt+F", "Send files"),
         new(JumpTask.Mirror, MOD_CONTROL | MOD_ALT, 'M', "Ctrl+Alt+M", "Mirror phone"),

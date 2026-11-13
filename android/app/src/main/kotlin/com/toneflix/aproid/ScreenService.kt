@@ -204,7 +204,7 @@ class ScreenService : Service() {
         if (current == null) {
             display = runCatching {
                 projection.createVirtualDisplay(
-                    "Aproid",
+                    "FlyyLink",
                     width,
                     height,
                     density,

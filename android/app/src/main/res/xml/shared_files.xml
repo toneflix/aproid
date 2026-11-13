@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Files other apps may read through Aproid's FileProvider: what came from the Mac's clipboard, and
+<!-- Files other apps may read through FlyyLink's FileProvider: what came from the Mac's clipboard, and
      received files on Android 9 and older, which stay in our own Downloads folder. -->
 <paths>
     <cache-path name="clipboard" path="clipboard/" />

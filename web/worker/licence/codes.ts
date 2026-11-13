@@ -46,7 +46,7 @@ export class SignInCodes {
       .bind(email, await this.hash(email, code), now + codeLifetime, now, fresh ? 1 : 0, fresh ? 1 : 0)
       .run();
 
-    await this.mailer.send(email, `${code} is your Aproid code`, `Your Aproid sign-in code is ${code}.\n\nIt works for 10 minutes.`);
+    await this.mailer.send(email, `${code} is your FlyyLink code`, `Your FlyyLink sign-in code is ${code}.\n\nIt works for 10 minutes.`);
   }
 
   /** Uses up the code when it matches. */

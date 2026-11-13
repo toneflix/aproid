@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Aproid's colors and sizes, shared by every view. Each color has a light and a dark value.
+/// FlyyLink's colors and sizes, shared by every view. Each color has a light and a dark value.
 enum Theme {
     static let accent = dynamic(light: 0x0086C9, dark: 0x3CC8FF)
     static let accentStrong = dynamic(light: 0x005F8F, dark: 0xA6E4FF)

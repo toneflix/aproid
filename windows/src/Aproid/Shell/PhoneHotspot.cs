@@ -5,7 +5,7 @@ using Windows.Networking.Connectivity;
 
 namespace Aproid.Shell;
 
-/// The phone's own hotspot. Aproid learns its name the first time this PC is on it, then can join it again on request
+/// The phone's own hotspot. FlyyLink learns its name the first time this PC is on it, then can join it again on request
 /// once the phone has turned it on. Windows keeps the password, so we never see it.
 internal sealed class PhoneHotspot(Func<IReadOnlyDictionary<string, string>> names, Action<string, string> remember)
 {

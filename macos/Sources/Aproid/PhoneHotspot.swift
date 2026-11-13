@@ -4,7 +4,7 @@ import Foundation
 import OSLog
 import SystemConfiguration
 
-/// The phone's own hotspot. Aproid learns its name the first time this Mac is on it, then can join it
+/// The phone's own hotspot. FlyyLink learns its name the first time this Mac is on it, then can join it
 /// again on request once the phone has turned it on. macOS keeps the password, so we never see it.
 final class PhoneHotspot: @unchecked Sendable {
     /// What a join is doing, for the panel.
@@ -35,7 +35,7 @@ final class PhoneHotspot: @unchecked Sendable {
     func name(of deviceId: String) -> String? { names[deviceId] }
 
     /// Remembers the Wi-Fi this Mac is on as the phone's hotspot when the phone is its router.
-    /// Returns false when the name is hidden because Aproid has no location access.
+    /// Returns false when the name is hidden because FlyyLink has no location access.
     @discardableResult
     func learn(deviceId: String, phoneHost: String) -> Bool {
         let host = phoneHost.hasPrefix("::ffff:") ? String(phoneHost.dropFirst(7)) : phoneHost
@@ -122,7 +122,7 @@ final class PhoneHotspot: @unchecked Sendable {
 
     /// The IPv4 router of this Mac's main network.
     private static func router() -> String? {
-        let store = SCDynamicStoreCreate(nil, "Aproid" as CFString, nil, nil)
+        let store = SCDynamicStoreCreate(nil, "FlyyLink" as CFString, nil, nil)
         let global = SCDynamicStoreCopyValue(store, "State:/Network/Global/IPv4" as CFString) as? [String: Any]
 
         return global?["Router"] as? String

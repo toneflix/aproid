@@ -17,7 +17,7 @@ object CallAudio {
     /** [address] is the Mac's Bluetooth address, as "AA:BB:CC:DD:EE:FF". */
     data class Request(val action: Action, val address: String, val name: String? = null)
 
-    /** [name] is the phone's Bluetooth name. [allowed] is false until the user lets Aproid use Bluetooth. */
+    /** [name] is the phone's Bluetooth name. [allowed] is false until the user lets FlyyLink use Bluetooth. */
     data class Status(
         val bluetoothOn: Boolean,
         val allowed: Boolean,

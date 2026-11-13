@@ -2,7 +2,7 @@ using Microsoft.Win32;
 
 namespace Aproid.Shell;
 
-/// Hooks Aproid into Explorer and Windows for the current user: "Send to phone" on files, and calling tel: links.
+/// Hooks FlyyLink into Explorer and Windows for the current user: "Send to phone" on files, and calling tel: links.
 internal static class Integration
 {
     private const string Classes = @"Software\Classes";
@@ -38,10 +38,10 @@ internal static class Integration
                 command.SetValue("", $"\"{exe}\" \"%1\"");
             }
 
-            // Listed in Settings > Default apps, where the user can make Aproid the app for tel: links.
+            // Listed in Settings > Default apps, where the user can make FlyyLink the app for tel: links.
             using (var capabilities = Registry.CurrentUser.CreateSubKey(Capabilities))
             {
-                capabilities.SetValue("ApplicationName", "Aproid");
+                capabilities.SetValue("ApplicationName", "FlyyLink");
                 capabilities.SetValue("ApplicationDescription", "Calls and texts from your Android phone");
                 using var urls = capabilities.CreateSubKey("URLAssociations");
                 urls.SetValue("tel", TelProgId);

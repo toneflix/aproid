@@ -2,7 +2,7 @@ using Microsoft.Win32;
 
 namespace Aproid.Shell;
 
-/// The ID Windows gives this installation, which stays the same when Aproid is reinstalled.
+/// The ID Windows gives this installation, which stays the same when FlyyLink is reinstalled.
 internal static class HardwareId
 {
     public static string Read()

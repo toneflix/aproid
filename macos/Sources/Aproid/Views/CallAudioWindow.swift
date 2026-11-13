@@ -77,7 +77,7 @@ struct CallAudioWindow: View {
         case .phoneOff:
             return AnyView(StepHint(icon: .smartphone, text: "Turn on Bluetooth on your phone", action: ("Check again", audio.refresh)))
         case .notAllowed:
-            return AnyView(StepHint(icon: .hand, text: "Allow Nearby devices in Aproid on your phone", action: ("Check again", audio.refresh)))
+            return AnyView(StepHint(icon: .hand, text: "Allow Nearby devices in FlyyLink on your phone", action: ("Check again", audio.refresh)))
         case .noPhone, .checking:
             return AnyView(StepHint(icon: .wifi, text: "Waiting for your phone…", action: nil))
         default:

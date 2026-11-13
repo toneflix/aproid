@@ -38,7 +38,7 @@ internal sealed class Updater(ToastCenter toasts)
         }
     });
 
-    /// `manual` also says when Aproid is up to date or the check failed.
+    /// `manual` also says when FlyyLink is up to date or the check failed.
     public async Task CheckAsync(bool manual)
     {
         Release? newest;
@@ -54,7 +54,7 @@ internal sealed class Updater(ToastCenter toasts)
 
         if (newest is null)
         {
-            if (manual) Say("Aproid is up to date", $"You have version {CurrentText}.");
+            if (manual) Say("FlyyLink is up to date", $"You have version {CurrentText}.");
             return;
         }
 
@@ -78,8 +78,8 @@ internal sealed class Updater(ToastCenter toasts)
 
     private void Offer(Release release) => toasts.Show(
         key => new AppNotificationBuilder()
-            .AddText($"Aproid {release.Version.ToString(3)} is available")
-            .AddText($"You have {CurrentText}. Aproid restarts to update.")
+            .AddText($"FlyyLink {release.Version.ToString(3)} is available")
+            .AddText($"You have {CurrentText}. FlyyLink restarts to update.")
             .AddButton(ToastCenter.Button("Update now", "update", key))
             .AddButton(ToastCenter.Button("What's new", "notes", key)),
         (action, input) =>
@@ -92,7 +92,7 @@ internal sealed class Updater(ToastCenter toasts)
 
     private async Task InstallAsync(Release release)
     {
-        var path = Path.Combine(Path.GetTempPath(), $"Aproid-Setup-{release.Version.ToString(3)}.exe");
+        var path = Path.Combine(Path.GetTempPath(), $"FlyyLink-Setup-{release.Version.ToString(3)}.exe");
 
         try
         {
@@ -102,13 +102,13 @@ internal sealed class Updater(ToastCenter toasts)
                 await source.CopyToAsync(file);
             }
 
-            // The installer closes Aproid, swaps the files and starts the new version.
+            // The installer closes FlyyLink, swaps the files and starts the new version.
             Process.Start(new ProcessStartInfo(path, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART") { UseShellExecute = true });
             OnInstalling?.Invoke();
         }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
-            Say("Couldn't update Aproid", e.Message);
+            Say("Couldn't update FlyyLink", e.Message);
         }
     }
 
@@ -119,7 +119,7 @@ internal sealed class Updater(ToastCenter toasts)
     private static HttpClient CreateClient()
     {
         var client = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd($"Aproid-Windows/{CurrentText}");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd($"FlyyLink-Windows/{CurrentText}");
 
         return client;
     }

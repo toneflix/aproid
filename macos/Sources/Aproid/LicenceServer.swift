@@ -1,6 +1,6 @@
 import Foundation
 
-/// Talks to the licence API on the Aproid website.
+/// Talks to the licence API on the FlyyLink website.
 struct LicenceServer {
     static let site = URL(string: "https://aproid.toneflix.com")!
 

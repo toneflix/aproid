@@ -1,7 +1,8 @@
-# Aproid
+# FlyyLink
 
 Android phone + Mac and Windows continuity app speaking the KDE Connect protocol (v8). See docs/ARCHITECTURE.md.
 
+- The app is called FlyyLink. Code, package and bundle ids, packet prefixes, the URL scheme, data folders and cloud resources keep the old `aproid` name so installs update in place.
 - The protocol is implemented three times: `android/protocol` (Kotlin), `macos/Sources/AproidKit` (Swift) and `windows/src/Aproid.Core` (C#). Keep names, behaviour and tests in sync when changing any of them.
 - Do not copy KDE Connect source code (GPL). This repo is proprietary (see LICENSE).
 - Our own packet types use the `aproid.` prefix and must be listed in capabilities.

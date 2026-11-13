@@ -173,7 +173,7 @@ private fun Header(macs: List<DeviceState>, style: SwitcherStyle) {
     Row(Modifier.padding(top = 18.dp, start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Image(painterResource(R.drawable.ic_aproid_logo), contentDescription = null, modifier = Modifier.size(30.dp))
         Spacer(Modifier.width(8.dp))
-        Text("Aproid", fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp, modifier = Modifier.weight(1f))
+        Text("FlyyLink", fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp, modifier = Modifier.weight(1f))
         Box {
             IconButton(onClick = { menu = true }) {
                 Icon(painterResource(R.drawable.lucide_settings), contentDescription = stringResource(R.string.home_settings), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -360,7 +360,7 @@ private fun ConnectedHero(mac: DeviceState, sharedWithOthers: Boolean, modifier:
         }
 
         LaptopArt(180.dp, Modifier.align(Alignment.CenterHorizontally).padding(vertical = 4.dp)) {
-            // The Aproid menu, open on the Mac's screen.
+            // The FlyyLink menu, open on the Mac's screen.
             Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.TopEnd) {
                 Box(Modifier.size(54.dp, 22.dp).background(Toneflix.cyan, RoundedCornerShape(6.dp)))
             }
@@ -470,7 +470,7 @@ private fun Tile(@DrawableRes icon: Int, label: String, modifier: Modifier, onCl
     }
 }
 
-/** Cyan cards for the permissions Aproid still needs. Each disappears once granted. */
+/** Cyan cards for the permissions FlyyLink still needs. Each disappears once granted. */
 @Composable
 private fun SetupCards() {
     val context = LocalContext.current

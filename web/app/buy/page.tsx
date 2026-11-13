@@ -3,7 +3,7 @@ import { BuyPanel } from "@/components/licence/BuyPanel";
 
 export const metadata: Metadata = {
   title: "Buy",
-  description: "Buy Aproid once and use it on all your computers.",
+  description: "Buy FlyyLink once and use it on all your computers.",
 };
 
 export default function BuyPage() {
