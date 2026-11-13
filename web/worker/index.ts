@@ -15,8 +15,8 @@ export interface Env {
   RELEASES: R2Bucket;
   LICENCES: D1Database;
 
-  PADDLE_CLIENT_TOKEN: string;
-  PADDLE_PRICE_ID: string;
+  PADDLE_CLIENT_TOKEN?: string;
+  PADDLE_PRICE_ID?: string;
   PADDLE_SANDBOX?: string;
   MAIL_FROM: string;
   /** Set to "log" in .dev.vars to print sign-in codes instead of emailing them. */
@@ -41,8 +41,8 @@ function router(env: Env): Router {
     new Licensing(store, new TokenSigner(env.LICENCE_SIGNING_KEY)),
     new SignInCodes(env.LICENCES, mailer, env.CODE_SECRET),
     new Sessions(env.LICENCES, store),
-    new PaddleWebhook({ webhookSecret: env.PADDLE_WEBHOOK_SECRET, apiKey: env.PADDLE_API_KEY, priceId: env.PADDLE_PRICE_ID, sandbox }, store),
-    { clientToken: env.PADDLE_CLIENT_TOKEN, priceId: env.PADDLE_PRICE_ID, sandbox },
+    new PaddleWebhook({ webhookSecret: env.PADDLE_WEBHOOK_SECRET, apiKey: env.PADDLE_API_KEY, priceId: env.PADDLE_PRICE_ID ?? "", sandbox }, store),
+    { clientToken: env.PADDLE_CLIENT_TOKEN ?? "", priceId: env.PADDLE_PRICE_ID ?? "", sandbox },
   ).register(router);
 
   return router;
