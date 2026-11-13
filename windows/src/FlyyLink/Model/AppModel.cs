@@ -197,7 +197,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         plugins = new PluginRouter([notifications, battery, clipboard, share, media, sms, calls, locations, photos, screen, find, mediaHost, notificationShare, inputShare, screenHost, relay, flyyDrop]);
 
         updater = new Updater(toasts) { OnInstalling = () => ui.TryEnqueue(() => UpdateInstalling?.Invoke()) };
-        Licence = new LicenceModel(ui);
+        Licence = new LicenceModel(ui, toasts);
         Licence.LockChanged += () =>
         {
             if (Licence.IsLocked) StopLink();

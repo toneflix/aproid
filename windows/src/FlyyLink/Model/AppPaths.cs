@@ -24,6 +24,9 @@ internal static class AppPaths
 
     public static string Licence => Path.Combine(Data, "licence.json");
 
+    /// The newest server notice this PC has seen.
+    public static string ServerNotices => Path.Combine(Data, "notices.txt");
+
     /// The paired phones' battery, read by scripts.
     public static string Status => Path.Combine(Data, "status.json");
 

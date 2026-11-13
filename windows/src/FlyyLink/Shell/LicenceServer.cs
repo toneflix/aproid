@@ -18,6 +18,15 @@ internal sealed class LicenceServer
 
     public sealed record Activation([property: JsonPropertyName("token")] string Token, [property: JsonPropertyName("secret")] string Secret);
 
+    public sealed record Notice(
+        [property: JsonPropertyName("id")] int Id,
+        [property: JsonPropertyName("title")] string Title,
+        [property: JsonPropertyName("message")] string Message,
+        [property: JsonPropertyName("link")] string? Link,
+        [property: JsonPropertyName("linkText")] string? LinkText);
+
+    public sealed record Notices([property: JsonPropertyName("notices")] Notice[] Items, [property: JsonPropertyName("latest")] int Latest);
+
     private sealed record TokenReply([property: JsonPropertyName("token")] string Token);
 
     private sealed record ErrorReply([property: JsonPropertyName("error")] string? Error);
@@ -32,6 +41,10 @@ internal sealed class LicenceServer
 
     public async Task<string> RefreshAsync(string machine, string secret) =>
         (await PostAsync<TokenReply>("/api/refresh", new { machine, secret })).Token;
+
+    /// App notices newer than `after`. With no `after`, only the newest id, to start from.
+    public Task<Notices> NoticesAsync(string machine, string? secret, int? after) =>
+        PostAsync<Notices>("/api/notices", new { machine, secret, after });
 
     private static async Task<T> PostAsync<T>(string path, object body)
     {
