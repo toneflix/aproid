@@ -1,8 +1,9 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { SendPulseTransport } from "nodemailer-sendpulse-transport";
+import type { Email } from "./emails";
 
 export interface Mailer {
-  send(to: string, subject: string, text: string): Promise<void>;
+  send(to: string, email: Email): Promise<void>;
 }
 
 /**
@@ -17,17 +18,17 @@ export class SendPulseMailer implements Mailer {
     private readonly from: string,
   ) {}
 
-  async send(to: string, subject: string, text: string): Promise<void> {
+  async send(to: string, { subject, text, html }: Email): Promise<void> {
     if (!this.apiKey) throw new Error("SENDPULSE_API_KEY is not set");
 
     this.transport ??= nodemailer.createTransport(new SendPulseTransport({ apiKey: this.apiKey }));
-    await this.transport.sendMail({ from: this.from, to, subject, text });
+    await this.transport.sendMail({ from: this.from, to, subject, text, html });
   }
 }
 
 /** Prints mail to the log instead of sending it, for local development. */
 export class LogMailer implements Mailer {
-  async send(to: string, subject: string, text: string): Promise<void> {
+  async send(to: string, { subject, text }: Email): Promise<void> {
     console.log(`Mail to ${to}: ${subject}\n${text}`);
   }
 }
