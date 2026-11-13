@@ -14,6 +14,9 @@ import { ResultPrinter } from "./ResultPrinter";
  * a next command, such as an email's next batch, is followed on its own.
  */
 export class AdminRunner {
+  /** The exit status after Ctrl+C at a prompt. */
+  static readonly cancelled = 130;
+
   private client: AdminClient | null = null;
 
   constructor(
@@ -38,7 +41,7 @@ export class AdminRunner {
       if (error instanceof Error && error.name === "ExitPromptError") {
         this.cli.newLine().warn("Cancelled.");
 
-        return 130;
+        return AdminRunner.cancelled;
       }
 
       throw error;
@@ -85,36 +88,34 @@ export class AdminRunner {
     else new ResultPrinter(this.cli).print(result);
   }
 
-  /** Lets the operator pick a row of the listing or another page, then runs the action they pick for the row. */
+  /**
+   * Lets the operator pick a row of the listing or another page, then runs the action they pick for the
+   * row and comes back to the listing, until they choose Exit.
+   */
   private async browse(input: AdminInput, listing: Listing): Promise<number> {
     const picked = await this.pick(listing, input.command.results!.label);
 
     if (picked === "done") return 0;
 
-    if (typeof picked === "number") {
-      const page = new AdminInput(input.command, input.arguments, { ...input.options, page: String(picked) });
-
-      return await this.send(page);
-    }
+    if (typeof picked === "number") return await this.send(new AdminInput(input.command, input.arguments, { ...input.options, page: String(picked) }));
 
     const actions = ResultAction.offered(input.command.results!.actions, picked);
     const choice = await this.cli.choice("What do you want to do with it?", [
       ...actions.map((action, index) => ({ name: action.label, value: String(index) })),
-      { name: "Nothing, exit", value: "done" },
+      { name: "Back to the list", value: "back" },
     ]);
 
-    if (choice === "done") return 0;
+    if (choice !== "back") {
+      const action = actions[Number(choice)]!;
+      const question = action.confirmation();
 
-    const action = actions[Number(choice)]!;
-    const question = action.confirmation();
-
-    if (question && !(await this.cli.confirm(question, false))) {
-      this.cli.info("Nothing was changed.");
-
-      return 0;
+      if (question && !(await this.cli.confirm(question, false))) this.cli.info("Nothing was changed.");
+      else if ((await this.run(action.input(), !action.action.options)) === AdminRunner.cancelled) return AdminRunner.cancelled;
     }
 
-    return await this.run(action.input(), !action.action.options);
+    this.cli.newLine();
+
+    return await this.send(input);
   }
 
   /** Asks for a row by its label, another page number, or `done`. */
