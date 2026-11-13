@@ -1,5 +1,5 @@
 {
-  "name": "aproid-web",
+  "name": "flyylink-web",
   "private": true,
   "scripts": {
     "dev": "next dev",

@@ -12,7 +12,7 @@ internal sealed class LicenceServerException(string code) : Exception(code)
 /// Talks to the licence API on the FlyyLink website.
 internal sealed class LicenceServer
 {
-    public const string Site = "https://aproid.toneflix.com";
+    public const string Site = "https://flyylink.toneflix.com";
 
     private static readonly HttpClient Http = new() { BaseAddress = new Uri(Site), Timeout = TimeSpan.FromSeconds(20) };
 

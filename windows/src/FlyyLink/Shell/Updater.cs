@@ -10,7 +10,7 @@ namespace FlyyLink.Shell;
 /// Looks for a newer Windows release on the website and installs it when the user agrees.
 internal sealed class Updater(ToastCenter toasts)
 {
-    private const string Feed = "https://aproid.toneflix.com/updates/windows.json";
+    private const string Feed = "https://flyylink.toneflix.com/updates/windows.json";
     private static readonly TimeSpan FirstCheck = TimeSpan.FromMinutes(2);
     private static readonly TimeSpan CheckEvery = TimeSpan.FromHours(12);
 

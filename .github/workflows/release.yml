@@ -18,19 +18,26 @@ name: Release
 # Mac variable: SPARKLE_PUBLIC_KEY. Without the Sparkle key and variable, the release works but can't auto-update.
 #
 # Website secrets: CLOUDFLARE_API_TOKEN (with R2 edit access) and CLOUDFLARE_ACCOUNT_ID. Every file is uploaded
-# to the aproid-releases bucket, which the website serves at /download/<platform> and /releases/<file>.
+# to the flyylink-releases bucket, which the website serves at /download/<platform> and /releases/<file>.
 # The Mac app reads its update feed from /updates/mac/appcast.xml and the Windows app from /updates/windows.json.
 # Builds from before the move still read the GitHub releases, so those are published too.
 # Digits after the prefix keep the macos-appcast tag from starting a release.
 on:
   push:
-    tags: ["[0-9]*", "v[0-9]*", "android-[0-9v]*", "macos-[0-9v]*", "windows-[0-9v]*"]
+    tags:
+      [
+        '[0-9]*',
+        'v[0-9]*',
+        'android-[0-9v]*',
+        'macos-[0-9v]*',
+        'windows-[0-9v]*',
+      ]
 
 permissions:
   contents: write
 
 env:
-  SITE_URL: https://aproid.toneflix.com
+  SITE_URL: https://flyylink.toneflix.com
 
 jobs:
   android:
@@ -304,9 +311,9 @@ jobs:
           fi
 
           r2() { npx --yes wrangler@4 r2 object "$@" --remote; }
-          put() { r2 put "aproid-releases/$1" --file "$2"; }
+          put() { r2 put "flyylink-releases/$1" --file "$2"; }
 
-          r2 get aproid-releases/latest.json --file latest.json || echo '{}' > latest.json
+          r2 get flyylink-releases/latest.json --file latest.json || echo '{}' > latest.json
 
           record() {
             jq --arg p "$1" --arg v "$VERSION" --arg d "$2" --arg u "${3:-}" \

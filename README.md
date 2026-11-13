@@ -32,13 +32,13 @@ Nothing goes through us, and no tracking. Your devices talk to each other direct
 
 ## Get it
 
-Download from [aproid.toneflix.com](https://aproid.toneflix.com/#download), and [buy a lifetime licence](https://aproid.toneflix.com/buy) for your computers.
+Download from [flyylink.toneflix.com](https://flyylink.toneflix.com/#download), and [buy a lifetime licence](https://flyylink.toneflix.com/buy) for your computers.
 
-| | Needs | How it installs |
-| --- | --- | --- |
-| **Android** | Android 8.0 or later | APK, Google Play coming soon |
-| **Mac** | macOS 13 Ventura or later | Signed app, updates itself |
-| **Windows** | Windows 10 (1809) or later | Installer, updates itself |
+|             | Needs                      | How it installs              |
+| ----------- | -------------------------- | ---------------------------- |
+| **Android** | Android 8.0 or later       | APK, Google Play coming soon |
+| **Mac**     | macOS 13 Ventura or later  | Signed app, updates itself   |
+| **Windows** | Windows 10 (1809) or later | Installer, updates itself    |
 
 ### Setting up
 
@@ -55,17 +55,17 @@ Close KDE Connect while setting up; both use the same network port.
 
 FlyyLink is three native apps sharing one protocol.
 
-| Folder | What's inside |
-| --- | --- |
-| `android/protocol` | The protocol in plain Kotlin: packets, identity, pairing, discovery. |
-| `android/app` | The Android app (Kotlin, Jetpack Compose). |
-| `macos/Sources/FlyyLinkKit` | The protocol in Swift. |
-| `macos/Sources/FlyyLink` | The Mac menu bar app (SwiftUI). |
-| `windows/src/FlyyLink.Core` | The protocol in C#. |
-| `windows/src/FlyyLink` | The Windows tray app (WinUI 3). |
-| `web` | The website (Next.js). |
-| `branding` | The logo and the scripts that generate every app icon. |
-| `docs` | [Architecture](docs/ARCHITECTURE.md), [roadmap](docs/ROADMAP.md), [releasing](docs/RELEASING.md), [licences](docs/LICENCES.md), [website hosting](docs/WEBSITE.md) and the [Windows app](docs/WINDOWS.md). |
+| Folder                      | What's inside                                                                                                                                                                                              |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `android/protocol`          | The protocol in plain Kotlin: packets, identity, pairing, discovery.                                                                                                                                       |
+| `android/app`               | The Android app (Kotlin, Jetpack Compose).                                                                                                                                                                 |
+| `macos/Sources/FlyyLinkKit` | The protocol in Swift.                                                                                                                                                                                     |
+| `macos/Sources/FlyyLink`    | The Mac menu bar app (SwiftUI).                                                                                                                                                                            |
+| `windows/src/FlyyLink.Core` | The protocol in C#.                                                                                                                                                                                        |
+| `windows/src/FlyyLink`      | The Windows tray app (WinUI 3).                                                                                                                                                                            |
+| `web`                       | The website (Next.js).                                                                                                                                                                                     |
+| `branding`                  | The logo and the scripts that generate every app icon.                                                                                                                                                     |
+| `docs`                      | [Architecture](docs/ARCHITECTURE.md), [roadmap](docs/ROADMAP.md), [releasing](docs/RELEASING.md), [licences](docs/LICENCES.md), [website hosting](docs/WEBSITE.md) and the [Windows app](docs/WINDOWS.md). |
 
 **Android** (JDK 17 and the Android SDK):
 
