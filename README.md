@@ -23,6 +23,7 @@
 - **Clipboard.** Copy on one, paste on the other.
 - **Find your phone.** Ring it, even on silent.
 - **Media and battery.** Play, pause, skip, and check the battery.
+- **Play on TV.** Photos, videos and music on your smart TV.
 - **Several devices.** Pair as many phones and computers as you like.
 - **No shared Wi-Fi?** Connects through your phone's hotspot.
 
