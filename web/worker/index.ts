@@ -18,6 +18,8 @@ export interface Env {
   PADDLE_CLIENT_TOKEN?: string;
   PADDLE_PRICE_ID?: string;
   PADDLE_SANDBOX?: string;
+  /** Trial length in days, set in the dashboard. */
+  TRIAL_DAYS?: string;
   MAIL_FROM: string;
   /** Set to "log" in .dev.vars to print sign-in codes instead of emailing them. */
   MAIL_MODE?: string;
@@ -38,7 +40,7 @@ function router(env: Env): Router {
   new Downloads(env.RELEASES).register(router);
   new LicenceApi(
     store,
-    new Licensing(store, new TokenSigner(env.LICENCE_SIGNING_KEY)),
+    new Licensing(store, new TokenSigner(env.LICENCE_SIGNING_KEY), Number(env.TRIAL_DAYS) || undefined),
     new SignInCodes(env.LICENCES, mailer, env.CODE_SECRET),
     new Sessions(env.LICENCES, store),
     new PaddleWebhook({ webhookSecret: env.PADDLE_WEBHOOK_SECRET, apiKey: env.PADDLE_API_KEY, priceId: env.PADDLE_PRICE_ID ?? "", sandbox }, store),
