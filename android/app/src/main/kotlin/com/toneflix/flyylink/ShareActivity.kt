@@ -58,6 +58,7 @@ import com.toneflix.flyylink.protocol.TransferProgress
 import com.toneflix.flyylink.ui.FlyyLinkTheme
 import com.toneflix.flyylink.ui.DeviceArt
 import com.toneflix.flyylink.ui.DeviceBadge
+import com.toneflix.flyylink.ui.PlayOnTvSection
 import com.toneflix.flyylink.ui.Radar
 import kotlinx.coroutines.delay
 
@@ -152,6 +153,7 @@ private fun ShareSheet(outgoing: Outgoing, target: String?, onClose: () -> Unit)
     val nearby = devices.filter { it.pairState != PairState.PAIRED && it.canFlyyDrop }
     val progress = remember { mutableStateMapOf<String, SendProgress>() }
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val castItem = remember(outgoing) { (outgoing as? Outgoing.Files)?.items?.singleOrNull()?.let { CastItem.of(context, it) } }
 
     val flyyDrop = { device: DeviceState ->
         if (flyyDrops[device.id]?.isFinished != false) {
@@ -182,7 +184,7 @@ private fun ShareSheet(outgoing: Outgoing, target: String?, onClose: () -> Unit)
 
         when {
             target != null -> macs.firstOrNull { it.id == target }?.let(send) ?: nearby.firstOrNull { it.id == target }?.let(flyyDrop)
-            macs.size == 1 && nearby.isEmpty() -> send(macs.first())
+            macs.size == 1 && nearby.isEmpty() && castItem == null -> send(macs.first())
         }
     }
 
@@ -238,6 +240,8 @@ private fun ShareSheet(outgoing: Outgoing, target: String?, onClose: () -> Unit)
                     NearbyRow(device, flyyDrops[device.id], onClick = { flyyDrop(device) }, onCancel = { FlyyDropPlugin.cancelSend(device.id) })
                 }
             }
+
+            castItem?.let { PlayOnTvSection(it, onStarted = onClose) }
 
             OutlinedButton(
                 onClick = onClose,

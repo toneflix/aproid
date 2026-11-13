@@ -140,6 +140,19 @@
     <string name="share_link_tap">From %1$s · Tap to open</string>
     <string name="share_text_copied">Copied from %1$s</string>
 
+    <string name="play_on_tv">Play on TV</string>
+    <string name="play_on_tv_hint">Photos, videos and music</string>
+    <string name="play_on_tv_looking">Looking for TVs…</string>
+    <string name="play_on_tv_none">No TVs found</string>
+    <string name="play_on_tv_search_again">Search again</string>
+    <string name="play_on_tv_tap">Tap to play</string>
+    <string name="play_on_tv_on">On %1$s</string>
+    <string name="play_on_tv_playing">Playing on %1$s</string>
+    <string name="play_on_tv_failed">Couldn\'t play on %1$s</string>
+    <string name="play_on_tv_play">Play</string>
+    <string name="play_on_tv_pause">Pause</string>
+    <string name="play_on_tv_stop">Stop</string>
+
     <plurals name="share_photos">
         <item quantity="one">%d photo</item>
         <item quantity="other">%d photos</item>
