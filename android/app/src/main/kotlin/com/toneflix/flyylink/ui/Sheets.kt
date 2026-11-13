@@ -68,7 +68,7 @@ fun PairSheet() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(22.dp),
         ) {
-            LaptopArt(150.dp, Modifier.padding(top = 8.dp))
+            DeviceArt(device.type, 150.dp, Modifier.padding(top = 8.dp))
 
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(

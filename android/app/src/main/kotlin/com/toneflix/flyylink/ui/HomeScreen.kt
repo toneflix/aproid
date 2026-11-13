@@ -101,6 +101,8 @@ import com.toneflix.flyylink.TransferText
 import com.toneflix.flyylink.ShareActivity
 import com.toneflix.flyylink.SwitcherStyle
 import com.toneflix.flyylink.openIntent
+import com.toneflix.flyylink.RemoteActivity
+import com.toneflix.flyylink.protocol.DeviceType
 import com.toneflix.flyylink.protocol.PairState
 import kotlinx.coroutines.launch
 import kotlin.concurrent.thread
@@ -320,7 +322,7 @@ private fun MacChip(mac: DeviceState, isFocused: Boolean, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(contentAlignment = Alignment.BottomEnd) {
-            LaptopArt(36.dp)
+            DeviceArt(mac.type, 36.dp)
             Box(Modifier.size(10.dp).background(colors.surface, CircleShape).padding(2.dp).background(FlyyLink.colors.ok, CircleShape))
         }
         Column {
@@ -359,10 +361,19 @@ private fun ConnectedHero(mac: DeviceState, sharedWithOthers: Boolean, modifier:
             )
         }
 
-        LaptopArt(180.dp, Modifier.align(Alignment.CenterHorizontally).padding(vertical = 4.dp)) {
-            // The FlyyLink menu, open on the Mac's screen.
-            Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.TopEnd) {
-                Box(Modifier.size(54.dp, 22.dp).background(Toneflix.cyan, RoundedCornerShape(6.dp)))
+        if (mac.type == DeviceType.TV) {
+            TvArt(190.dp, Modifier.align(Alignment.CenterHorizontally).padding(vertical = 4.dp)) {
+                // FlyyLink's home screen, open on the TV.
+                Box(Modifier.fillMaxSize().background(Toneflix.goldGlow), contentAlignment = Alignment.Center) {
+                    Image(painterResource(R.drawable.ic_flyylink_logo), contentDescription = null, modifier = Modifier.size(40.dp))
+                }
+            }
+        } else {
+            LaptopArt(180.dp, Modifier.align(Alignment.CenterHorizontally).padding(vertical = 4.dp)) {
+                // The FlyyLink menu, open on the Mac's screen.
+                Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.TopEnd) {
+                    Box(Modifier.size(54.dp, 22.dp).background(Toneflix.cyan, RoundedCornerShape(6.dp)))
+                }
             }
         }
 
@@ -431,18 +442,28 @@ private fun QuickTiles(mac: DeviceState, macCount: Int) {
         if (uris.isNotEmpty()) context.startActivity(ShareActivity.sendFilesIntent(context, uris))
     }
 
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Tile(R.drawable.lucide_file_up, stringResource(R.string.home_send_files), Modifier.weight(1f)) { pick.launch("*/*") }
-        Tile(R.drawable.lucide_clipboard, stringResource(R.string.home_clipboard), Modifier.weight(1f)) {
-            val message = when {
-                !ClipboardPlugin.send(context) -> context.getString(R.string.clipboard_empty)
-                macCount > 1 -> context.getString(R.string.clipboard_sent_many, macCount)
-                else -> context.getString(R.string.clipboard_sent)
+    if (mac.type == DeviceType.TV) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Tile(R.drawable.lucide_tv, stringResource(R.string.home_remote), Modifier.weight(1f)) {
+                context.startActivity(RemoteActivity.intent(context, mac.id))
             }
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            Tile(R.drawable.lucide_file_up, stringResource(R.string.home_send_files), Modifier.weight(1f)) { pick.launch("*/*") }
+            Tile(R.drawable.lucide_link, stringResource(R.string.home_open_link), Modifier.weight(1f)) { linkDialog = true }
         }
-        Tile(R.drawable.lucide_link, stringResource(R.string.home_open_link), Modifier.weight(1f)) { linkDialog = true }
-        Tile(R.drawable.lucide_cast, stringResource(R.string.home_mirror), Modifier.weight(1f)) { ScreenPlugin.mirror(context, mac.id) }
+    } else {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Tile(R.drawable.lucide_file_up, stringResource(R.string.home_send_files), Modifier.weight(1f)) { pick.launch("*/*") }
+            Tile(R.drawable.lucide_clipboard, stringResource(R.string.home_clipboard), Modifier.weight(1f)) {
+                val message = when {
+                    !ClipboardPlugin.send(context) -> context.getString(R.string.clipboard_empty)
+                    macCount > 1 -> context.getString(R.string.clipboard_sent_many, macCount)
+                    else -> context.getString(R.string.clipboard_sent)
+                }
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
+            Tile(R.drawable.lucide_link, stringResource(R.string.home_open_link), Modifier.weight(1f)) { linkDialog = true }
+            Tile(R.drawable.lucide_cast, stringResource(R.string.home_mirror), Modifier.weight(1f)) { ScreenPlugin.mirror(context, mac.id) }
+        }
     }
 
     if (linkDialog) {
