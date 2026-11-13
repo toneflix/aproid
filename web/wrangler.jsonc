@@ -21,7 +21,7 @@
     },
   ],
   // Secrets, set with `wrangler secret put`: LICENCE_SIGNING_KEY, CODE_SECRET, PADDLE_WEBHOOK_SECRET,
-  // PADDLE_API_KEY, SENDPULSE_CLIENT_ID, SENDPULSE_CLIENT_SECRET. See web/README.md.
+  // PADDLE_API_KEY, SENDPULSE_API_KEY. See docs/LICENCES.md.
   "vars": {
     "PADDLE_CLIENT_TOKEN": "",
     "PADDLE_PRICE_ID": "",

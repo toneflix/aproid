@@ -26,15 +26,14 @@ export interface Env {
   CODE_SECRET: string;
   PADDLE_WEBHOOK_SECRET: string;
   PADDLE_API_KEY: string;
-  SENDPULSE_CLIENT_ID: string;
-  SENDPULSE_CLIENT_SECRET: string;
+  SENDPULSE_API_KEY: string;
 }
 
 function router(env: Env): Router {
   const router = new Router();
   const store = new LicenceStore(env.LICENCES);
   const sandbox = env.PADDLE_SANDBOX === "true";
-  const mailer = env.MAIL_MODE === "log" ? new LogMailer() : new SendPulseMailer(env.SENDPULSE_CLIENT_ID, env.SENDPULSE_CLIENT_SECRET, env.MAIL_FROM);
+  const mailer = env.MAIL_MODE === "log" ? new LogMailer() : new SendPulseMailer(env.SENDPULSE_API_KEY, env.MAIL_FROM);
 
   new Downloads(env.RELEASES).register(router);
   new LicenceApi(
