@@ -10,5 +10,5 @@ SENDPULSE_API_KEY=
 REVIEW_EMAILS=
 REVIEW_CODE=
 
-# Admin CLI: the public key `flyylink-admin login` printed, until the first operator is added
+# Admin CLI: the public key `flyylink-cli login` printed, until the first operator is added
 ADMIN_BOOTSTRAP_KEY=

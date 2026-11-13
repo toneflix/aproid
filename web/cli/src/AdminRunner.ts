@@ -9,7 +9,7 @@ import { ResultAction } from "./ResultAction";
 import { ResultPrinter } from "./ResultPrinter";
 
 /**
- * Runs admin commands for a flyylink-admin command. When it is interactive it asks for missing input
+ * Runs admin commands for a flyylink-cli command. When it is interactive it asks for missing input
  * and, for a listing, lets the operator pick a result and an action to run on it. A result that names
  * a next command, such as an email's next batch, is followed on its own.
  */
@@ -50,7 +50,7 @@ export class AdminRunner {
 
     for (const problem of problems) this.cli.error(problem);
 
-    if (problems.length) this.cli.line(`Usage: flyylink-admin ${input.usage()}`);
+    if (problems.length) this.cli.line(`Usage: flyylink-cli ${input.usage()}`);
 
     return !problems.length;
   }
@@ -136,7 +136,7 @@ export class AdminRunner {
 
     const config = await new ConfigStore().load();
 
-    if (!config) this.cli.error("Not connected. Run flyylink-admin login first.");
+    if (!config) this.cli.error("Not connected. Run flyylink-cli login first.");
 
     this.client = config ? new AdminClient(config) : null;
 

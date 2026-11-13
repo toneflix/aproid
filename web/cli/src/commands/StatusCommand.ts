@@ -13,7 +13,7 @@ export class StatusCommand extends CliCommand {
     const config = await new ConfigStore().load();
 
     if (!config) {
-      this.error("Not connected. Run flyylink-admin login first.");
+      this.error("Not connected. Run flyylink-cli login first.");
       process.exitCode = 1;
 
       return;

@@ -1,24 +1,24 @@
 # Admin CLI
 
-`flyylink-admin` manages FlyyLink from your own machine: users, licences, trials, settings and notices. It talks to the website's worker at `/api/admin/run`, so nothing needs the Cloudflare dashboard or `wrangler d1 execute`.
+`flyylink-cli` manages FlyyLink from your own machine: users, licences, trials, settings and notices. It talks to the website's worker at `/api/admin/run`, so nothing needs the Cloudflare dashboard or `wrangler d1 execute`.
 
 ## Install
 
 Needs Node 22 or later.
 
 ```sh
-npm install -g @toneflix/flyylink-admin
+npm install -g @toneflix/flyylink-cli
 ```
 
 Update it with the same command.
 
 ## Publishing
 
-Push a tag like `admin-cli-1.0.0` (or run the **Publish flyylink-admin** workflow by hand). It tests the CLI and publishes it to npm, using the `NPM_TOKEN` Actions secret, an npm automation token that can publish under `@toneflix`.
+Push a tag like `cli-1.0.0` (or run the **Publish flyylink-cli** workflow by hand). It tests the CLI and publishes it to npm, using the `NPM_TOKEN` Actions secret, an npm automation token that can publish under `@toneflix`.
 
 ## Connect
 
-1. Run `flyylink-admin login`. It makes a key for this machine and prints its public key. Add `--url=` to use another site, such as a preview.
+1. Run `flyylink-cli login`. It makes a key for this machine and prints its public key. Add `--url=` to use another site, such as a preview.
 2. **First operator:** set the public key as a worker secret and deploy:
 
    ```sh
@@ -26,24 +26,24 @@ Push a tag like `admin-cli-1.0.0` (or run the **Publish flyylink-admin** workflo
    npx wrangler secret put ADMIN_BOOTSTRAP_KEY
    ```
 
-   Then make it permanent with `flyylink-admin operators:add <your name> <public key>`. The bootstrap key stops working once an operator exists, so you can delete the secret afterwards.
+   Then make it permanent with `flyylink-cli operators:add <your name> <public key>`. The bootstrap key stops working once an operator exists, so you can delete the secret afterwards.
 
-   **Later operators:** an existing operator runs `flyylink-admin operators:add <name> <their public key>`.
+   **Later operators:** an existing operator runs `flyylink-cli operators:add <name> <their public key>`.
 
-3. Check with `flyylink-admin status` and `flyylink-admin stats`.
+3. Check with `flyylink-cli status` and `flyylink-cli stats`.
 
-The key lives in `~/.config/flyylink-admin/config.json` (mode 600). Set `FLYYLINK_ADMIN_CONFIG` to keep another file, such as one per site.
+The key lives in `~/.config/flyylink-cli/config.json` (mode 600). Set `FLYYLINK_CLI_CONFIG` to keep another file, such as one per site.
 
 ## Use
 
 ```sh
-flyylink-admin wizard                          # pick a task from a menu
-flyylink-admin commands                        # every command
-flyylink-admin users:list --search=gmail       # pick a user, then what to do with them
-flyylink-admin licences:grant ada@example.com
-flyylink-admin settings:set max_computers 6
-flyylink-admin notify:send licensed --channel=both --subject="New in 2.0" --message="Line one\nLine two"
-flyylink-admin <command> --help
+flyylink-cli wizard                          # pick a task from a menu
+flyylink-cli commands                        # every command
+flyylink-cli users:list --search=gmail       # pick a user, then what to do with them
+flyylink-cli licences:grant ada@example.com
+flyylink-cli settings:set max_computers 6
+flyylink-cli notify:send licensed --channel=both --subject="New in 2.0" --message="Line one\nLine two"
+flyylink-cli <command> --help
 ```
 
 On a terminal, missing input is asked for and listings let you pick a row and an action. Pass `-n` to skip questions, or `--json` for the raw result.

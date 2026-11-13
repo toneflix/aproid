@@ -7,7 +7,7 @@ The Android app is free. The Mac and Windows apps need a lifetime licence after 
 - **Licences** live in the `flyylink-licences` D1 database (`web/migrations/`). People buy through Paddle; its webhook (`/api/paddle/webhook`, events `transaction.completed`, `adjustment.created`, `adjustment.updated`) adds or revokes the licence.
 - **Sign-in** uses a code emailed through SendPulse (Nodemailer with `nodemailer-sendpulse-transport`), on the site and in the computer apps.
 - **Computers** that sign in get a token signed with `LICENCE_SIGNING_KEY`, which the app checks offline and renews every few hours.
-- **Rules** (5 computers, 3 removals a month, 14-day trial, 30 days offline plus 7 of grace) are in `web/worker/licence/licensing.ts`. The first three can be changed with `flyylink-admin settings:set`.
+- **Rules** (5 computers, 3 removals a month, 14-day trial, 30 days offline plus 7 of grace) are in `web/worker/licence/licensing.ts`. The first three can be changed with `flyylink-cli settings:set`.
 
 ## Setup, once
 
@@ -30,7 +30,7 @@ Run the `wrangler` commands from `web/`.
 Grant a licence without a purchase (for a reviewer, a tester or a refund you want to honour) with the [admin CLI](ADMIN.md). The email gets an account if it has none.
 
 ```sh
-flyylink-admin licences:grant reviewer@example.com
+flyylink-cli licences:grant reviewer@example.com
 ```
 
 Revoke it with `licences:revoke <id>`, taking the id from `licences:list` (computers lose access when their token next renews, within a few hours).
@@ -40,7 +40,7 @@ Revoke it with `licences:revoke <id>`, taking the id from `licences:list` (compu
 Reviewers can't receive the emailed code, so listed emails can sign in with a fixed code instead. Other emails are unaffected.
 
 1. Give the reviewer email a free licence (above).
-2. List the email with `flyylink-admin settings:set review_emails reviewer@example.com` (comma-separated for several). The `REVIEW_EMAILS` variable still works as the default.
+2. List the email with `flyylink-cli settings:set review_emails reviewer@example.com` (comma-separated for several). The `REVIEW_EMAILS` variable still works as the default.
 3. `npx wrangler secret put REVIEW_CODE` with a code of at least 8 characters. Shorter or unset turns the bypass off.
 
 No email is sent to a listed address; the fixed code is the only way in. To end it, delete `REVIEW_CODE` (or take the email off `review_emails`) and revoke the licence.

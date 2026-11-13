@@ -55,7 +55,7 @@ Close KDE Connect while setting up; both use the same network port.
 
 FlyyLink is three native apps sharing one protocol.
 
-| Folder                      | What's inside                                                                                                                                                                                              |
+| Folder                      | What's inside                                                                                                                                                                                                                          |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `android/protocol`          | The protocol in plain Kotlin: packets, identity, pairing, discovery.                                                                                                                                                                   |
 | `android/app`               | The Android app (Kotlin, Jetpack Compose).                                                                                                                                                                                             |
@@ -63,7 +63,7 @@ FlyyLink is three native apps sharing one protocol.
 | `macos/Sources/FlyyLink`    | The Mac menu bar app (SwiftUI).                                                                                                                                                                                                        |
 | `windows/src/FlyyLink.Core` | The protocol in C#.                                                                                                                                                                                                                    |
 | `windows/src/FlyyLink`      | The Windows tray app (WinUI 3).                                                                                                                                                                                                        |
-| `web`                       | The website (Next.js), its worker, and the `flyylink-admin` CLI in `web/cli`.                                                                                                                                                          |
+| `web`                       | The website (Next.js), its worker, and the `flyylink-cli` CLI in `web/cli`.                                                                                                                                                            |
 | `branding`                  | The logo and the scripts that generate every app icon.                                                                                                                                                                                 |
 | `docs`                      | [Architecture](docs/ARCHITECTURE.md), [roadmap](docs/ROADMAP.md), [releasing](docs/RELEASING.md), [licences](docs/LICENCES.md), [admin CLI](docs/ADMIN.md), [website hosting](docs/WEBSITE.md) and the [Windows app](docs/WINDOWS.md). |
 

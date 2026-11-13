@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { AdminSignature } from "../../worker/admin/protocol/signature";
 
-/** What `flyylink-admin login` saves: the site's URL and this machine's operator key pair. */
+/** What `flyylink-cli login` saves: the site's URL and this machine's operator key pair. */
 export interface CliConfig {
   url: string;
   publicKey: string;
@@ -16,13 +16,13 @@ export class ConfigStore {
 
   constructor(readonly file = ConfigStore.defaultFile()) {}
 
-  /** `FLYYLINK_ADMIN_CONFIG`, or `flyylink-admin/config.json` in the user's config directory. */
+  /** `FLYYLINK_CLI_CONFIG`, or `flyylink-cli/config.json` in the user's config directory. */
   static defaultFile(): string {
-    if (process.env.FLYYLINK_ADMIN_CONFIG) return process.env.FLYYLINK_ADMIN_CONFIG;
+    if (process.env.FLYYLINK_CLI_CONFIG) return process.env.FLYYLINK_CLI_CONFIG;
 
     const base = process.env.XDG_CONFIG_HOME || path.join(homedir(), ".config");
 
-    return path.join(base, "flyylink-admin", "config.json");
+    return path.join(base, "flyylink-cli", "config.json");
   }
 
   /** The URL without a trailing slash, or null when it is not an http or https URL. */

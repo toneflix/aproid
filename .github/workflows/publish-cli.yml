@@ -1,9 +1,9 @@
-name: Publish flyylink-admin
+name: Publish flyylink-cli
 
-# Publishes web/cli to npm as @toneflix/flyylink-admin. Push a tag like admin-cli-1.2.0, or run it by hand.
+# Publishes web/cli to npm as @toneflix/flyylink-cli. Push a tag like cli-1.2.0, or run it by hand.
 on:
   push:
-    tags: ['admin-cli-[0-9]*']
+    tags: ['cli-[0-9]*']
   workflow_dispatch:
     inputs:
       version:
@@ -12,7 +12,7 @@ on:
         type: string
 
 concurrency:
-  group: publish-flyylink-admin
+  group: publish-flyylink-cli
   cancel-in-progress: false
 
 jobs:

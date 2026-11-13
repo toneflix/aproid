@@ -45,7 +45,7 @@ export interface Env {
   /** Comma-separated reviewer emails that sign in with REVIEW_CODE, until the review_emails setting replaces them. */
   REVIEW_EMAILS?: string;
   REVIEW_CODE?: string;
-  /** The public key `flyylink-admin login` printed, accepted only until the first operator is added. */
+  /** The public key `flyylink-cli login` printed, accepted only until the first operator is added. */
   ADMIN_BOOTSTRAP_KEY?: string;
   PADDLE_API_KEY: string;
   SENDPULSE_API_KEY: string;

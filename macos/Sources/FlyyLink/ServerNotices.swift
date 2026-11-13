@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 import UserNotifications
 
-/// Notices the FlyyLink team sends with `flyylink-admin notify:send --channel=app`, shown in Notification
+/// Notices the FlyyLink team sends with `flyylink-cli notify:send --channel=app`, shown in Notification
 /// Center. Fetched when the licence is checked; the first fetch only records where to start. Mirrors ServerNotices.cs.
 @MainActor
 final class ServerNotices {

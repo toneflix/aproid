@@ -1,11 +1,11 @@
 {
-  "name": "@toneflix/flyylink-admin",
+  "name": "@toneflix/flyylink-cli",
   "description": "Manage FlyyLink's users, licences, settings and notices from your machine.",
   "type": "module",
   "version": "0.0.0",
   "license": "UNLICENSED",
   "bin": {
-    "flyylink-admin": "./dist/index.js"
+    "flyylink-cli": "./dist/index.js"
   },
   "files": [
     "dist"

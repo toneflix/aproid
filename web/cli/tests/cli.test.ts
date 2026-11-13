@@ -10,7 +10,7 @@ import { testDatabase } from "../../worker/tests/d1";
 
 const run = promisify(execFile);
 const cli = path.join(import.meta.dirname, "../dist/index.js");
-const config = path.join(mkdtempSync(path.join(tmpdir(), "flyylink-admin-")), "config.json");
+const config = path.join(mkdtempSync(path.join(tmpdir(), "flyylink-cli-")), "config.json");
 
 let server: Server;
 let url: string;
@@ -27,7 +27,7 @@ const env = {
 /** Runs the built CLI without a terminal, so it never asks questions. */
 async function admin(...args: string[]): Promise<{ stdout: string; code: number }> {
   try {
-    const { stdout } = await run(process.execPath, [cli, ...args], { env: { ...process.env, FLYYLINK_ADMIN_CONFIG: config, NO_COLOR: "1" } });
+    const { stdout } = await run(process.execPath, [cli, ...args], { env: { ...process.env, FLYYLINK_CLI_CONFIG: config, NO_COLOR: "1" } });
 
     return { stdout, code: 0 };
   } catch (error) {
@@ -60,7 +60,7 @@ beforeAll(async () => {
 
 afterAll(() => server.close());
 
-describe("flyylink-admin", () => {
+describe("flyylink-cli", () => {
   it("logs in, becomes the first operator and manages licences", async () => {
     expect((await admin("login", `--url=${url}`)).code).toBe(0);
 

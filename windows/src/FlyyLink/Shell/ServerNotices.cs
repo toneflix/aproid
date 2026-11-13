@@ -4,7 +4,7 @@ using Microsoft.Windows.AppNotifications.Builder;
 
 namespace FlyyLink.Shell;
 
-/// Notices the FlyyLink team sends with `flyylink-admin notify:send --channel=app`, shown as Windows notifications.
+/// Notices the FlyyLink team sends with `flyylink-cli notify:send --channel=app`, shown as Windows notifications.
 /// Fetched when the licence is checked; the first fetch only records where to start. Mirrors ServerNotices.swift.
 internal sealed class ServerNotices(LicenceServer server, ToastCenter toasts)
 {
