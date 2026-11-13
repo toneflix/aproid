@@ -32,7 +32,7 @@ export class OperatorCommands extends CommandGroup {
     }
 
     if (!AdminSignature.isPublicKey(key)) {
-      reply.error("That is not a public key. Copy the one flyylink-admin login printed.");
+      reply.error("That is not a public key. Copy the one flyylink-cli login printed.");
 
       return;
     }

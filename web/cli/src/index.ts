@@ -11,8 +11,8 @@ import { StatusCommand } from "./commands/StatusCommand";
 import { WizardCommand } from "./commands/WizardCommand";
 
 await Kernel.init(new Application(), {
-  name: "flyylink-admin",
-  logo: "FlyyLink Admin",
+  name: "flyylink-cli",
+  logo: "FlyyLink CLI",
   version: pkg.version,
   baseCommands: [LoginCommand, LogoutCommand, StatusCommand, CommandsCommand, WizardCommand, ...AdminCommands.map((definition) => ForwardedCommand.for(definition))],
 });

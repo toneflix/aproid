@@ -1,7 +1,7 @@
 import { Command } from "@h3ravel/musket";
 import { Logger, type LoggerChalk } from "@h3ravel/shared";
 
-/** A flyylink-admin command, whose messages keep their colons instead of turning the text before one into a badge. */
+/** A flyylink-cli command, whose messages keep their colons instead of turning the text before one into a badge. */
 export abstract class CliCommand extends Command {
   override info(message: string): this {
     Logger.info(message, false, true);

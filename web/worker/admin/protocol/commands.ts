@@ -280,7 +280,7 @@ export const AdminCommands = [
     description: "Allow an operator key to run admin commands",
     arguments: [
       { name: "name", label: "Operator name", description: "A name for the operator, such as obi" },
-      { name: "key", label: "Their public key", description: "The public key flyylink-admin login printed" },
+      { name: "key", label: "Their public key", description: "The public key flyylink-cli login printed" },
     ],
     options: [],
   },
@@ -298,7 +298,7 @@ export const AdminCommands = [
           command: "operators:revoke",
           arguments: { name: "{name}" },
           when: { status: "active" },
-          confirm: "Revoke {name}'s key? Their flyylink-admin stops working at once.",
+          confirm: "Revoke {name}'s key? Their flyylink-cli stops working at once.",
         },
       ],
     },

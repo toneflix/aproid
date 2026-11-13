@@ -1,0 +1,64 @@
+name: Publish flyylink-cli
+
+# Publishes web/cli to npm as @toneflix/flyylink-cli. Push a tag like cli-1.2.0, or run it by hand.
+on:
+  push:
+    tags: ['cli-[0-9]*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish, such as 1.2.0 or 1.3.0-beta.1
+        required: true
+        type: string
+
+concurrency:
+  group: publish-flyylink-cli
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Resolve version
+        id: version
+        env:
+          INPUT: ${{ github.event_name == 'push' && github.ref_name || inputs.version }}
+        run: |
+          version="$(printf '%s' "$INPUT" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' || true)"
+
+          if [ -z "$version" ]; then
+            echo "::error::\"$INPUT\" does not end in a version such as 1.2.0"
+            exit 1
+          fi
+
+          if [[ "$version" == *-* ]]; then tag=next; else tag=latest; fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Worker dependencies, for the CLI's end-to-end tests
+        working-directory: web
+        run: npm ci
+
+      - name: Check and test
+        working-directory: web/cli
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm test
+
+      - name: Publish
+        working-directory: web/cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm version "${{ steps.version.outputs.version }}" --no-git-tag-version --allow-same-version
+          npm publish --access public --tag "${{ steps.version.outputs.tag }}"

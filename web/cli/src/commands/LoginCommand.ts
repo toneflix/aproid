@@ -36,7 +36,7 @@ export class LoginCommand extends CliCommand {
     ]);
     this.newLine();
     this.line("Ask an operator to allow this key with");
-    this.line(this.paint(`  flyylink-admin operators:add <your name> ${config.publicKey}`, "cyan"));
+    this.line(this.paint(`  flyylink-cli operators:add <your name> ${config.publicKey}`, "cyan"));
     this.line("or, for the first operator, set it as the worker's ADMIN_BOOTSTRAP_KEY secret.");
 
     if (!(await new AdminClient(config).reachable())) {

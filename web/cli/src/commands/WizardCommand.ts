@@ -11,7 +11,7 @@ export class WizardCommand extends CliCommand {
 
   async handle() {
     if (!this.interactive()) {
-      this.error("The wizard needs a terminal. Run a command directly instead, as flyylink-admin commands lists them.");
+      this.error("The wizard needs a terminal. Run a command directly instead, as flyylink-cli commands lists them.");
       process.exitCode = 1;
 
       return;

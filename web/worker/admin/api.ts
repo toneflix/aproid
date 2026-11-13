@@ -50,7 +50,7 @@ export class AdminApi {
 
     if (problems.length) {
       problems.forEach((problem) => reply.error(problem));
-      reply.info(`Usage: flyylink-admin ${input.usage()}`);
+      reply.info(`Usage: flyylink-cli ${input.usage()}`);
     } else {
       await this.handle(input, reply, actor, now);
     }

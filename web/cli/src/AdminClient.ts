@@ -43,7 +43,7 @@ export class AdminClient {
     try {
       return (await response.json()) as AdminResult;
     } catch {
-      return AdminClient.failure("The server sent an answer flyylink-admin could not read.");
+      return AdminClient.failure("The server sent an answer flyylink-cli could not read.");
     }
   }
 
