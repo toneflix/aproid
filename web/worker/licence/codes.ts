@@ -1,5 +1,6 @@
 import { HttpError } from "../http";
 import { hmac, sameText } from "./crypto";
+import type { Emails } from "./emails";
 import type { Mailer } from "./mailer";
 
 const codeLifetime = 10 * 60;
@@ -20,6 +21,7 @@ export class SignInCodes {
   constructor(
     private readonly db: D1Database,
     private readonly mailer: Mailer,
+    private readonly emails: Emails,
     private readonly secret: string,
   ) {}
 
@@ -46,7 +48,7 @@ export class SignInCodes {
       .bind(email, await this.hash(email, code), now + codeLifetime, now, fresh ? 1 : 0, fresh ? 1 : 0)
       .run();
 
-    await this.mailer.send(email, `${code} is your FlyyLink code`, `Your FlyyLink sign-in code is ${code}.\n\nIt works for 10 minutes.`);
+    await this.mailer.send(email, this.emails.signInCode(code, codeLifetime / 60));
   }
 
   /** Uses up the code when it matches. */

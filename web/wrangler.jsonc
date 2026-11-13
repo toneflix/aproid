@@ -26,6 +26,7 @@
   "vars": {
     "PADDLE_SANDBOX": "true",
     "MAIL_FROM": "FlyyLink <hello@toneflix.net>",
+    "SITE_URL": "https://flyylink.toneflix.net",
   },
   "keep_vars": true,
   "previews": {},

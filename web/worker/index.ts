@@ -2,6 +2,7 @@ import { Downloads } from "./downloads";
 import { HttpError } from "./http";
 import { LicenceApi } from "./licence/api";
 import { SignInCodes } from "./licence/codes";
+import { Emails } from "./licence/emails";
 import { Licensing } from "./licence/licensing";
 import { LogMailer, SendPulseMailer } from "./licence/mailer";
 import { PaddleWebhook } from "./licence/paddle";
@@ -21,6 +22,8 @@ export interface Env {
   /** Trial length in days, set in the dashboard. */
   TRIAL_DAYS?: string;
   MAIL_FROM: string;
+  /** The site's address, for links and images in emails. */
+  SITE_URL: string;
   /** Set to "log" in .dev.vars to print sign-in codes instead of emailing them. */
   MAIL_MODE?: string;
 
@@ -41,7 +44,7 @@ function router(env: Env): Router {
   new LicenceApi(
     store,
     new Licensing(store, new TokenSigner(env.LICENCE_SIGNING_KEY), Number(env.TRIAL_DAYS) || undefined),
-    new SignInCodes(env.LICENCES, mailer, env.CODE_SECRET),
+    new SignInCodes(env.LICENCES, mailer, new Emails(env.SITE_URL), env.CODE_SECRET),
     new Sessions(env.LICENCES, store),
     new PaddleWebhook({ webhookSecret: env.PADDLE_WEBHOOK_SECRET, apiKey: env.PADDLE_API_KEY, priceId: env.PADDLE_PRICE_ID ?? "", sandbox }, store),
     { clientToken: env.PADDLE_CLIENT_TOKEN ?? "", priceId: env.PADDLE_PRICE_ID ?? "", sandbox },
