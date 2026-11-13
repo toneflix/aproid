@@ -90,7 +90,6 @@ jobs:
       run:
         working-directory: macos
     env:
-      FEED_URL: ${{ env.SITE_URL }}/updates/mac/appcast.xml
       SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
       SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
       LICENCE_PUBLIC_KEY: ${{ vars.LICENCE_PUBLIC_KEY }}
@@ -143,7 +142,7 @@ jobs:
           SIGN_IDENTITY: ${{ steps.cert.outputs.identity }}
         run: |
           if [ -n "$SPARKLE_PRIVATE_KEY" ] && [ -n "$SPARKLE_PUBLIC_KEY" ]; then
-            export SPARKLE_FEED_URL="$FEED_URL"
+            export SPARKLE_FEED_URL="$SITE_URL/updates/mac/appcast.xml"
           else
             echo "::warning::No Sparkle key, so this build won't update itself."
           fi
