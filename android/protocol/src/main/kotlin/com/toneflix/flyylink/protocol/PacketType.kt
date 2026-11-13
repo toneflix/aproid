@@ -94,9 +94,12 @@ object PacketType {
 
     /** Stops a FlyyDrop request from either side. Body: {"id"}. */
     const val FLYYDROP_CANCEL = "flyylink.flyydrop.cancel"
+
+    /** A remote control press or typed text for a TV. Body: {"action": "key"|"text", "key"?, "text"?}; see [TvRemote]. */
+    const val REMOTE = "flyylink.remote"
 }
 
-/** What this MVP sends and accepts. Kept in one place so both apps advertise the same set. */
+/** What each kind of device sends and accepts. Kept in one place so every app advertises the same set. */
 object Capabilities {
     val mvp: Set<String> = setOf(
         PacketType.PING,
@@ -137,5 +140,37 @@ object Capabilities {
         PacketType.FLYYDROP_REQUEST,
         PacketType.FLYYDROP_RESPONSE,
         PacketType.FLYYDROP_CANCEL,
+        PacketType.REMOTE,
     )
+
+    /** What a TV sends and accepts: no texts, calls, clipboard, battery, location, photos or screen sharing. */
+    val tv: Set<String> = mvp - setOf(
+        PacketType.BATTERY,
+        PacketType.BATTERY_REQUEST,
+        PacketType.CLIPBOARD,
+        PacketType.CLIPBOARD_CONNECT,
+        PacketType.CLIPBOARD_FILE,
+        PacketType.FIND_MY_PHONE,
+        PacketType.SMS_MESSAGES,
+        PacketType.SMS_REQUEST,
+        PacketType.SMS_REQUEST_CONVERSATIONS,
+        PacketType.SMS_REQUEST_CONVERSATION,
+        PacketType.TELEPHONY,
+        PacketType.CALL_REQUEST,
+        PacketType.CALL_AUDIO_REQUEST,
+        PacketType.CALL_AUDIO,
+        PacketType.LOCATION_REQUEST,
+        PacketType.LOCATION,
+        PacketType.PHOTOS_REQUEST,
+        PacketType.PHOTOS,
+        PacketType.PHOTOS_DOWNLOAD,
+        PacketType.PHOTOS_FILE,
+        PacketType.SCREEN_REQUEST,
+        PacketType.SCREEN,
+        PacketType.SCREEN_INPUT,
+        PacketType.INPUT,
+        PacketType.RELAY,
+    )
+
+    fun forType(type: DeviceType): Set<String> = if (type == DeviceType.TV) tv else mvp
 }
