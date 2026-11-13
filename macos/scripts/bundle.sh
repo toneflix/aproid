@@ -13,21 +13,21 @@ cd "$(dirname "$0")/.."
 
 CONFIG="${1:-debug}"
 APP="build/FlyyLink.app"
-SHARE="$APP/Contents/PlugIns/AproidShare.appex"
-WIDGET="$APP/Contents/PlugIns/AproidWidget.appex"
+SHARE="$APP/Contents/PlugIns/FlyyLinkShare.appex"
+WIDGET="$APP/Contents/PlugIns/FlyyLinkWidget.appex"
 
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 
 swift build -c "$CONFIG"
 BIN_DIR="$(swift build -c "$CONFIG" --show-bin-path)"
-BIN="$BIN_DIR/Aproid"
+BIN="$BIN_DIR/FlyyLink"
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks" \
     "$SHARE/Contents/MacOS" "$SHARE/Contents/Resources" "$WIDGET/Contents/MacOS"
 cp Bundle/Info.plist "$APP/Contents/Info.plist"
 cp Bundle/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
-cp "$BIN" "$APP/Contents/MacOS/Aproid"
+cp "$BIN" "$APP/Contents/MacOS/FlyyLink"
 # Keep the framework's symlinks, or its signature breaks.
 ditto "$BIN_DIR/Sparkle.framework" "$APP/Contents/Frameworks/Sparkle.framework"
 
@@ -39,42 +39,42 @@ cp Bundle/AppIcon.icns "$SHARE/Contents/Resources/AppIcon.icns"
 xcrun swiftc $OPTIMIZE \
     -parse-as-library \
     -application-extension \
-    -module-name AproidShare \
+    -module-name FlyyLinkShare \
     -target "$(uname -m)-apple-macos13.0" \
     -Xlinker -e -Xlinker _NSExtensionMain \
-    Share/*.swift Sources/Aproid/ShareRequest.swift Sources/Aproid/AproidMark.swift \
-    -o "$SHARE/Contents/MacOS/AproidShare"
+    Share/*.swift Sources/FlyyLink/ShareRequest.swift Sources/FlyyLink/FlyyLinkMark.swift \
+    -o "$SHARE/Contents/MacOS/FlyyLinkShare"
 
 # The battery widget, compiled the same way. WidgetKit supplies its entry point.
 cp Widget/Info.plist "$WIDGET/Contents/Info.plist"
 xcrun swiftc $OPTIMIZE \
     -parse-as-library \
     -application-extension \
-    -module-name AproidWidget \
+    -module-name FlyyLinkWidget \
     -target "$(uname -m)-apple-macos13.0" \
-    Widget/*.swift Sources/Aproid/WidgetSnapshot.swift Sources/Aproid/AproidMark.swift \
-    -o "$WIDGET/Contents/MacOS/AproidWidget"
+    Widget/*.swift Sources/FlyyLink/WidgetSnapshot.swift Sources/FlyyLink/FlyyLinkMark.swift \
+    -o "$WIDGET/Contents/MacOS/FlyyLinkWidget"
 
 # Shortcuts finds the app's actions through metadata Xcode normally writes. SwiftPM doesn't, so ask the
 # same tool for it. If this Xcode's tool wants something else, the app still works, just without the actions.
 SWIFT_FILES="$(mktemp)"
 EMPTY_LIST="$(mktemp)"
 CONST_VALUES="$(mktemp)"
-ls "$PWD"/Sources/Aproid/*.swift > "$SWIFT_FILES"
-find "$BIN_DIR/Aproid.build" -name '*.swiftconstvalues' > "$CONST_VALUES" 2>/dev/null || true
+ls "$PWD"/Sources/FlyyLink/*.swift > "$SWIFT_FILES"
+find "$BIN_DIR/FlyyLink.build" -name '*.swiftconstvalues' > "$CONST_VALUES" 2>/dev/null || true
 echo "Shortcuts actions: $(wc -l < "$CONST_VALUES" | tr -d ' ') const value files"
 if xcrun appintentsmetadataprocessor \
     --toolchain-dir "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain" \
-    --module-name Aproid \
+    --module-name FlyyLink \
     --sdk-root "$(xcrun --sdk macosx --show-sdk-path)" \
     --xcode-version "$(xcodebuild -version | awk '/Build version/ { print $3 }')" \
     --platform-family macOS \
     --deployment-target 13.0 \
-    --bundle-identifier com.toneflix.aproid.app \
+    --bundle-identifier com.toneflix.flyylink \
     --output "$APP/Contents/Resources" \
     --target-triple "$(uname -m)-apple-macos13.0" \
-    --binary-file "$APP/Contents/MacOS/Aproid" \
-    --dependency-file "$PWD/.build/Aproid_dependency_info.dat" \
+    --binary-file "$APP/Contents/MacOS/FlyyLink" \
+    --dependency-file "$PWD/.build/FlyyLink_dependency_info.dat" \
     --stringsdata-file "$(mktemp)" \
     --source-file-list "$SWIFT_FILES" \
     --metadata-file-list "$EMPTY_LIST" \
@@ -107,7 +107,7 @@ if [ -n "${SPARKLE_FEED_URL:-}" ] && [ -n "${SPARKLE_PUBLIC_KEY:-}" ]; then
 fi
 
 if [ -n "${LICENCE_PUBLIC_KEY:-}" ]; then
-    /usr/libexec/PlistBuddy -c "Add :AproidLicenceKey string $LICENCE_PUBLIC_KEY" "$APP/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c "Add :FlyyLinkLicenceKey string $LICENCE_PUBLIC_KEY" "$APP/Contents/Info.plist"
 fi
 
 # Sign from the inside out. Ad hoc is enough for this Mac; a Developer ID release also needs the
@@ -127,7 +127,7 @@ sign "$SPARKLE/Updater.app"
 sign "$APP/Contents/Frameworks/Sparkle.framework"
 sign --entitlements Share/Share.entitlements "$SHARE"
 sign --entitlements Widget/Widget.entitlements "$WIDGET"
-sign --entitlements Bundle/Aproid.entitlements "$APP"
+sign --entitlements Bundle/FlyyLink.entitlements "$APP"
 codesign --verify --deep --strict "$APP"
 
 # Tells the Share menu and the widget gallery about the extensions without waiting for macOS to find them.

@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key>
-    <string>com.toneflix.aproid.app.widget</string>
+    <string>com.toneflix.flyylink.widget</string>
     <key>CFBundleName</key>
-    <string>AproidWidget</string>
+    <string>FlyyLinkWidget</string>
     <key>CFBundleDisplayName</key>
     <string>FlyyLink</string>
     <key>CFBundleExecutable</key>
-    <string>AproidWidget</string>
+    <string>FlyyLinkWidget</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>CFBundleInfoDictionaryVersion</key>

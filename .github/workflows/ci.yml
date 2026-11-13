@@ -54,14 +54,14 @@ jobs:
         with:
           dotnet-version: 8.0.x
       - name: Protocol tests
-        run: dotnet test tests/Aproid.Core.Tests
+        run: dotnet test tests/FlyyLink.Core.Tests
       - name: Build app and installer
         run: ./scripts/package.ps1
       - name: Upload app
         uses: actions/upload-artifact@v7
         with:
           name: FlyyLink-windows-x64
-          path: windows/publish/Aproid
+          path: windows/publish/FlyyLink
       - name: Upload installer
         uses: actions/upload-artifact@v7
         with:

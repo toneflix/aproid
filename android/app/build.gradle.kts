@@ -42,11 +42,11 @@ val appVersion = AppVersion(
 )
 
 android {
-    namespace = "com.toneflix.aproid"
+    namespace = "com.toneflix.flyylink"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.toneflix.aproid"
+        applicationId = "com.toneflix.flyylink"
         minSdk = 26
         targetSdk = 36
         versionCode = appVersion.code

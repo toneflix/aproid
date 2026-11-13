@@ -230,7 +230,7 @@ jobs:
         with:
           dotnet-version: 8.0.x
       - name: Protocol tests
-        run: dotnet test tests/Aproid.Core.Tests
+        run: dotnet test tests/FlyyLink.Core.Tests
       - name: Read the version from the tag
         id: version
         shell: bash

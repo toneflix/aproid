@@ -8,11 +8,11 @@ let packageDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().pat
 let intentsFlags = ["-emit-const-values", "-Xfrontend", "-const-gather-protocols-file", "-Xfrontend", "\(packageDir)/AppIntentsProtocols.json"]
 
 let package = Package(
-    name: "Aproid",
+    name: "FlyyLink",
     platforms: [.macOS(.v13)],
     products: [
-        .executable(name: "Aproid", targets: ["Aproid"]),
-        .library(name: "AproidKit", targets: ["AproidKit"]),
+        .executable(name: "FlyyLink", targets: ["FlyyLink"]),
+        .library(name: "FlyyLinkKit", targets: ["FlyyLinkKit"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0"),
@@ -25,7 +25,7 @@ let package = Package(
     targets: [
         // Protocol and networking. No UI, so it can be tested on its own.
         .target(
-            name: "AproidKit",
+            name: "FlyyLinkKit",
             dependencies: [
                 .product(name: "NIOCore", package: "swift-nio"),
                 .product(name: "NIOPosix", package: "swift-nio"),
@@ -39,18 +39,18 @@ let package = Package(
         ),
         // The menu bar app.
         .executableTarget(
-            name: "Aproid",
-            dependencies: ["AproidKit", .product(name: "Sparkle", package: "Sparkle")],
+            name: "FlyyLink",
+            dependencies: ["FlyyLinkKit", .product(name: "Sparkle", package: "Sparkle")],
             swiftSettings: [.unsafeFlags(intentsFlags)],
             linkerSettings: [
                 .linkedFramework("AppIntents"),
                 .unsafeFlags([
-                    "-Xlinker", "-dependency_info", "-Xlinker", "\(packageDir)/.build/Aproid_dependency_info.dat",
+                    "-Xlinker", "-dependency_info", "-Xlinker", "\(packageDir)/.build/FlyyLink_dependency_info.dat",
                     // Sparkle.framework is copied into Contents/Frameworks by bundle.sh.
                     "-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks",
                 ]),
             ]
         ),
-        .testTarget(name: "AproidKitTests", dependencies: ["AproidKit"]),
+        .testTarget(name: "FlyyLinkKitTests", dependencies: ["FlyyLinkKit"]),
     ]
 )

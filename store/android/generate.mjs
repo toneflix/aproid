@@ -17,7 +17,7 @@ class Assets {
 
   load() {
     return {
-      mark: this.dataUrl(join(this.root, 'branding/aproid-mark.svg'), 'image/svg+xml'),
+      mark: this.dataUrl(join(this.root, 'branding/flyylink-mark.svg'), 'image/svg+xml'),
       appIcon: this.dataUrl(join(this.root, 'branding/play-store-icon.png'), 'image/png'),
       icons: this.lucideIcons(join(this.root, 'android/app/src/main/res/drawable')),
     };

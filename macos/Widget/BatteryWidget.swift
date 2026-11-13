@@ -3,7 +3,7 @@ import WidgetKit
 
 /// Desktop and Notification Center widgets showing each paired phone's battery.
 @main
-struct AproidWidgets: WidgetBundle {
+struct FlyyLinkWidgets: WidgetBundle {
     var body: some Widget {
         BatteryWidget()
     }
@@ -13,7 +13,7 @@ struct BatteryWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "battery", provider: BatteryTimeline()) { entry in
             BatteryWidgetView(snapshot: entry.snapshot)
-                .widgetURL(URL(string: "aproid://open"))
+                .widgetURL(URL(string: "flyylink://open"))
         }
         .configurationDisplayName("Phone battery")
         .description("Your phones' battery, from FlyyLink.")
@@ -69,7 +69,7 @@ private struct SmallBattery: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                AproidMark()
+                FlyyLinkMark()
                     .fill(BatteryStyle.gold)
                     .frame(width: 12, height: 12)
                 Text(phone.name)
@@ -111,7 +111,7 @@ private struct MediumBattery: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 6) {
-                    AproidMark()
+                    FlyyLinkMark()
                         .fill(BatteryStyle.gold)
                         .frame(width: 12, height: 12)
                     Text("FlyyLink")
@@ -197,7 +197,7 @@ private struct BatteryRing: View {
 private struct NoPhone: View {
     var body: some View {
         VStack(spacing: 8) {
-            AproidMark()
+            FlyyLinkMark()
                 .fill(BatteryStyle.gold)
                 .frame(width: 28, height: 28)
             Text("No phone yet")

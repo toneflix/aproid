@@ -2,7 +2,7 @@ import { HttpError } from "../http";
 import { randomToken, sha256 } from "./crypto";
 import type { Account, LicenceStore } from "./store";
 
-const cookie = "aproid_session";
+const cookie = "flyylink_session";
 const lifetime = 30 * 24 * 60 * 60;
 
 /** Website sign-ins, kept in an HttpOnly cookie. */

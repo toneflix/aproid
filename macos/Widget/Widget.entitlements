@@ -6,7 +6,7 @@
     <true/>
     <key>com.apple.security.temporary-exception.files.home-relative-path.read-only</key>
     <array>
-        <string>/Library/Application Support/Aproid/Widget/</string>
+        <string>/Library/Application Support/FlyyLink/Widget/</string>
     </array>
 </dict>
 </plist>

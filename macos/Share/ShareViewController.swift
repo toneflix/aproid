@@ -134,7 +134,7 @@ final class SendingView: NSView {
     override init(frame: NSRect) {
         super.init(frame: frame)
 
-        let icon = NSHostingView(rootView: AproidMark().fill(AproidMark.gradient).frame(width: 34, height: 34))
+        let icon = NSHostingView(rootView: FlyyLinkMark().fill(FlyyLinkMark.gradient).frame(width: 34, height: 34))
 
         let title = NSTextField(labelWithString: "Sending to your phone")
         title.font = .systemFont(ofSize: 13, weight: .semibold)

@@ -59,10 +59,10 @@ FlyyLink is three native apps sharing one protocol.
 | --- | --- |
 | `android/protocol` | The protocol in plain Kotlin: packets, identity, pairing, discovery. |
 | `android/app` | The Android app (Kotlin, Jetpack Compose). |
-| `macos/Sources/AproidKit` | The protocol in Swift. |
-| `macos/Sources/Aproid` | The Mac menu bar app (SwiftUI). |
-| `windows/src/Aproid.Core` | The protocol in C#. |
-| `windows/src/Aproid` | The Windows tray app (WinUI 3). |
+| `macos/Sources/FlyyLinkKit` | The protocol in Swift. |
+| `macos/Sources/FlyyLink` | The Mac menu bar app (SwiftUI). |
+| `windows/src/FlyyLink.Core` | The protocol in C#. |
+| `windows/src/FlyyLink` | The Windows tray app (WinUI 3). |
 | `web` | The website (Next.js). |
 | `branding` | The logo and the scripts that generate every app icon. |
 | `docs` | [Architecture](docs/ARCHITECTURE.md), [roadmap](docs/ROADMAP.md), [releasing](docs/RELEASING.md), [licences](docs/LICENCES.md), [website hosting](docs/WEBSITE.md) and the [Windows app](docs/WINDOWS.md). |
@@ -90,7 +90,7 @@ Run it as a bundle, or notifications and the Share menu won't work.
 
 ```sh
 cd windows
-dotnet test tests/Aproid.Core.Tests    # runs on any OS
+dotnet test tests/FlyyLink.Core.Tests    # runs on any OS
 ```
 
 See [windows/README.md](windows/README.md) for building the app and the installer, and [docs/WINDOWS.md](docs/WINDOWS.md) for what it does.
