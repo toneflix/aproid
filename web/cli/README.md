@@ -1,6 +1,6 @@
 # flyylink-cli
 
-The admin CLI for the FlyyLink server: `npm install -g @toneflix/flyylink-cli`. Setup, commands and publishing are in [docs/ADMIN.md](../../docs/ADMIN.md).
+The admin CLI for the FlyyLink server: `npm install -g @toneflix/flyylink-cli`. Setup and commands are in [docs/ADMIN.md](../../docs/ADMIN.md), releasing in [docs/RELEASING.md](../../docs/RELEASING.md#admin-cli).
 
 ```sh
 npm install

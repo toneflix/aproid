@@ -1,6 +1,6 @@
 name: Publish flyylink-cli
 
-# Publishes web/cli to npm as @toneflix/flyylink-cli. Push a tag like cli-1.2.0, or run it by hand.
+# Publishes web/cli to npm as @toneflix/flyylink-cli. Push a tag like cli-1.2.0, or run it by hand. See docs/RELEASING.md.
 on:
   push:
     tags: ['cli-[0-9]*']

@@ -10,11 +10,7 @@ Needs Node 22 or later.
 npm install -g @toneflix/flyylink-cli
 ```
 
-Update it with the same command.
-
-## Publishing
-
-Push a tag like `cli-1.0.0` (or run the **Publish flyylink-cli** workflow by hand). It tests the CLI and publishes it to npm, using the `NPM_TOKEN` Actions secret, an npm automation token that can publish under `@toneflix`.
+Update it with the same command. Releasing a new version is in [RELEASING.md](RELEASING.md#admin-cli).
 
 ## Connect
 
