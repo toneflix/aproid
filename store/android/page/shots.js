@@ -58,7 +58,7 @@ class FeatureGraphic {
       <div class="laptop-wrap app" style="width:auto;height:auto;background:none">${app.laptop(270, true)}</div>
       <div class="device">${phone.render(screen)}</div>
       <div class="copy">
-        <div class="brand"><img src="${assets.mark}"><span>Aproid</span></div>
+        <div class="brand"><img src="${assets.mark}"><span>FlyyLink</span></div>
         <div class="headline">Your Android phone,<br><span class="accent">on your Mac and PC</span></div>
         <div class="sub">Texts, calls, notifications and files.</div>
       </div>

@@ -1,4 +1,4 @@
-/** Builds the Aproid Android screens as HTML, mirroring the Compose layouts in android/app. */
+/** Builds the FlyyLink Android screens as HTML, mirroring the Compose layouts in android/app. */
 class AndroidApp {
   constructor(assets, { dark = false, time = '19:31' } = {}) {
     this.assets = assets;
@@ -25,7 +25,7 @@ class AndroidApp {
   }
 
   header() {
-    return `<div class="header"><img src="${this.assets.mark}"><span class="name">Aproid</span>${this.icon('settings')}</div>`;
+    return `<div class="header"><img src="${this.assets.mark}"><span class="name">FlyyLink</span>${this.icon('settings')}</div>`;
   }
 
   laptop(width, menu = false) {
