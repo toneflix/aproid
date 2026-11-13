@@ -71,8 +71,7 @@ describe("flyylink-cli", () => {
 
     const listing = await admin("users:list", "--licence=with");
 
-    expect(listing.stdout).toMatch(/Email\s+Licensed\s+Computers\s+Joined/);
-    expect(listing.stdout).toMatch(/ada@example\.com\s+yes\s+0/);
+    expect(listing.stdout).toMatch(/Email\s+ada@example\.com\nLicensed\s+yes\nComputers\s+0\n/);
 
     const json = JSON.parse((await admin("licences:list", "--json")).stdout);
 
