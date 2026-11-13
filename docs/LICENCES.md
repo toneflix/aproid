@@ -25,6 +25,37 @@ Run the `wrangler` commands from `web/`.
 6. **Cloudflare deploys.** Use the deploy command in [WEBSITE.md](WEBSITE.md) so new migrations run before each deploy.
 7. **Release uploads.** Add the Cloudflare secrets listed in [RELEASING.md](RELEASING.md).
 
+## Free licences
+
+Grant a licence without a purchase (for a reviewer, a tester or a refund you want to honour). The email gets an account if it has none.
+
+```sh
+EMAIL=reviewer@example.com
+npx wrangler d1 execute flyylink-licences --remote --command "
+INSERT INTO accounts (id, email, created_at) VALUES (lower(hex(randomblob(16))), '$EMAIL', unixepoch()) ON CONFLICT (email) DO NOTHING;
+INSERT INTO licences (id, account_id, provider, order_id, status, created_at)
+  SELECT lower(hex(randomblob(16))), id, 'manual', 'grant:' || email, 'active', unixepoch() FROM accounts WHERE email = '$EMAIL'
+  ON CONFLICT (provider, order_id) DO UPDATE SET status = 'active';"
+```
+
+Revoke it (computers lose access when their token next renews, within a few hours):
+
+```sh
+npx wrangler d1 execute flyylink-licences --remote --command "UPDATE licences SET status = 'revoked' WHERE provider = 'manual' AND order_id = 'grant:$EMAIL';"
+```
+
+Use the email in lower case.
+
+## App store reviewers
+
+Reviewers can't receive the emailed code, so listed emails can sign in with a fixed code instead. Other emails are unaffected.
+
+1. Give the reviewer email a free licence (above).
+2. Add `REVIEW_EMAILS` (comma-separated) as a variable under the worker's Settings > Variables and Secrets.
+3. `npx wrangler secret put REVIEW_CODE` with a code of at least 8 characters. Shorter or unset turns the bypass off.
+
+No email is sent to a listed address; the fixed code is the only way in. To end it, delete `REVIEW_CODE` (or remove the email from `REVIEW_EMAILS`) and revoke the licence.
+
 ## Going live, in this order
 
 1. Let Cloudflare deploy the site with the licence server.

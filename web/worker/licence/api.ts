@@ -3,6 +3,7 @@ import type { Router } from "../router";
 import { SignInCodes } from "./codes";
 import { Licensing, type Machine } from "./licensing";
 import type { PaddleWebhook } from "./paddle";
+import type { ReviewAccess } from "./review";
 import type { Sessions } from "./sessions";
 import type { LicenceStore } from "./store";
 
@@ -24,6 +25,7 @@ export class LicenceApi {
     private readonly sessions: Sessions,
     private readonly paddle: PaddleWebhook,
     private readonly checkout: CheckoutConfig,
+    private readonly review: ReviewAccess,
   ) {}
 
   register(router: Router): void {
@@ -48,7 +50,8 @@ export class LicenceApi {
 
   private async sendCode(request: Request): Promise<Response> {
     const { email } = await readJson<{ email?: unknown }>(request);
-    await this.codes.send(SignInCodes.normalise(requireString(email, "email")), now());
+    const address = SignInCodes.normalise(requireString(email, "email"));
+    if (!this.review.covers(address)) await this.codes.send(address, now());
 
     return new Response(null, { status: 204 });
   }
@@ -103,10 +106,11 @@ export class LicenceApi {
     return new Response(null, { status: 204 });
   }
 
-  /** Checks the emailed code; an email that never bought anything still gets an account to sign in to. */
+  /** Checks the emailed code, or a reviewer's fixed one; an email that never bought anything still gets an account. */
   private async verify(email: unknown, code: unknown) {
     const address = SignInCodes.normalise(requireString(email, "email"));
-    await this.codes.verify(address, requireString(code, "code", 12), now());
+    const entered = requireString(code, "code", 64);
+    if (!this.review.accepts(address, entered)) await this.codes.verify(address, entered, now());
 
     return this.store.accountFor(address, now());
   }

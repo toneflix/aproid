@@ -5,6 +5,7 @@ import { SignInCodes } from "./licence/codes";
 import { Licensing } from "./licence/licensing";
 import { LogMailer, SendPulseMailer } from "./licence/mailer";
 import { PaddleWebhook } from "./licence/paddle";
+import { ReviewAccess } from "./licence/review";
 import { Sessions } from "./licence/sessions";
 import { TokenSigner } from "./licence/signer";
 import { LicenceStore } from "./licence/store";
@@ -27,6 +28,9 @@ export interface Env {
   LICENCE_SIGNING_KEY: string;
   CODE_SECRET: string;
   PADDLE_WEBHOOK_SECRET: string;
+  /** Comma-separated reviewer emails that sign in with REVIEW_CODE instead of an emailed code. */
+  REVIEW_EMAILS?: string;
+  REVIEW_CODE?: string;
   PADDLE_API_KEY: string;
   SENDPULSE_API_KEY: string;
 }
@@ -45,6 +49,7 @@ function router(env: Env): Router {
     new Sessions(env.LICENCES, store),
     new PaddleWebhook({ webhookSecret: env.PADDLE_WEBHOOK_SECRET, apiKey: env.PADDLE_API_KEY, priceId: env.PADDLE_PRICE_ID ?? "", sandbox }, store),
     { clientToken: env.PADDLE_CLIENT_TOKEN ?? "", priceId: env.PADDLE_PRICE_ID ?? "", sandbox },
+    new ReviewAccess(env.REVIEW_EMAILS, env.REVIEW_CODE),
   ).register(router);
 
   return router;

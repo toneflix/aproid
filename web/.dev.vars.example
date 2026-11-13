@@ -5,3 +5,7 @@ CODE_SECRET=dev-only
 PADDLE_WEBHOOK_SECRET=dev-only
 PADDLE_API_KEY=
 SENDPULSE_API_KEY=
+
+# App store reviewer sign-in (optional)
+REVIEW_EMAILS=
+REVIEW_CODE=
