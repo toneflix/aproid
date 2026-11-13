@@ -5,18 +5,22 @@ export interface Mailer {
   send(to: string, subject: string, text: string): Promise<void>;
 }
 
-/** Sends mail with Nodemailer through SendPulse's SMTP API. */
+/**
+ * Sends mail with Nodemailer through SendPulse's SMTP API. The transport is made on the first send,
+ * because it throws without a key and the worker builds this for every request, downloads included.
+ */
 export class SendPulseMailer implements Mailer {
-  private readonly transport: Transporter;
+  private transport?: Transporter;
 
   constructor(
-    apiKey: string,
+    private readonly apiKey: string | undefined,
     private readonly from: string,
-  ) {
-    this.transport = nodemailer.createTransport(new SendPulseTransport({ apiKey }));
-  }
+  ) {}
 
   async send(to: string, subject: string, text: string): Promise<void> {
+    if (!this.apiKey) throw new Error("SENDPULSE_API_KEY is not set");
+
+    this.transport ??= nodemailer.createTransport(new SendPulseTransport({ apiKey: this.apiKey }));
     await this.transport.sendMail({ from: this.from, to, subject, text });
   }
 }
