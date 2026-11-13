@@ -7,11 +7,14 @@
 Needs Node 22 or later.
 
 ```sh
-cd web/cli
-npm install
-npm run build
-npm link        # puts flyylink-admin on your PATH
+npm install -g @toneflix/flyylink-admin
 ```
+
+Update it with the same command.
+
+## Publishing
+
+Push a tag like `admin-cli-1.0.0` (or run the **Publish flyylink-admin** workflow by hand). It tests the CLI and publishes it to npm, using the `NPM_TOKEN` Actions secret, an npm automation token that can publish under `@toneflix`.
 
 ## Connect
 
