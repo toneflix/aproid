@@ -1,5 +1,6 @@
 import { HttpError } from "../http";
 import { randomToken, sha256 } from "./crypto";
+import type { Settings } from "../settings";
 import type { Account, LicenceStore } from "./store";
 import type { TokenKind, TokenSigner } from "./signer";
 
@@ -21,12 +22,13 @@ export interface ComputerView {
 
 /**
  * The rules of the lifetime licence: one purchase covers an account's computers up to a limit,
- * phones are free, and computers can only be swapped a few times a month.
+ * phones are free, and computers can only be swapped a few times a month. The limits and trial
+ * length come from `Settings`; these are their defaults.
  */
 export class Licensing {
   static readonly maxComputers = 5;
   static readonly removalsPerMonth = 3;
-  /** Used when the `TRIAL_DAYS` variable isn't set. */
+  /** Used when neither the `trial_days` setting nor the `TRIAL_DAYS` variable is set. */
   static readonly defaultTrialDays = 14;
   static readonly renewDays = 30;
   static readonly graceDays = 7;
@@ -34,8 +36,12 @@ export class Licensing {
   constructor(
     private readonly store: LicenceStore,
     private readonly signer: TokenSigner,
-    private readonly trialDays = Licensing.defaultTrialDays,
+    private readonly settings: Settings,
   ) {}
+
+  limit(): Promise<number> {
+    return this.settings.number("max_computers");
+  }
 
   /** Activates a computer for a signed-in account and returns its token and refresh secret. */
   async activate(account: Account, machine: Machine, now: number): Promise<{ token: string; secret: string }> {
@@ -43,8 +49,9 @@ export class Licensing {
 
     const active = (await this.store.computers(account.id)).filter((c) => c.removed_at === null);
     const known = active.some((c) => c.machine === machine.id);
-    if (!known && active.length >= Licensing.maxComputers) {
-      throw new HttpError(409, "computer_limit", { computers: active.map(Licensing.view), limit: Licensing.maxComputers });
+    const limit = await this.limit();
+    if (!known && active.length >= limit) {
+      throw new HttpError(409, "computer_limit", { computers: active.map(Licensing.view), limit });
     }
 
     const secret = randomToken();
@@ -69,7 +76,7 @@ export class Licensing {
   /** The trial runs from the first time this computer asked, however often it asks again. */
   async trial(machine: string, now: number): Promise<string> {
     const started = await this.store.trialStart(machine, now);
-    const ends = started + this.trialDays * day;
+    const ends = started + (await this.settings.number("trial_days")) * day;
     if (ends <= now) throw new HttpError(402, "trial_over");
 
     return this.signer.sign({ v: 1, kind: "trial", machine, issued: now, renew: ends, expires: ends });
@@ -83,7 +90,7 @@ export class Licensing {
     const since = now - 30 * day;
     const recent = (await this.store.computers(account.id)).filter((c) => c.removed_at !== null && c.removed_at > since).length;
 
-    return Math.max(0, Licensing.removalsPerMonth - recent);
+    return Math.max(0, (await this.settings.number("removals_per_month")) - recent);
   }
 
   async remove(account: Account, machine: string, now: number): Promise<void> {

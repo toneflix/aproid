@@ -37,6 +37,29 @@ export class Emails {
     };
   }
 
+  /** A message from the FlyyLink team, with paragraphs and an optional button. */
+  notice(subject: string, paragraphs: string[], link?: { url: string; text: string }): Email {
+    const button = link
+      ? `<p style="margin:8px 0 0;"><a href="${Emails.escape(link.url)}" style="display:inline-block;padding:12px 22px;border-radius:12px;background:${colors.cyan};color:${colors.surface};font-size:15px;font-weight:700;text-decoration:none;">${Emails.escape(link.text)}</a></p>`
+      : "";
+    const text = [...paragraphs, ...(link ? [`${link.text}: ${link.url}`] : [])].join("\n\n");
+
+    return {
+      subject,
+      text,
+      html: this.layout(
+        Emails.escape(paragraphs[0] ?? subject),
+        `<p style="margin:0 0 16px;font-size:22px;line-height:30px;font-weight:800;color:${colors.text};">${Emails.escape(subject)}</p>
+        ${paragraphs.map((paragraph) => `<p style="margin:0 0 16px;font-size:15px;line-height:24px;color:${colors.muted};">${Emails.escape(paragraph)}</p>`).join("\n        ")}
+        ${button}`,
+      ),
+    };
+  }
+
+  private static escape(text: string): string {
+    return text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+  }
+
   private layout(preview: string, body: string): string {
     const site = this.siteUrl.replace(/\/$/, "");
 

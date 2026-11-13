@@ -13,6 +13,40 @@ export interface Computer {
   removed_at: number | null;
 }
 
+export interface Licence {
+  id: string;
+  account_id: string;
+  email: string;
+  provider: string;
+  order_id: string;
+  status: "active" | "revoked";
+  created_at: number;
+}
+
+export interface AccountSummary {
+  id: string;
+  email: string;
+  created_at: number;
+  licensed: number;
+  computers: number;
+}
+
+export interface Trial {
+  machine: string;
+  started_at: number;
+}
+
+/** A page of rows and how many there are in all. */
+export interface Found<T> {
+  rows: T[];
+  total: number;
+}
+
+export interface Paging {
+  offset: number;
+  limit: number;
+}
+
 /** Reads and writes the licence database. Holds no rules; `Licensing` does. */
 export class LicenceStore {
   constructor(private readonly db: D1Database) {}
@@ -101,5 +135,109 @@ export class LicenceStore {
     const row = await this.db.prepare("SELECT started_at FROM trials WHERE machine = ?").bind(machine).first<{ started_at: number }>();
 
     return row!.started_at;
+  }
+
+  async findAccounts(filter: { search: string; licence: string }, paging: Paging): Promise<Found<AccountSummary>> {
+    const where = ["a.email LIKE ?"];
+    const licensed = "EXISTS (SELECT 1 FROM licences l WHERE l.account_id = a.id AND l.status = 'active')";
+    if (filter.licence === "with") where.push(licensed);
+    if (filter.licence === "without") where.push(`NOT ${licensed}`);
+
+    const clause = where.join(" AND ");
+    const pattern = `%${filter.search.toLowerCase()}%`;
+    const { results } = await this.db
+      .prepare(
+        `SELECT a.id, a.email, a.created_at, ${licensed} AS licensed, ` +
+          "(SELECT COUNT(*) FROM computers c WHERE c.account_id = a.id AND c.removed_at IS NULL) AS computers " +
+          `FROM accounts a WHERE ${clause} ORDER BY a.created_at DESC, a.email LIMIT ? OFFSET ?`,
+      )
+      .bind(pattern, paging.limit, paging.offset)
+      .all<AccountSummary>();
+    const count = await this.db.prepare(`SELECT COUNT(*) AS total FROM accounts a WHERE ${clause}`).bind(pattern).first<{ total: number }>();
+
+    return { rows: results, total: count?.total ?? 0 };
+  }
+
+  async findLicences(filter: { search: string; status: string; provider: string }, paging: Paging): Promise<Found<Licence>> {
+    const where = ["a.email LIKE ?"];
+    const binds: unknown[] = [`%${filter.search.toLowerCase()}%`];
+    for (const [column, value] of [["l.status", filter.status], ["l.provider", filter.provider]]) {
+      if (!value) continue;
+
+      where.push(`${column} = ?`);
+      binds.push(value);
+    }
+
+    const from = `FROM licences l JOIN accounts a ON a.id = l.account_id WHERE ${where.join(" AND ")}`;
+    const { results } = await this.db
+      .prepare(`SELECT l.*, a.email ${from} ORDER BY l.created_at DESC, l.id LIMIT ? OFFSET ?`)
+      .bind(...binds, paging.limit, paging.offset)
+      .all<Licence>();
+    const count = await this.db.prepare(`SELECT COUNT(*) AS total ${from}`).bind(...binds).first<{ total: number }>();
+
+    return { rows: results, total: count?.total ?? 0 };
+  }
+
+  async licences(accountId: string): Promise<Licence[]> {
+    const { results } = await this.db
+      .prepare("SELECT l.*, a.email FROM licences l JOIN accounts a ON a.id = l.account_id WHERE l.account_id = ? ORDER BY l.created_at")
+      .bind(accountId)
+      .all<Licence>();
+
+    return results;
+  }
+
+  findLicence(id: string): Promise<Licence | null> {
+    return this.db.prepare("SELECT l.*, a.email FROM licences l JOIN accounts a ON a.id = l.account_id WHERE l.id = ?").bind(id).first<Licence>();
+  }
+
+  async setLicenceStatusById(id: string, status: "active" | "revoked"): Promise<void> {
+    await this.db.prepare("UPDATE licences SET status = ? WHERE id = ?").bind(status, id).run();
+  }
+
+  /** Ends every website session of the account and returns how many there were. */
+  async endSessions(accountId: string): Promise<number> {
+    const result = await this.db.prepare("DELETE FROM sessions WHERE account_id = ?").bind(accountId).run();
+
+    return result.meta.changes ?? 0;
+  }
+
+  async deleteAccount(account: Account): Promise<void> {
+    await this.db.batch([
+      this.db.prepare("DELETE FROM sessions WHERE account_id = ?").bind(account.id),
+      this.db.prepare("DELETE FROM computers WHERE account_id = ?").bind(account.id),
+      this.db.prepare("DELETE FROM licences WHERE account_id = ?").bind(account.id),
+      this.db.prepare("DELETE FROM codes WHERE email = ?").bind(account.email),
+      this.db.prepare("DELETE FROM accounts WHERE id = ?").bind(account.id),
+    ]);
+  }
+
+  findTrial(machine: string): Promise<Trial | null> {
+    return this.db.prepare("SELECT * FROM trials WHERE machine = ?").bind(machine).first<Trial>();
+  }
+
+  async setTrialStart(machine: string, startedAt: number): Promise<void> {
+    await this.db.prepare("UPDATE trials SET started_at = ? WHERE machine = ?").bind(startedAt, machine).run();
+  }
+
+  /** Counts for `stats`. */
+  async totals(since: number): Promise<Record<string, number>> {
+    const count = async (sql: string, ...binds: unknown[]) =>
+      (await this.db.prepare(sql).bind(...binds).first<{ n: number }>())?.n ?? 0;
+
+    return {
+      accounts: await count("SELECT COUNT(*) AS n FROM accounts"),
+      newAccounts: await count("SELECT COUNT(*) AS n FROM accounts WHERE created_at >= ?", since),
+      licensed: await count("SELECT COUNT(DISTINCT account_id) AS n FROM licences WHERE status = 'active'"),
+      paid: await count("SELECT COUNT(*) AS n FROM licences WHERE status = 'active' AND provider = 'paddle'"),
+      free: await count("SELECT COUNT(*) AS n FROM licences WHERE status = 'active' AND provider = 'manual'"),
+      revoked: await count("SELECT COUNT(*) AS n FROM licences WHERE status = 'revoked'"),
+      newLicences: await count("SELECT COUNT(*) AS n FROM licences WHERE created_at >= ?", since),
+      macs: await count("SELECT COUNT(*) AS n FROM computers WHERE removed_at IS NULL AND platform = 'mac'"),
+      pcs: await count("SELECT COUNT(*) AS n FROM computers WHERE removed_at IS NULL AND platform = 'windows'"),
+      activeComputers: await count("SELECT COUNT(*) AS n FROM computers WHERE removed_at IS NULL AND seen_at >= ?", since),
+      trials: await count("SELECT COUNT(*) AS n FROM trials"),
+      newTrials: await count("SELECT COUNT(*) AS n FROM trials WHERE started_at >= ?", since),
+    };
   }
 }
