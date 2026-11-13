@@ -37,7 +37,7 @@ permissions:
   contents: write
 
 env:
-  SITE_URL: https://flyylink.toneflix.com
+  SITE_URL: https://flyylink.toneflix.net
 
 jobs:
   android:

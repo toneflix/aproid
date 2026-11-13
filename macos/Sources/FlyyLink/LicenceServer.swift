@@ -2,7 +2,7 @@ import Foundation
 
 /// Talks to the licence API on the FlyyLink website.
 struct LicenceServer {
-    static let site = URL(string: "https://flyylink.toneflix.com")!
+    static let site = URL(string: "https://flyylink.toneflix.net")!
 
     /// An error code from the server, such as "bad_code" or "computer_limit".
     struct Failure: Error {

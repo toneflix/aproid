@@ -3,7 +3,7 @@ export const site = {
   tagline: "Your Android phone and your computer, finally on speaking terms.",
   description:
     "Your Android phone on your Mac or PC: notifications, texts, calls, files, photos, screen mirroring and clipboard.",
-  url: "https://flyylink.toneflix.com",
+  url: "https://flyylink.toneflix.net",
   legalEntity: "Toneflix Technologies Limited",
   legalAddress: "197, Ahoada Road, Omoku, Rivers State, Nigeria",
   contactEmail: "support@toneflix.net",

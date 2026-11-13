@@ -16,8 +16,8 @@ Run the `wrangler` commands from `web/`.
 1. **Licence keys.** Run `node scripts/licence-keys.mjs`. Put the private key in the worker with `npx wrangler secret put LICENCE_SIGNING_KEY`, and add the public key as the `LICENCE_PUBLIC_KEY` variable under GitHub > Settings > Secrets and variables > Actions > Variables. Release builds of the Mac and Windows apps only check licences when this variable is set.
 2. **Paddle.** Under Catalog, add a product with one one-time price, and put its `pri_…` ID in `PADDLE_PRICE_ID` in `wrangler.jsonc`. Under Developer tools:
    - Authentication: make a client-side token for `PADDLE_CLIENT_TOKEN` in `wrangler.jsonc`, and an API key with customer read access for `npx wrangler secret put PADDLE_API_KEY`.
-   - Notifications: add a destination for `https://flyylink.toneflix.com/api/paddle/webhook` with the events `transaction.completed`, `adjustment.created` and `adjustment.updated`. Put its secret key in `npx wrangler secret put PADDLE_WEBHOOK_SECRET`.
-   - Checkout settings: approve `flyylink.toneflix.com` as a website, and set the default payment link to `https://flyylink.toneflix.com/buy`.
+   - Notifications: add a destination for `https://flyylink.toneflix.net/api/paddle/webhook` with the events `transaction.completed`, `adjustment.created` and `adjustment.updated`. Put its secret key in `npx wrangler secret put PADDLE_WEBHOOK_SECRET`.
+   - Checkout settings: approve `flyylink.toneflix.net` as a website, and set the default payment link to `https://flyylink.toneflix.net/buy`.
    - Start with a sandbox account (`PADDLE_SANDBOX` set to `"true"`). When going live, repeat the steps in the live account and set it to `"false"`.
 3. **SendPulse.** Under Settings > API, make an API key and put it in `npx wrangler secret put SENDPULSE_API_KEY`. Under SMTP, verify the `MAIL_FROM` sender in `wrangler.jsonc`.
 4. **Sign-in codes.** `npx wrangler secret put CODE_SECRET` with any long random text.

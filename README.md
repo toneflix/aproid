@@ -32,7 +32,7 @@ Nothing goes through us, and no tracking. Your devices talk to each other direct
 
 ## Get it
 
-Download from [flyylink.toneflix.com](https://flyylink.toneflix.com/#download), and [buy a lifetime licence](https://flyylink.toneflix.com/buy) for your computers.
+Download from [flyylink.toneflix.net](https://flyylink.toneflix.net/#download), and [buy a lifetime licence](https://flyylink.toneflix.net/buy) for your computers.
 
 |             | Needs                      | How it installs              |
 | ----------- | -------------------------- | ---------------------------- |
