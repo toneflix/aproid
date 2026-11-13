@@ -184,11 +184,11 @@ public final class MediaServer: @unchecked Sendable {
     private var closed = false
 
     public init() throws {
-        fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
-        guard fd >= 0 else { throw ProtocolError("no socket for the media server") }
+        let listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
+        guard listener >= 0 else { throw ProtocolError("no socket for the media server") }
 
         var yes: Int32 = 1
-        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, socklen_t(MemoryLayout<Int32>.size))
+        setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, socklen_t(MemoryLayout<Int32>.size))
 
         var address = sockaddr_in()
         address.sin_family = sa_family_t(AF_INET)
@@ -196,18 +196,20 @@ public final class MediaServer: @unchecked Sendable {
         address.sin_addr.s_addr = 0
 
         let bound = withUnsafePointer(to: &address) { ptr in
-            ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) }
+            ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(listener, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) }
         }
-        guard bound == 0, listen(fd, 16) == 0 else {
-            Darwin.close(fd)
+        guard bound == 0, listen(listener, 16) == 0 else {
+            Darwin.close(listener)
             throw ProtocolError("the media server couldn't open a port")
         }
 
         var local = sockaddr_in()
         var length = socklen_t(MemoryLayout<sockaddr_in>.size)
         _ = withUnsafeMutablePointer(to: &local) { ptr in
-            ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(fd, $0, &length) }
+            ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(listener, $0, &length) }
         }
+
+        fd = listener
         port = UInt16(bigEndian: local.sin_port)
 
         let thread = Thread { [weak self] in self?.acceptLoop() }
