@@ -1,6 +1,6 @@
-# Aproid for Windows
+# FlyyLink for Windows
 
-A tray app that pairs with the Aproid Android app over the same protocol as the Mac app.
+A tray app that pairs with the FlyyLink Android app over the same protocol as the Mac app.
 
 - `src/Aproid.Core`: the protocol in C# (.NET 8), mirroring `macos/Sources/AproidKit` and `android/protocol`. Builds and tests on any OS.
 - `src/Aproid`: the WinUI 3 app. A tray icon opens a panel like the Mac menu bar panel.
@@ -16,7 +16,7 @@ dotnet test tests/Aproid.Core.Tests
 dotnet run --project src/Aproid -r win-x64 -p:Platform=x64
 ```
 
-CI publishes a self-contained build as the `Aproid-windows-x64` artifact (unzip it and run `Aproid.exe`) and the installer as `Aproid-windows-setup`.
+CI publishes a self-contained build as the `FlyyLink-windows-x64` artifact (unzip it and run `FlyyLink.exe`) and the installer as `FlyyLink-windows-setup`.
 
 ## More
 

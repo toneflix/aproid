@@ -60,10 +60,10 @@ jobs:
       - name: Upload app
         uses: actions/upload-artifact@v7
         with:
-          name: Aproid-windows-x64
+          name: FlyyLink-windows-x64
           path: windows/publish/Aproid
       - name: Upload installer
         uses: actions/upload-artifact@v7
         with:
-          name: Aproid-windows-setup
-          path: windows/publish/Aproid-Setup-*.exe
+          name: FlyyLink-windows-setup
+          path: windows/publish/FlyyLink-Setup-*.exe

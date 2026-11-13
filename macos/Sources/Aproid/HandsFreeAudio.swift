@@ -4,7 +4,7 @@ import OSLog
 import AproidKit
 
 /// Makes this Mac a Bluetooth hands-free device for the phone, like a car kit, so calls are heard and answered here.
-/// Android sends call audio to a connected hands-free device by itself; Aproid only pairs, connects and steers it.
+/// Android sends call audio to a connected hands-free device by itself; FlyyLink only pairs, connects and steers it.
 @MainActor
 final class HandsFreeAudio: NSObject, ObservableObject {
     enum Stage: Equatable {

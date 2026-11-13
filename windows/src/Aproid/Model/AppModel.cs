@@ -636,7 +636,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
         timer?.Stop();
         link?.Stop();
         link = null;
-        foreach (var device in connected.All) device.Link.Close("Aproid stopped");
+        foreach (var device in connected.All) device.Link.Close("FlyyLink stopped");
     }
 
     /// Something was copied on this PC.
@@ -947,7 +947,7 @@ public sealed class AppModel : Observable, IDeviceDelegate
             : new Activity(ActivityKind.Text, $"“{(trimmed.Length > 60 ? trimmed[..60] : trimmed)}”", $"Copied to {device.Name}"));
     }
 
-    /// Files and tel: links handed over by Windows. Right after Aproid starts no phone is connected yet,
+    /// Files and tel: links handed over by Windows. Right after FlyyLink starts no phone is connected yet,
     /// so they wait up to a minute for one.
     public void Handover(IReadOnlyList<string> files, string? number, string? text = null)
     {

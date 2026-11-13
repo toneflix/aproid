@@ -72,7 +72,7 @@ class ShareActivity : ComponentActivity() {
             return
         }
 
-        // Shared from another app while Aproid wasn't running: connect now.
+        // Shared from another app while FlyyLink wasn't running: connect now.
         LinkService.start(this)
 
         setContent {
@@ -108,7 +108,7 @@ class ShareActivity : ComponentActivity() {
     companion object {
         private const val EXTRA_TARGET = "com.toneflix.aproid.TARGET"
 
-        /** Opens the sheet to send files picked inside Aproid, starting right away when a [target] device is given. */
+        /** Opens the sheet to send files picked inside FlyyLink, starting right away when a [target] device is given. */
         fun sendFilesIntent(context: Context, uris: List<Uri>, target: String? = null): Intent =
             Intent(context, ShareActivity::class.java)
                 .setAction(Intent.ACTION_SEND_MULTIPLE)

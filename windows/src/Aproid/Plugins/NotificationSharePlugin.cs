@@ -131,7 +131,7 @@ internal sealed class NotificationSharePlugin(DeviceRegistry devices) : IPlugin
             appName = "Windows";
         }
 
-        if (appName == "Aproid") return null;
+        if (appName == "FlyyLink") return null;
 
         var texts = notification.Notification.Visual.GetBinding(KnownNotificationBindings.ToastGeneric)?.GetTextElements().Select(t => t.Text).ToList() ?? [];
         if (texts.Count == 0) return null;

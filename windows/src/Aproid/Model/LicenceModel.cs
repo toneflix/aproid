@@ -5,7 +5,7 @@ using Microsoft.UI.Dispatching;
 
 namespace Aproid.Model;
 
-/// Whether this PC may use Aproid, and the sign-in card that unlocks it. Properties change on the UI thread.
+/// Whether this PC may use FlyyLink, and the sign-in card that unlocks it. Properties change on the UI thread.
 public sealed class LicenceModel : Observable
 {
     private static readonly TimeSpan SyncEvery = TimeSpan.FromHours(6);
@@ -83,8 +83,8 @@ public sealed class LicenceModel : Observable
 
     public string Body => status switch
     {
-        LicenceStatus.Locked { Reason: LicenceLock.Offline } => "Aproid needs to check your licence.",
-        _ => "Use the email you bought Aproid with.",
+        LicenceStatus.Locked { Reason: LicenceLock.Offline } => "FlyyLink needs to check your licence.",
+        _ => "Use the email you bought FlyyLink with.",
     };
 
     public bool CanClose => !IsLocked;
@@ -279,9 +279,9 @@ public sealed class LicenceModel : Observable
         "bad_email" => "Check the email address.",
         "bad_code" => "That code didn't work. Ask for a new one.",
         "too_many_codes" => "Too many codes. Try again in an hour.",
-        "no_licence" => "This email hasn't bought Aproid yet.",
+        "no_licence" => "This email hasn't bought FlyyLink yet.",
         "computer_limit" => "You're on 5 computers already. Remove one in your account.",
-        "offline" => "Couldn't reach Aproid. Check your connection.",
+        "offline" => "Couldn't reach FlyyLink. Check your connection.",
         _ => "Something went wrong. Try again.",
     };
 }

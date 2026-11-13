@@ -2,9 +2,9 @@ name: Release
 
 # Tag a version as 1.2.3 to build all three apps and publish them together as one GitHub release,
 # or as android-1.2.3, macos-1.2.3 or windows-1.2.3 to release just that app:
-#   Aproid-1.2.3.apk / .aab   signed Android app and Play Store bundle
-#   Aproid-1.2.3.dmg / .zip   signed, notarized Mac app and its update zip
-#   Aproid-Setup-1.2.3.exe    Windows installer
+#   FlyyLink-1.2.3.apk / .aab   signed Android app and Play Store bundle
+#   FlyyLink-1.2.3.dmg / .zip   signed, notarized Mac app and its update zip
+#   FlyyLink-Setup-1.2.3.exe    Windows installer
 # Nothing is published unless every app in the release builds.
 #
 # The Android build number is the base in version.json plus this workflow's run number, and the
@@ -75,8 +75,8 @@ jobs:
           ./gradlew :app:assembleRelease :app:bundleRelease -PversionName="$VERSION" -PbuildNumber=${{ github.run_number }}
           rm "$ANDROID_KEYSTORE_FILE"
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk "dist/Aproid-$VERSION.apk"
-          cp app/build/outputs/bundle/release/app-release.aab "dist/Aproid-$VERSION.aab"
+          cp app/build/outputs/apk/release/app-release.apk "dist/FlyyLink-$VERSION.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "dist/FlyyLink-$VERSION.aab"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -163,22 +163,22 @@ jobs:
           }
 
           # The app first, so the copy inside the disk image and the update zip carry the ticket.
-          ditto -c -k --keepParent build/Aproid.app "$RUNNER_TEMP/notarize.zip"
+          ditto -c -k --keepParent build/FlyyLink.app "$RUNNER_TEMP/notarize.zip"
           notarize "$RUNNER_TEMP/notarize.zip"
-          xcrun stapler staple build/Aproid.app
+          xcrun stapler staple build/FlyyLink.app
 
           mkdir -p dist
-          ditto -c -k --sequesterRsrc --keepParent build/Aproid.app "dist/Aproid-$VERSION.zip"
+          ditto -c -k --sequesterRsrc --keepParent build/FlyyLink.app "dist/FlyyLink-$VERSION.zip"
 
           # A disk image with a shortcut to Applications, for first installs.
           stage="$RUNNER_TEMP/dmg"
           mkdir -p "$stage"
-          ditto build/Aproid.app "$stage/Aproid.app"
+          ditto build/FlyyLink.app "$stage/FlyyLink.app"
           ln -s /Applications "$stage/Applications"
-          hdiutil create -volname Aproid -srcfolder "$stage" -ov -format UDZO "dist/Aproid-$VERSION.dmg"
-          codesign --force --sign "$SIGN_IDENTITY" --timestamp "dist/Aproid-$VERSION.dmg"
-          notarize "dist/Aproid-$VERSION.dmg"
-          xcrun stapler staple "dist/Aproid-$VERSION.dmg"
+          hdiutil create -volname FlyyLink -srcfolder "$stage" -ov -format UDZO "dist/FlyyLink-$VERSION.dmg"
+          codesign --force --sign "$SIGN_IDENTITY" --timestamp "dist/FlyyLink-$VERSION.dmg"
+          notarize "dist/FlyyLink-$VERSION.dmg"
+          xcrun stapler staple "dist/FlyyLink-$VERSION.dmg"
           rm "$key"
 
       - name: Write the update feed
@@ -192,16 +192,16 @@ jobs:
           tar -xJf "$RUNNER_TEMP/sparkle.tar.xz" -C "$RUNNER_TEMP/sparkle"
           printf '%s' "$SPARKLE_PRIVATE_KEY" > "$RUNNER_TEMP/sparkle.key"
           # Prints: sparkle:edSignature="..." length="..."
-          signature=$("$RUNNER_TEMP/sparkle/bin/sign_update" --ed-key-file "$RUNNER_TEMP/sparkle.key" "dist/Aproid-$VERSION.zip")
+          signature=$("$RUNNER_TEMP/sparkle/bin/sign_update" --ed-key-file "$RUNNER_TEMP/sparkle.key" "dist/FlyyLink-$VERSION.zip")
           rm "$RUNNER_TEMP/sparkle.key"
-          url="$SITE_URL/releases/Aproid-$VERSION.zip"
+          url="$SITE_URL/releases/FlyyLink-$VERSION.zip"
           cat > dist/appcast.xml <<EOF
           <?xml version="1.0" encoding="utf-8"?>
           <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
             <channel>
-              <title>Aproid</title>
+              <title>FlyyLink</title>
               <item>
-                <title>Aproid $VERSION</title>
+                <title>FlyyLink $VERSION</title>
                 <pubDate>$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')</pubDate>
                 <sparkle:version>$BUILD_NUMBER</sparkle:version>
                 <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
@@ -244,7 +244,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: windows
-          path: windows/publish/Aproid-Setup-*.exe
+          path: windows/publish/FlyyLink-Setup-*.exe
 
   # Skipped apps are fine; a failed or cancelled one stops the release.
   publish:
@@ -261,7 +261,7 @@ jobs:
             macos-*) app=" for Mac"; tag="${tag#macos-}" ;;
             windows-*) app=" for Windows"; tag="${tag#windows-}" ;;
           esac
-          echo "title=Aproid$app ${tag#v}" >> "$GITHUB_OUTPUT"
+          echo "title=FlyyLink$app ${tag#v}" >> "$GITHUB_OUTPUT"
           echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/download-artifact@v8
@@ -274,11 +274,11 @@ jobs:
         with:
           name: ${{ steps.name.outputs.title }}
           files: |
-            dist/Aproid-*.apk
-            dist/Aproid-*.aab
-            dist/Aproid-*.dmg
-            dist/Aproid-*.zip
-            dist/Aproid-Setup-*.exe
+            dist/FlyyLink-*.apk
+            dist/FlyyLink-*.aab
+            dist/FlyyLink-*.dmg
+            dist/FlyyLink-*.zip
+            dist/FlyyLink-Setup-*.exe
           generate_release_notes: true
 
       # One fixed release holds the Mac feed, so the app's feed address never changes.
@@ -288,7 +288,7 @@ jobs:
         with:
           tag_name: macos-appcast
           name: Mac update feed
-          body: Aproid for Mac checks this feed for updates. Don't delete it.
+          body: FlyyLink for Mac checks this feed for updates. Don't delete it.
           prerelease: true
           files: dist/appcast.xml
 
@@ -314,14 +314,14 @@ jobs:
               latest.json > latest.next && mv latest.next latest.json
           }
 
-          for file in dist/Aproid-*.apk dist/Aproid-*.dmg dist/Aproid-*.zip dist/Aproid-Setup-*.exe; do
+          for file in dist/FlyyLink-*.apk dist/FlyyLink-*.dmg dist/FlyyLink-*.zip dist/FlyyLink-Setup-*.exe; do
             [ -f "$file" ] || continue
             put "releases/$(basename "$file")" "$file"
           done
 
-          [ -f "dist/Aproid-$VERSION.apk" ] && record android "Aproid-$VERSION.apk"
-          [ -f "dist/Aproid-$VERSION.dmg" ] && record mac "Aproid-$VERSION.dmg" "Aproid-$VERSION.zip"
-          [ -f "dist/Aproid-Setup-$VERSION.exe" ] && record windows "Aproid-Setup-$VERSION.exe"
+          [ -f "dist/FlyyLink-$VERSION.apk" ] && record android "FlyyLink-$VERSION.apk"
+          [ -f "dist/FlyyLink-$VERSION.dmg" ] && record mac "FlyyLink-$VERSION.dmg" "FlyyLink-$VERSION.zip"
+          [ -f "dist/FlyyLink-Setup-$VERSION.exe" ] && record windows "FlyyLink-Setup-$VERSION.exe"
 
           # The feed goes up after the files it points to, and the download links last.
           if [ -f dist/appcast.xml ]; then

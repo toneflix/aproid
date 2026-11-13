@@ -70,7 +70,7 @@ final class GlobalShortcuts {
     }
 }
 
-/// Opens or closes the menu bar panel, as clicking Aproid's icon does.
+/// Opens or closes the menu bar panel, as clicking FlyyLink's icon does.
 enum MenuBarPanel {
     @MainActor static func toggle() {
         let button = NSApp.windows

@@ -5,11 +5,11 @@
     <key>CFBundleIdentifier</key>
     <string>com.toneflix.aproid.app</string>
     <key>CFBundleName</key>
-    <string>Aproid</string>
+    <string>FlyyLink</string>
     <key>CFBundleDisplayName</key>
-    <string>Aproid</string>
+    <string>FlyyLink</string>
     <key>CFBundleExecutable</key>
-    <string>Aproid</string>
+    <string>FlyyLink</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleIconFile</key>
@@ -20,13 +20,15 @@
     <string>1</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
+    <key>SUNormalizeInstalledApplicationName</key>
+    <true/>
     <key>LSUIElement</key>
     <true/>
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
             <key>CFBundleURLName</key>
-            <string>Aproid share</string>
+            <string>FlyyLink share</string>
             <key>CFBundleURLSchemes</key>
             <array>
                 <string>aproid</string>
@@ -42,14 +44,14 @@
         </dict>
     </array>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Aproid shows what Music or Spotify is playing on your other computers, and lets them pause or skip it.</string>
+    <string>FlyyLink shows what Music or Spotify is playing on your other computers, and lets them pause or skip it.</string>
     <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>Aproid finds your phone over Bluetooth when it isn't on the same Wi-Fi, and carries call audio to this Mac.</string>
+    <string>FlyyLink finds your phone over Bluetooth when it isn't on the same Wi-Fi, and carries call audio to this Mac.</string>
     <key>NSLocationUsageDescription</key>
-    <string>macOS needs location access for Aproid to see your phone's hotspot name.</string>
+    <string>macOS needs location access for FlyyLink to see your phone's hotspot name.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>macOS needs location access for Aproid to see your phone's hotspot name.</string>
+    <string>macOS needs location access for FlyyLink to see your phone's hotspot name.</string>
     <key>NSLocalNetworkUsageDescription</key>
-    <string>Aproid finds and connects to your phone on the local network.</string>
+    <string>FlyyLink finds and connects to your phone on the local network.</string>
 </dict>
 </plist>

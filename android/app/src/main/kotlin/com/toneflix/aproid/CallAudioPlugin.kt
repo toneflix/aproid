@@ -33,7 +33,7 @@ object CallAudioPlugin : Plugin {
     private var context: Context? = null
     @Volatile private var headset: BluetoothHeadset? = null
 
-    /** Each Mac's Bluetooth address, by Aproid device id, so changes reach the Macs that asked. */
+    /** Each Mac's Bluetooth address, by FlyyLink device id, so changes reach the Macs that asked. */
     private val macs = ConcurrentHashMap<String, String>()
 
     private val receiver = object : BroadcastReceiver() {

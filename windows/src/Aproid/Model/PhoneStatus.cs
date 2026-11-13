@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Aproid.Model;
 
-/// Each paired phone's battery and connection, saved to status.json for scripts and `Aproid.exe --battery`.
+/// Each paired phone's battery and connection, saved to status.json for scripts and `FlyyLink.exe --battery`.
 /// The shown phone comes first.
 internal sealed record PhoneStatus(IReadOnlyList<PhoneStatus.Phone> Phones)
 {
@@ -13,7 +13,7 @@ internal sealed record PhoneStatus(IReadOnlyList<PhoneStatus.Phone> Phones)
 
     public static PhoneStatus Empty { get; } = new([]);
 
-    /// The same phones, none of them connected, for when Aproid quits.
+    /// The same phones, none of them connected, for when FlyyLink quits.
     public PhoneStatus Disconnected() => new(Phones.Select(p => p with { IsConnected = false }).ToList());
 
     public bool Matches(PhoneStatus other) => Phones.SequenceEqual(other.Phones);

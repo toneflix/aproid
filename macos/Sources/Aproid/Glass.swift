@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// A rounded surface: the system's Liquid Glass on macOS 26 and later, which follows the Mac's own
-/// glass and transparency settings, or Aproid's solid card colour on older systems.
+/// glass and transparency settings, or FlyyLink's solid card colour on older systems.
 struct GlassSurface: ViewModifier {
     var cornerRadius: CGFloat = Theme.radius
     var tint: Color?
@@ -29,7 +29,7 @@ struct GlassSurface: ViewModifier {
     }
 }
 
-/// A window's backdrop: left to the system's glass on macOS 26 and later, Aproid's panel colour before.
+/// A window's backdrop: left to the system's glass on macOS 26 and later, FlyyLink's panel colour before.
 struct GlassBackdrop: ViewModifier {
     @ViewBuilder func body(content: Content) -> some View {
         #if compiler(>=6.2)

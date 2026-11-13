@@ -98,7 +98,7 @@ public final class LanLink {
     /// How an identity broadcast went.
     public enum BroadcastResult: Equatable {
         case sent
-        /// macOS refused to send, which is what Local Network privacy does when Aproid isn't allowed.
+        /// macOS refused to send, which is what Local Network privacy does when FlyyLink isn't allowed.
         case blocked
         case failed
     }

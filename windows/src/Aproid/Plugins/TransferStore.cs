@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Aproid.Plugins;
 
-/// Files that haven't finished moving, kept on disk so a transfer can still resume after Aproid quits.
+/// Files that haven't finished moving, kept on disk so a transfer can still resume after FlyyLink quits.
 internal sealed class TransferStore(string path)
 {
     /// A file we offered to the phone, which it may ask the rest of.

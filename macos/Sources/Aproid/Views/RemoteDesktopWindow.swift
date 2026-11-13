@@ -53,7 +53,7 @@ struct RemoteDesktopWindow: View {
         switch desktop.phase {
         case .ended:
             return "\(desktop.deviceName) stopped sharing. It needs Screen Recording access and \"Let my computers control this Mac\" on."
-        case .idle: return "Start from View screen in the Aproid menu."
+        case .idle: return "Start from View screen in the FlyyLink menu."
         default: return "Connecting…"
         }
     }
@@ -195,7 +195,7 @@ final class DesktopInputView: NSView {
     override func keyDown(with event: NSEvent) { key(event, down: true) }
     override func keyUp(with event: NSEvent) { key(event, down: false) }
 
-    /// Shortcuts such as Command-W go to the other computer too, rather than to Aproid's menus.
+    /// Shortcuts such as Command-W go to the other computer too, rather than to FlyyLink's menus.
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         guard window?.firstResponder === self, event.type == .keyDown else { return false }
 

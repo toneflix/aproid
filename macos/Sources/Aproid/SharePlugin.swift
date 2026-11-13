@@ -3,7 +3,7 @@ import AproidKit
 
 /// Moves files, links and text between the Mac and the phone, and any accepted FlyyDrop. Files go to Downloads, links open in the
 /// browser, and text lands on the clipboard. A file that stops halfway resumes when the phone reconnects,
-/// even after Aproid restarts.
+/// even after FlyyLink restarts.
 final class SharePlugin: Plugin {
     let incoming: Set<String> = [PacketType.shareRequest, PacketType.shareResume]
 

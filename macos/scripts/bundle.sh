@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds Aproid.app, with its Share extension and battery widget, in macos/build. Notification Center and the
+# Builds FlyyLink.app, with its Share extension and battery widget, in macos/build. Notification Center and the
 # Share menu only work for a bundled app, so use this instead of `swift run` to try them.
 #
 # Without settings it signs ad hoc for this Mac. The release workflow sets:
@@ -12,7 +12,7 @@ set -eu
 cd "$(dirname "$0")/.."
 
 CONFIG="${1:-debug}"
-APP="build/Aproid.app"
+APP="build/FlyyLink.app"
 SHARE="$APP/Contents/PlugIns/AproidShare.appex"
 WIDGET="$APP/Contents/PlugIns/AproidWidget.appex"
 

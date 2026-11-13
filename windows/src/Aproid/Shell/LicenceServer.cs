@@ -9,7 +9,7 @@ internal sealed class LicenceServerException(string code) : Exception(code)
     public string Code { get; } = code;
 }
 
-/// Talks to the licence API on the Aproid website.
+/// Talks to the licence API on the FlyyLink website.
 internal sealed class LicenceServer
 {
     public const string Site = "https://aproid.toneflix.com";

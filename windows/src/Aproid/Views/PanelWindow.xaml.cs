@@ -135,7 +135,7 @@ public sealed partial class PanelWindow : Window
         hiddenAt = DateTimeOffset.Now;
     }
 
-    /// Closes the window for good, when Aproid quits.
+    /// Closes the window for good, when FlyyLink quits.
     public void Shutdown()
     {
         quitting = true;
@@ -252,7 +252,7 @@ public sealed partial class PanelWindow : Window
 
     public string SearchingTitle(bool hasNearby) => hasNearby ? "Pick your phone to pair" : "Looking for your phone";
 
-    public string SearchingHint(bool hasNearby) => hasNearby ? "" : "Open Aproid on your phone, on the same Wi-Fi.";
+    public string SearchingHint(bool hasNearby) => hasNearby ? "" : "Open FlyyLink on your phone, on the same Wi-Fi.";
 
     public int BatteryCharge(DeviceState? device) => device?.Battery?.Charge ?? -1;
 
@@ -791,7 +791,7 @@ public sealed partial class PanelWindow : Window
         }
 
         SettingsMenu.Items.Add(new MenuFlyoutSeparator());
-        var quit = new MenuFlyoutItem { Text = "Quit Aproid" };
+        var quit = new MenuFlyoutItem { Text = "Quit FlyyLink" };
         quit.Click += (_, _) => QuitRequested?.Invoke();
         SettingsMenu.Items.Add(quit);
     }

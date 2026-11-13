@@ -17,7 +17,7 @@ struct DeviceState: Identifiable, Equatable {
     let battery: BatteryStatus?
     let media: NowPlaying?
     let location: PhoneLocation?
-    /// Runs Aproid with FlyyDrop, so files can go to it without pairing.
+    /// Runs FlyyLink with FlyyDrop, so files can go to it without pairing.
     var canFlyyDrop = false
 
     var isComputer: Bool { type.isComputer }
@@ -30,7 +30,7 @@ final class AppModel: ObservableObject {
 
     @Published private(set) var devices: [DeviceState] = []
     @Published private(set) var error: String?
-    /// True while macOS stops Aproid from reaching the local network, so the phone can't be found.
+    /// True while macOS stops FlyyLink from reaching the local network, so the phone can't be found.
     @Published private(set) var localNetworkBlocked = false
     @Published private(set) var recent: [Activity] = []
     @Published private(set) var clipboardSyncedAt: Date?
@@ -96,7 +96,7 @@ final class AppModel: ObservableObject {
 
     /// ⌃⌥ shortcuts for the shown phone that work from any app.
     private(set) lazy var shortcuts = GlobalShortcuts([
-        .init(keyCode: kVK_ANSI_A, symbol: "⌃⌥A", title: "Open Aproid") { MenuBarPanel.toggle() },
+        .init(keyCode: kVK_ANSI_A, symbol: "⌃⌥A", title: "Open FlyyLink") { MenuBarPanel.toggle() },
         .init(keyCode: kVK_ANSI_C, symbol: "⌃⌥C", title: "Send clipboard") { [weak self] in
             if let id = self?.primaryId { self?.sendClipboard(to: id) }
         },
@@ -111,7 +111,7 @@ final class AppModel: ObservableObject {
         },
     ])
 
-    /// Looks for new versions of Aproid.
+    /// Looks for new versions of FlyyLink.
     let updater = AppUpdater()
 
     /// Whether this Mac may connect, and the sign-in card.
@@ -124,7 +124,7 @@ final class AppModel: ObservableObject {
     static let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
         ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads")
 
-    /// Notification Center only works when Aproid runs as a bundled app.
+    /// Notification Center only works when FlyyLink runs as a bundled app.
     let notificationsAvailable = NotificationPlugin.isAvailable
 
     let identity: DeviceIdentity
@@ -732,7 +732,7 @@ final class AppModel: ObservableObject {
         guard blocked != localNetworkBlocked else { return }
 
         localNetworkBlocked = blocked
-        if blocked { log.error("macOS blocked the identity broadcast; Local Network access is off for Aproid") }
+        if blocked { log.error("macOS blocked the identity broadcast; Local Network access is off for FlyyLink") }
     }
 
     func openLocalNetworkSettings() {

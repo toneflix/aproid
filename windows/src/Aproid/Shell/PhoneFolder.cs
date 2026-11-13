@@ -75,7 +75,7 @@ internal sealed class PhoneFolder
                 var registration = new CF_SYNC_REGISTRATION
                 {
                     StructSize = (uint)Marshal.SizeOf<CF_SYNC_REGISTRATION>(),
-                    ProviderName = "Aproid",
+                    ProviderName = "FlyyLink",
                     ProviderVersion = "1.0",
                     SyncRootIdentity = identity,
                     SyncRootIdentityLength = 12,

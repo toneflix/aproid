@@ -76,7 +76,7 @@ struct LicenceStore {
         record.serverLock = reason
     }
 
-    /// The Mac's hardware UUID, which stays the same when Aproid is reinstalled.
+    /// The Mac's hardware UUID, which stays the same when FlyyLink is reinstalled.
     static func hardwareId() -> String {
         let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPlatformExpertDevice"))
         defer { IOObjectRelease(service) }

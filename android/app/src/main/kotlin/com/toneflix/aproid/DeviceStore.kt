@@ -31,7 +31,7 @@ data class DeviceState(
     val address: String,
     val pairState: PairState,
     val code: String?,
-    /** Runs Aproid with FlyyDrop, so files can go to it without pairing. */
+    /** Runs FlyyLink with FlyyDrop, so files can go to it without pairing. */
     val canFlyyDrop: Boolean = false,
     /** False for another phone, which is reachable only through FlyyDrop. */
     val canPair: Boolean = true,

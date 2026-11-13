@@ -13,7 +13,7 @@ final class PhotosPlugin: Plugin {
     var onPreview: ((Int64, URL?, String) -> Void)?
 
     /// Viewed photos are only kept while the app runs.
-    private let cache = FileManager.default.temporaryDirectory.appendingPathComponent("Aproid Photos", isDirectory: true)
+    private let cache = FileManager.default.temporaryDirectory.appendingPathComponent("FlyyLink Photos", isDirectory: true)
 
     init() {
         try? FileManager.default.removeItem(at: cache)

@@ -1,7 +1,7 @@
 import OSLog
 import ServiceManagement
 
-/// Starts Aproid when the user logs in. Only works for the bundled app.
+/// Starts FlyyLink when the user logs in. Only works for the bundled app.
 enum LoginItem {
     private static let log = Logger(subsystem: "com.toneflix.aproid.app", category: "login")
 

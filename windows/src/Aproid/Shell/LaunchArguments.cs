@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Aproid.Shell;
 
-/// What Aproid was started with: files to send from Explorer, a tel: link to call, a jump list task, text to send,
+/// What FlyyLink was started with: files to send from Explorer, a tel: link to call, a jump list task, text to send,
 /// or a start at sign-in. Scripts use `--ring`, `--mirror`, `--send-clipboard`, `--send-text <text>` and `--send <files>`.
 internal sealed record LaunchArguments(IReadOnlyList<string> Files, string? Number, bool Background, JumpTask? Jump = null, string? Text = null)
 {

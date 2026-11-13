@@ -68,7 +68,7 @@ struct PhotosWindow: View {
     private var emptyText: String {
         if !store.hasPhone { return "Connect your phone to see its photos" }
         if store.loading { return "Loading your photos…" }
-        return "No photos. Allow photo access in Aproid on your phone."
+        return "No photos. Allow photo access in FlyyLink on your phone."
     }
 
     private var subtitle: String {

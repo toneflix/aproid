@@ -5,6 +5,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <Company>Toneflix</Company>
-    <Product>Aproid</Product>
+    <Product>FlyyLink</Product>
   </PropertyGroup>
 </Project>

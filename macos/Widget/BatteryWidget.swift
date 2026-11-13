@@ -16,7 +16,7 @@ struct BatteryWidget: Widget {
                 .widgetURL(URL(string: "aproid://open"))
         }
         .configurationDisplayName("Phone battery")
-        .description("Your phones' battery, from Aproid.")
+        .description("Your phones' battery, from FlyyLink.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
@@ -114,7 +114,7 @@ private struct MediumBattery: View {
                     AproidMark()
                         .fill(BatteryStyle.gold)
                         .frame(width: 12, height: 12)
-                    Text("Aproid")
+                    Text("FlyyLink")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary)
                 }
@@ -202,7 +202,7 @@ private struct NoPhone: View {
                 .frame(width: 28, height: 28)
             Text("No phone yet")
                 .font(.system(size: 13, weight: .semibold))
-            Text("Pair one in Aproid")
+            Text("Pair one in FlyyLink")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
         }

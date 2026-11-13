@@ -24,7 +24,7 @@ internal sealed class ToastCenter
         try
         {
             manager.NotificationInvoked += Invoked;
-            manager.Register("Aproid", new Uri(AppPaths.AppIcon));
+            manager.Register("FlyyLink", new Uri(AppPaths.AppIcon));
             IsAvailable = true;
         }
         catch (Exception e)

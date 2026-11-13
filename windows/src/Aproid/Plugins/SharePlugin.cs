@@ -6,7 +6,7 @@ namespace Aproid.Plugins;
 
 /// Moves files, links and text between this PC and the phone. Files go to Downloads, links open in the
 /// browser, and text lands on the clipboard. A file that stops halfway resumes when the phone reconnects,
-/// even after Aproid restarts.
+/// even after FlyyLink restarts.
 internal sealed class SharePlugin(string folder, TransferStore store, ToastCenter toasts, ClipboardPlugin clipboard) : IPlugin
 {
     private readonly object gate = new();

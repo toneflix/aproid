@@ -40,7 +40,7 @@ struct MenuPanel: View {
         if model.localNetworkBlocked {
             Banner(
                 icon: .wifi,
-                text: "Turn on Aproid under Local Network so your phone can find this Mac.",
+                text: "Turn on FlyyLink under Local Network so your phone can find this Mac.",
                 action: ("Open Settings", model.openLocalNetworkSettings)
             )
         }
@@ -120,7 +120,7 @@ private struct PanelHeader: View {
     var body: some View {
         HStack(spacing: 10) {
             AppGlyph()
-            Text("Aproid")
+            Text("FlyyLink")
                 .font(.system(size: 15, weight: .bold))
             Spacer()
             Menu {
@@ -165,8 +165,8 @@ private struct PanelHeader: View {
                 }
 
                 Divider()
-                Text("Aproid \(model.updater.version)")
-                Button("Quit Aproid") { NSApplication.shared.terminate(nil) }
+                Text("FlyyLink \(model.updater.version)")
+                Button("Quit FlyyLink") { NSApplication.shared.terminate(nil) }
             } label: {
                 Image(lucide: .settings, size: 14, weight: .medium)
                     .foregroundStyle(.secondary)
@@ -221,7 +221,7 @@ private struct SearchingCard: View {
                 Text(hasNearby ? "Pick your phone to pair" : "Looking for your phone")
                     .font(.system(size: 16, weight: .bold))
                 if !hasNearby {
-                    Text("Open Aproid on your phone, on the same Wi-Fi.")
+                    Text("Open FlyyLink on your phone, on the same Wi-Fi.")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)

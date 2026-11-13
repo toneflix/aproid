@@ -62,7 +62,7 @@ struct KeyboardMouseCard: View {
             if edge != nil && model.inputNeedsAccess {
                 Banner(
                     icon: .lock,
-                    text: "Turn on Aproid under Accessibility.",
+                    text: "Turn on FlyyLink under Accessibility.",
                     action: ("Open Settings", openAccessibility)
                 )
             }

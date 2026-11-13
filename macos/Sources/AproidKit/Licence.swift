@@ -88,7 +88,7 @@ public struct LicenceRecord: Codable, Equatable, Sendable {
     }
 }
 
-/// Decides, offline, whether this computer may use Aproid. Mirrors LicenceRules in Licence.cs.
+/// Decides, offline, whether this computer may use FlyyLink. Mirrors LicenceRules in Licence.cs.
 public enum LicenceRules {
     public static let trialDays = 14
 
