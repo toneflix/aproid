@@ -1,4 +1,4 @@
-"""Reads the Aproid mark out of aproid-logo.svg and normalises it to a unit square."""
+"""Reads the FlyyLink mark out of aproid-logo.svg and normalises it to a unit square."""
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path

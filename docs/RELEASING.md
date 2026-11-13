@@ -4,9 +4,9 @@ Push a tag like `1.2.3` to release all three apps, or `android-1.2.3`, `macos-1.
 
 | App | Files |
 | --- | --- |
-| Android | `Aproid-1.2.3.apk` and the Play Store bundle `.aab` |
-| Mac | `Aproid-1.2.3.dmg`, signed and notarized, and its update `.zip` |
-| Windows | `Aproid-Setup-1.2.3.exe` |
+| Android | `FlyyLink-1.2.3.apk` and the Play Store bundle `.aab` |
+| Mac | `FlyyLink-1.2.3.dmg`, signed and notarized, and its update `.zip` |
+| Windows | `FlyyLink-Setup-1.2.3.exe` |
 
 The Android build number is the base in `version.json` plus the workflow's run number.
 

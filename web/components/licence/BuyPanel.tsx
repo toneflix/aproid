@@ -30,7 +30,7 @@ export function BuyPanel() {
       <div className="licence-panel">
         <h2>Thank you!</h2>
         <p className="lead">
-          Open Aproid on your computer and sign in with {boughtBy || "the email you used"}.
+          Open FlyyLink on your computer and sign in with {boughtBy || "the email you used"}.
         </p>
       </div>
     );
@@ -57,7 +57,7 @@ export function BuyPanel() {
         onClick={() => checkout.current?.open((email) => setBoughtBy(email ?? ""))}
       >
         <ShoppingBag size={18} />
-        Buy Aproid
+        Buy FlyyLink
       </button>
       {error && <p className="form-error">{error}</p>}
     </div>

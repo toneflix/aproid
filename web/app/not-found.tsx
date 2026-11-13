@@ -7,7 +7,7 @@ export default function NotFound() {
         <h1>Page not found</h1>
         <p className="updated">That page wandered off. Let&apos;s get you home.</p>
         <Link className="button button-primary" href="/">
-          Back to Aproid
+          Back to FlyyLink
         </Link>
       </div>
     </main>

@@ -1,5 +1,5 @@
 export const site = {
-  name: "Aproid",
+  name: "FlyyLink",
   tagline: "Your Android phone and your computer, finally on speaking terms.",
   description:
     "Your Android phone on your Mac or PC: notifications, texts, calls, files, photos, screen mirroring and clipboard.",

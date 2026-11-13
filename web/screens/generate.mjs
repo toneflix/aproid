@@ -36,7 +36,7 @@ class MacPanel {
 
   render() {
     return `<div class="panel">
-      <div class="header"><img src="${this.appIcon}"><b>Aproid</b>${this.icon('Settings')}</div>
+      <div class="header"><img src="${this.appIcon}"><b>FlyyLink</b>${this.icon('Settings')}</div>
       <div class="carousel">
         <div class="hero">
           <div class="phone-art"><div></div></div>

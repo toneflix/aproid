@@ -26,7 +26,7 @@
     "PADDLE_CLIENT_TOKEN": "",
     "PADDLE_PRICE_ID": "",
     "PADDLE_SANDBOX": "true",
-    "MAIL_FROM": "Aproid <hello@toneflix.net>",
+    "MAIL_FROM": "FlyyLink <hello@toneflix.net>",
   },
   "keep_vars": true,
   "previews": {},

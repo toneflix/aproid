@@ -3,7 +3,7 @@ import { AccountPanel } from "@/components/licence/AccountPanel";
 
 export const metadata: Metadata = {
   title: "Account",
-  description: "Your Aproid licence and computers.",
+  description: "Your FlyyLink licence and computers.",
 };
 
 export default function AccountPage() {

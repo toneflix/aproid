@@ -5,7 +5,7 @@ export function DownloadButtons() {
     <div className="hero-actions">
       <a className="button button-primary" href="/#download">
         <Download size={18} />
-        Download Aproid
+        Download FlyyLink
       </a>
     </div>
   );
