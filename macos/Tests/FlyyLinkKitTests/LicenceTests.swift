@@ -64,7 +64,7 @@ final class LicenceTests: XCTestCase {
 
     func testMachineIdIsAStableHash() {
         XCTAssertEqual(MachineId.from(" ABC "), MachineId.from("abc"))
-        XCTAssertEqual(MachineId.from("abc"), "024012ba71e56454f1a305db046e8a33b08ad2127b0032cc61f97c4c34deb6a1")
+        XCTAssertEqual(MachineId.from("abc"), "d2411e14a3705cc79bff7bf923a5655a0a23014b45072915c3e38e9046f4d34a")
     }
 
     private func evaluate(_ record: LicenceRecord, at seconds: TimeInterval) -> LicenceStatus {

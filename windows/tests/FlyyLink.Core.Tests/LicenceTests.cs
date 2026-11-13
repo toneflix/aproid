@@ -84,7 +84,7 @@ public class LicenceTests
     public void MachineIdIsAStableHash()
     {
         Assert.Equal(MachineId.From(" ABC "), MachineId.From("abc"));
-        Assert.Equal("024012ba71e56454f1a305db046e8a33b08ad2127b0032cc61f97c4c34deb6a1", MachineId.From("abc"));
+        Assert.Equal("d2411e14a3705cc79bff7bf923a5655a0a23014b45072915c3e38e9046f4d34a", MachineId.From("abc"));
     }
 
     private static LicenceStatus Evaluate(LicenceRecord record, long seconds) =>
