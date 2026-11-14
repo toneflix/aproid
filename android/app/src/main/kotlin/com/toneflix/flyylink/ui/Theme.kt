@@ -115,9 +115,7 @@ object FlyyLink {
 }
 
 @Composable
-fun FlyyLinkTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
-
+fun FlyyLinkTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalFlyyLinkColors provides if (dark) DarkExtra else LightExtra) {
         MaterialTheme(
             colorScheme = if (dark) Dark else Light,

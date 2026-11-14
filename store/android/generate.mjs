@@ -66,9 +66,10 @@ class Renderer {
 
     await page.addInitScript((assets) => { window.ASSETS = assets; }, this.assets);
     await page.goto(index.href);
-    const ids = await page.evaluate(() => GRAPHICS.map((graphic) => graphic.id));
+    const graphics = await page.evaluate(() => [...GRAPHICS, ...TV_GRAPHICS].map(({ id, width, height }) => ({ id, width, height })));
 
-    for (const id of ids) {
+    for (const { id, width = 1080, height = 1920 } of graphics) {
+      await page.setViewportSize({ width, height });
       await page.goto(`${index}?graphic=${id}`);
       await page.evaluate(() => document.fonts.ready);
 
@@ -81,8 +82,20 @@ class Renderer {
   }
 }
 
+/** Where each graphic goes: the TV banner inside the app is the launcher's, the rest are for the listing. */
+function outputFor(id) {
+  if (id === 'feature-graphic') return join(HERE, 'feature-graphic.png');
+  if (id === 'tv-banner-app') return join(ROOT, 'android/app/src/main/res/drawable-xhdpi/tv_banner.png');
+  if (id === 'tv-banner') return join(HERE, 'tv/banner.png');
+  if (id.startsWith('tv-')) return join(HERE, `tv/screenshots/${id.slice(3)}.png`);
+
+  return join(HERE, `screenshots/${id}.png`);
+}
+
 const assets = new Assets(ROOT).load();
 
-mkdirSync(join(HERE, 'screenshots'), { recursive: true });
+for (const folder of ['screenshots', 'tv/screenshots', '../../android/app/src/main/res/drawable-xhdpi']) {
+  mkdirSync(join(HERE, folder), { recursive: true });
+}
 
-await new Renderer(assets, (id) => join(HERE, id === 'feature-graphic' ? 'feature-graphic.png' : `screenshots/${id}.png`)).run();
+await new Renderer(assets, outputFor).run();

@@ -66,7 +66,7 @@ internal sealed class PhoneRelayPlugin(DeviceRegistry devices, Settings settings
     {
         if (Relay.ToPhone.Contains(message.Packet.Type))
         {
-            if (devices[message.PhoneId] is { IsPaired: true } phone && !phone.Link.Identity.DeviceType.IsComputer()) phone.Send(message.Packet);
+            if (devices[message.PhoneId] is { IsPaired: true } phone && phone.Link.Identity.DeviceType.IsPhone()) phone.Send(message.Packet);
             return;
         }
 

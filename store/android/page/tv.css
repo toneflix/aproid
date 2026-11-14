@@ -1,0 +1,166 @@
+/* The TV app, drawn at 960x540 dp and scaled 2x to the 1920x1080 canvas. Colors follow the dark theme in Theme.kt. */
+
+.canvas.tv-shot { width: 1920px; height: 1080px; background: #13120f; }
+.tv-scale { width: 960px; height: 540px; transform: scale(2); transform-origin: top left; }
+
+.tv-app {
+  position: relative;
+  width: 960px;
+  height: 540px;
+  overflow: hidden;
+  font-family: Roboto, sans-serif;
+  color: #f3f0e8;
+  background: radial-gradient(700px 700px at 0 0, rgba(246, 193, 1, 0.22), transparent 70%), #13120f;
+  --surface: #1e1c18;
+  --surface-variant: #2e2b24;
+  --outline-variant: #3b3830;
+  --on-variant: #b1ab9c;
+  --primary-container: #003b55;
+  --on-primary-container: #c4edff;
+  --ok: #0b7a4b;
+  --device-body: #0b1428;
+  --device-screen: #c4edff;
+  --device-base: #3a4b75;
+}
+
+.tv-app .ic { display: inline-flex; width: 22px; height: 22px; }
+.tv-app .ic svg { width: 100%; height: 100%; }
+.tv-app .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 9px; }
+.tv-app .dot.ok { background: #0f9d61; }
+.tv-app .dot.gold { background: var(--gold); }
+
+.tv-home { display: flex; gap: 48px; height: 100%; padding: 32px 58px; }
+
+.tv-home .intro { width: 300px; flex: none; display: flex; flex-direction: column; gap: 18px; }
+.tv-home .brand { display: flex; align-items: center; gap: 12px; }
+.tv-home .brand img { width: 40px; height: 40px; }
+.tv-home .brand span { font-size: 15px; font-weight: 500; letter-spacing: 6px; color: var(--gold); }
+.tv-home .hero-art { margin-top: 24px; align-self: flex-start; }
+.tv-home .tv-name { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.15; }
+.tv-home .tv-status { font-size: 16px; color: var(--on-variant); display: flex; align-items: center; }
+
+.tv-art { display: flex; flex-direction: column; align-items: center; }
+.tv-art .frame { background: var(--device-body); }
+.tv-art .glass { width: 100%; height: 100%; background: var(--device-screen); overflow: hidden; }
+.tv-art .neck, .tv-art .foot { background: var(--device-base); }
+.tv-art .foot { border-radius: 99px; }
+.tv-glow { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: radial-gradient(var(--gold), var(--gold-deep)); }
+.tv-glow img { width: 56px; height: 56px; }
+
+.tv-home .rows { flex: 1; display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.tv-home .row .title { font-size: 20px; font-weight: 600; margin: 0 0 10px 8px; }
+.tv-home .cards { display: flex; gap: 20px; padding: 8px; }
+
+.tv-app .card {
+  flex: none;
+  border-radius: 24px;
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  overflow: hidden;
+}
+
+.tv-app .card.focused { transform: scale(1.06); background: var(--surface-variant); border: 3px solid var(--gold); }
+.tv-app .card .name { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tv-app .card .status, .tv-app .card .detail { font-size: 13px; color: var(--on-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tv-app .card .status.ok { color: #0f9d61; }
+
+.card.device { width: 200px; height: 160px; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
+.card.device .art { height: 76px; display: flex; align-items: center; }
+.card.device .name { font-size: 17px; }
+.card.device .status { font-size: 14px; display: flex; align-items: center; }
+
+.card.received { width: 240px; height: 160px; }
+.card.received .thumb { height: 96px; display: flex; align-items: center; justify-content: center; background: var(--primary-container); color: var(--on-primary-container); }
+.card.received .thumb .ic { width: 34px; height: 34px; }
+.card.received .body { padding: 10px 14px; }
+
+.card.setting { width: 200px; height: 112px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; }
+.card.setting .chip { width: 40px; height: 40px; border-radius: 13px; display: flex; align-items: center; justify-content: center; background: var(--primary-container); color: var(--on-primary-container); }
+.card.setting .chip.on { background: var(--gold); color: #2a1e00; }
+
+.tv-app .laptop { display: flex; flex-direction: column; align-items: center; }
+.tv-app .laptop .lid { background: var(--device-body); }
+.tv-app .laptop .glass { width: 100%; height: 100%; background: var(--device-screen); }
+.tv-app .laptop .base { background: var(--device-base); }
+.tv-app .phone-art { background: var(--device-body); }
+.tv-app .phone-art .glass { width: 100%; height: 100%; background: var(--device-screen); }
+
+/* A made-up photo, drawn so the screenshots need no image files. */
+.tv-app .picture.sunset {
+  background:
+    radial-gradient(18% 30% at 62% 58%, #fff3c4, #ffb347 40%, transparent 70%),
+    linear-gradient(180deg, #2b1d5c 0%, #c2457a 45%, #ff9a4a 62%, #3b2a4a 63%, #1a1630 100%);
+}
+
+.tv-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); }
+.tv-dialog {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 620px;
+  transform: translate(-50%, -50%) scale(0.82);
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  border-radius: 32px;
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+}
+.tv-dialog .title { font-size: 28px; font-weight: 700; }
+.tv-dialog .hint { font-size: 17px; color: var(--on-variant); margin-top: -12px; }
+.tv-dialog .digits { display: flex; gap: 6px; }
+.tv-dialog .digits .gap { width: 6px; }
+.tv-dialog .digits b { width: 34px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font: 600 24px monospace; color: var(--on-primary-container); background: var(--primary-container); }
+.tv-dialog .buttons { display: flex; gap: 16px; }
+.tv-dialog .button { padding: 14px 34px; border-radius: 99px; font-size: 17px; font-weight: 600; background: var(--surface-variant); }
+.tv-dialog .button.focused { background: var(--gold); color: #2a1e00; transform: scale(1.06); }
+
+.tv-popup {
+  position: absolute;
+  top: 36px;
+  right: 48px;
+  width: 420px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px 16px 20px;
+  border-radius: 22px;
+  background: rgba(30, 28, 24, 0.94);
+  border: 1px solid rgba(246, 193, 1, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.tv-popup img { width: 44px; height: 44px; border-radius: 12px; }
+.tv-popup .label { font-size: 13px; color: var(--gold); }
+.tv-popup .title { font-size: 17px; font-weight: 700; }
+.tv-popup .text { font-size: 15px; color: var(--on-variant); }
+
+.tv-viewer { position: absolute; inset: 0; }
+.tv-viewer .caption { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 58px; background: linear-gradient(transparent, rgba(0, 0, 0, 0.7)); }
+.tv-viewer .caption .title { font-size: 26px; font-weight: 700; }
+.tv-viewer .caption .detail { font-size: 17px; color: rgba(255, 255, 255, 0.8); }
+
+.tv-film { position: absolute; inset: 0; background: linear-gradient(180deg, #0d2a4a, #2d6a8f 55%, #f0b35a 56%, #1c3a2a 70%, #0c1a12); }
+.tv-film .sun { position: absolute; left: 260px; top: 220px; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(#fff6d5, #ffcc66 60%, transparent 72%); }
+.tv-film .hills { position: absolute; left: 0; right: 0; bottom: 0; height: 200px; background: radial-gradient(60% 100% at 30% 100%, #12301f, transparent 70%), radial-gradient(50% 90% at 80% 100%, #0e2618, transparent 70%); }
+.tv-film .bar { position: absolute; left: 58px; right: 58px; bottom: 34px; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.25); }
+.tv-film .bar i { display: block; height: 100%; border-radius: 4px; background: #fff; }
+
+/* Banners: the gold of the launch screen with the mark and the name. */
+.canvas.tv-banner { background: none; }
+.tv-banner-scale {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  transform-origin: top left;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 56px;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+}
+.tv-banner-scale .glow { position: absolute; inset: 0; background: radial-gradient(50% 70% at 30% 50%, rgba(255, 255, 255, 0.35), transparent 70%); }
+.tv-banner-scale img { position: relative; width: 300px; height: 300px; }
+.tv-banner-scale span { position: relative; font-family: Inter, sans-serif; font-size: 190px; font-weight: 800; letter-spacing: -6px; color: #fff; text-shadow: 0 6px 30px rgba(120, 80, 0, 0.35); }

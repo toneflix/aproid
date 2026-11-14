@@ -1,7 +1,6 @@
 package com.toneflix.flyylink
 
 import android.content.Context
-import android.os.Build
 import android.util.Log
 import android.util.Base64
 import com.toneflix.flyylink.protocol.Device
@@ -47,8 +46,9 @@ object DeviceStore {
     private const val KEY_SWITCHER = "switcher_style"
 
     private val devices = linkedMapOf<String, Device>()
+    private var context: Context? = null
 
-    private val plugins = PluginRouter(listOf(NotificationPlugin, BatteryPlugin, FindMyPhonePlugin, ClipboardPlugin, SharePlugin, MediaPlugin, SmsPlugin, CallPlugin, CallAudioPlugin, LocationPlugin, PhotosPlugin, ScreenPlugin, FlyyDropPlugin))
+    private var plugins = PluginRouter(AppForm.PHONE.plugins)
 
     /** Network writes must stay off the main thread, so all plugin sends go through here. */
     private val sender = Executors.newSingleThreadExecutor()
@@ -73,6 +73,7 @@ object DeviceStore {
         override fun onPairRequest(device: Device, code: String) {
             _pairRequest.value = device.toState()
             publish()
+            context?.let { MainActivity.bringToFront(it) }
         }
 
         override fun onPairStateChanged(device: Device, state: PairState) {
@@ -96,14 +97,20 @@ object DeviceStore {
             prefs.edit().putString(KEY_ID, it).apply()
         }
 
+        val form = AppForm.of(context)
+
         return DeviceIdentity(
             deviceId = id,
-            deviceName = DeviceIdentity.sanitizeName(Build.MODEL ?: "Android"),
-            deviceType = DeviceType.PHONE,
+            deviceName = form.deviceName(context),
+            deviceType = form.deviceType,
+            incomingCapabilities = form.capabilities,
+            outgoingCapabilities = form.capabilities,
         )
     }
 
     fun restorePreferences(context: Context) {
+        this.context = context.applicationContext
+        plugins = PluginRouter(AppForm.of(context).plugins)
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         _focusId.value = prefs.getString(KEY_FOCUS, null)
         _switcherStyle.value = prefs.getString(KEY_SWITCHER, null)

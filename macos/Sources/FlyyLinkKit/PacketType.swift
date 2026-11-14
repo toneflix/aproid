@@ -95,6 +95,9 @@ public enum PacketType {
 
     /// Stops a FlyyDrop request from either side. Body: {"id"}.
     public static let flyyDropCancel = "flyylink.flyydrop.cancel"
+
+    /// A remote control press or typed text for a TV. Body: {"action": "key"|"text", "key"?, "text"?}; see `TvRemote`.
+    public static let remote = "flyylink.remote"
 }
 
 public enum Capabilities {
@@ -137,5 +140,37 @@ public enum Capabilities {
         PacketType.flyyDropRequest,
         PacketType.flyyDropResponse,
         PacketType.flyyDropCancel,
+        PacketType.remote,
     ]
+
+    /// What a TV sends and accepts: no texts, calls, clipboard, battery, location, photos or screen sharing.
+    public static let tv: Set<String> = mvp.subtracting([
+        PacketType.battery,
+        PacketType.batteryRequest,
+        PacketType.clipboard,
+        PacketType.clipboardConnect,
+        PacketType.clipboardFile,
+        PacketType.findMyPhone,
+        PacketType.smsMessages,
+        PacketType.smsRequest,
+        PacketType.smsRequestConversations,
+        PacketType.smsRequestConversation,
+        PacketType.telephony,
+        PacketType.callRequest,
+        PacketType.callAudioRequest,
+        PacketType.callAudio,
+        PacketType.locationRequest,
+        PacketType.location,
+        PacketType.photosRequest,
+        PacketType.photos,
+        PacketType.photosDownload,
+        PacketType.photosFile,
+        PacketType.screenRequest,
+        PacketType.screen,
+        PacketType.screenInput,
+        PacketType.input,
+        PacketType.relay,
+    ])
+
+    public static func forType(_ type: DeviceType) -> Set<String> { type == .tv ? tv : mvp }
 }

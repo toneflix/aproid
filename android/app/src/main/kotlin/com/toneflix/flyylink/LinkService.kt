@@ -38,6 +38,7 @@ class LinkService : Service() {
     private var statusText: String? = null
     private var connected = false
     private var beacon: NearbyBeacon? = null
+    private val form by lazy { AppForm.of(this) }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -72,17 +73,7 @@ class LinkService : Service() {
 
     private fun startLink() {
         DeviceStore.restorePreferences(this)
-        BatteryPlugin.start(this)
-        FindMyPhonePlugin.start(this)
-        ClipboardPlugin.start(this)
-        SharePlugin.start(this)
-        SmsPlugin.start(this)
-        CallPlugin.start(this)
-        CallAudioPlugin.start(this)
-        LocationPlugin.start(this)
-        PhotosPlugin.start(this)
-        ScreenPlugin.start(this)
-        FlyyDropPlugin.start(this)
+        form.startPlugins(this)
 
         val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         multicastLock = wifi.createMulticastLock("flyylink").apply {
@@ -131,6 +122,8 @@ class LinkService : Service() {
 
     /** Lets a paired Mac find the phone over Bluetooth. Safe to call again once the permission is granted. */
     private fun startBeacon() {
+        if (form == AppForm.TV) return
+
         val nearby = beacon ?: NearbyBeacon(this) { link?.tcpPort }.also { beacon = it }
         nearby.start()
     }

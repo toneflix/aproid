@@ -21,6 +21,10 @@ struct DeviceState: Identifiable, Equatable {
     var canFlyyDrop = false
 
     var isComputer: Bool { type.isComputer }
+
+    var isPhone: Bool { type.isPhone }
+
+    var isTv: Bool { type == .tv }
 }
 
 @MainActor
@@ -323,7 +327,7 @@ final class AppModel: ObservableObject {
         guard let device = connected[id] else { return }
 
         device.send(FindMyPhone.request())
-        guard !device.link.identity.deviceType.isComputer else { return }
+        guard device.link.identity.deviceType.isPhone else { return }
 
         locations.request(from: device)
         finding = id
@@ -830,7 +834,7 @@ final class AppModel: ObservableObject {
         if device.isPaired {
             plugins.onPaired(device)
         }
-        if device.isPaired, !device.link.identity.deviceType.isComputer {
+        if device.isPaired, device.link.identity.deviceType.isPhone {
             phoneNearby = false
             hotspotStatus = nil
             hotspot.cancel()
@@ -925,7 +929,7 @@ final class AppModel: ObservableObject {
     }
 
     private var pairedPhones: [Device] {
-        connected.all.filter { $0.isPaired && !$0.link.identity.deviceType.isComputer }
+        connected.all.filter { $0.isPaired && $0.link.identity.deviceType.isPhone }
     }
 
     private var primaryDevice: Device? {

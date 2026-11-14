@@ -4,13 +4,15 @@
   <meta charset="utf-8">
   <link rel="stylesheet" href="store.css">
   <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="tv.css">
   <script src="app.js"></script>
   <script src="shots.js"></script>
+  <script src="tv.js"></script>
 </head>
 <body>
   <script>
     const id = new URLSearchParams(location.search).get('graphic');
-    const graphic = GRAPHICS.find((g) => g.id === id);
+    const graphic = [...GRAPHICS, ...TV_GRAPHICS].find((g) => g.id === id);
 
     if (graphic) document.body.innerHTML = graphic.render(window.ASSETS);
   </script>

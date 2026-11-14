@@ -104,6 +104,9 @@ public static class PacketType
 
     /// Stops a FlyyDrop request from either side. Body: {"id"}.
     public const string FlyyDropCancel = "flyylink.flyydrop.cancel";
+
+    /// A remote control press or typed text for a TV. Body: {"action": "key"|"text", "key"?, "text"?}; see `TvRemote`.
+    public const string Remote = "flyylink.remote";
 }
 
 public static class Capabilities
@@ -148,5 +151,38 @@ public static class Capabilities
         PacketType.FlyyDropRequest,
         PacketType.FlyyDropResponse,
         PacketType.FlyyDropCancel,
+        PacketType.Remote,
     };
+
+    /// What a TV sends and accepts: no texts, calls, clipboard, battery, location, photos or screen sharing.
+    public static readonly IReadOnlySet<string> Tv = Mvp.Except(
+    [
+        PacketType.Battery,
+        PacketType.BatteryRequest,
+        PacketType.Clipboard,
+        PacketType.ClipboardConnect,
+        PacketType.ClipboardFile,
+        PacketType.FindMyPhone,
+        PacketType.SmsMessages,
+        PacketType.SmsRequest,
+        PacketType.SmsRequestConversations,
+        PacketType.SmsRequestConversation,
+        PacketType.Telephony,
+        PacketType.CallRequest,
+        PacketType.CallAudioRequest,
+        PacketType.CallAudio,
+        PacketType.LocationRequest,
+        PacketType.Location,
+        PacketType.PhotosRequest,
+        PacketType.Photos,
+        PacketType.PhotosDownload,
+        PacketType.PhotosFile,
+        PacketType.ScreenRequest,
+        PacketType.Screen,
+        PacketType.ScreenInput,
+        PacketType.Input,
+        PacketType.Relay,
+    ]).ToHashSet();
+
+    public static IReadOnlySet<string> ForType(DeviceType type) => type == DeviceType.Tv ? Tv : Mvp;
 }
