@@ -214,6 +214,8 @@ public sealed class AppModel : Observable, IDeviceDelegate
 
     public PhotosStore Photos { get; } = new();
 
+    public PlayOnTvState PlayOnTv { get; } = new();
+
     public ScreenMirror Mirror { get; } = new();
 
     internal ScreenVideo Video { get; } = new();

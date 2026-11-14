@@ -550,6 +550,48 @@ public sealed partial class PanelWindow : Window
         else Model.SendText(text, id);
     }
 
+    // Play on TV
+
+    private async void PlayOnTv_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new FileOpenPicker { SuggestedStartLocation = PickerLocationId.VideosLibrary, CommitButtonText = "Choose" };
+        foreach (var type in PlayOnTvTypes) picker.FileTypeFilter.Add(type);
+        InitializeWithWindow.Initialize(picker, hwnd);
+
+        keepOpen = true;
+        try
+        {
+            if (await picker.PickSingleFileAsync() is StorageFile file) Model.PlayOnTv.Pick(file.Path);
+        }
+        finally
+        {
+            keepOpen = false;
+        }
+    }
+
+    private static readonly string[] PlayOnTvTypes =
+        [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".mp4", ".m4v", ".mov", ".mkv", ".webm", ".avi", ".mp3", ".m4a", ".aac", ".wav", ".flac", ".ogg"];
+
+    private void SearchTvs_Click(object sender, RoutedEventArgs e) => Model.PlayOnTv.Search();
+
+    private void CancelTvPick_Click(object sender, RoutedEventArgs e) => Model.PlayOnTv.CancelPick();
+
+    private void PlayOnTvTarget_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string id } && Model.PlayOnTv.Tvs.FirstOrDefault(tv => tv.Id == id) is TvRenderer tv) Model.PlayOnTv.Play(tv);
+    }
+
+    private void TvPlayPause_Click(object sender, RoutedEventArgs e) => Model.PlayOnTv.TogglePause();
+
+    private void TvStop_Click(object sender, RoutedEventArgs e) => Model.PlayOnTv.Stop();
+
+    private void TvTrack_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (TvTrack.ActualWidth <= 0) return;
+
+        Model.PlayOnTv.Seek(e.GetCurrentPoint(TvTrack).Position.X / TvTrack.ActualWidth);
+    }
+
     // FlyyDrop
 
     private void AcceptFlyyDrop_Click(object sender, RoutedEventArgs e)

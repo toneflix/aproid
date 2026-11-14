@@ -67,7 +67,7 @@ private struct Artwork: View {
     }
 }
 
-private struct ControlButton: View {
+struct ControlButton: View {
     let icon: Lucide
     var size: CGFloat = 13
     let enabled: Bool
@@ -90,7 +90,7 @@ private struct ControlButton: View {
 }
 
 /// A thin bar; click or drag on it to seek when the player allows.
-private struct ProgressTrack: View {
+struct ProgressTrack: View {
     let fraction: Double
     let canSeek: Bool
     let seek: (Double) -> Void

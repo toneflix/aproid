@@ -150,6 +150,8 @@ fun HomeScreen(phoneName: String) {
 
             FlyyDropCard()
 
+            PlayOnTvCard()
+
             if (others.isNotEmpty()) Nearby(others)
 
             if (recent.isNotEmpty()) RecentSection(recent)

@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:views="using:FlyyLink.Views"
     xmlns:model="using:FlyyLink.Model"
+    xmlns:core="using:FlyyLink.Core"
     Title="FlyyLink">
 
     <Grid x:Name="Root" Background="{ThemeResource FlyyLinkGlassBrush}">
@@ -476,6 +477,98 @@
                             </StackPanel>
                         </Grid>
                     </StackPanel>
+
+                    <!-- Play on TV: choose a file, pick a TV, then control what it plays -->
+                    <Border Style="{StaticResource FlyyLinkCard}" Padding="10">
+                        <StackPanel Spacing="8">
+                            <Button Style="{StaticResource FlyyLinkPlainButton}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0" Click="PlayOnTv_Click" Visibility="{x:Bind Model.PlayOnTv.IsIdle, Mode=OneWay}">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="36" Height="36" CornerRadius="9" Background="{ThemeResource FlyyLinkTintBrush}">
+                                        <views:LucideIcon Icon="Cast" Size="15" Foreground="{ThemeResource FlyyLinkAccentBrush}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="Play on TV" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource FlyyLinkTextBrush}" />
+                                        <TextBlock Text="{x:Bind Model.PlayOnTv.IdleStatus, Mode=OneWay}" Style="{StaticResource FlyyLinkCaption}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </Grid>
+                            </Button>
+
+                            <StackPanel Spacing="8" Visibility="{x:Bind Model.PlayOnTv.IsPicking, Mode=OneWay}">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="36" Height="36" CornerRadius="9" Background="{ThemeResource FlyyLinkTintBrush}">
+                                        <views:LucideIcon Icon="{x:Bind Model.PlayOnTv.PickedIcon, Mode=OneWay}" Size="15" Foreground="{ThemeResource FlyyLinkAccentBrush}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="{x:Bind Model.PlayOnTv.PickedName, Mode=OneWay}" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource FlyyLinkTextBrush}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{x:Bind Model.PlayOnTv.PickStatus, Mode=OneWay}" Style="{StaticResource FlyyLinkCaption}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                        <ProgressRing IsActive="{x:Bind Model.PlayOnTv.Searching, Mode=OneWay}" Width="16" Height="16" />
+                                        <HyperlinkButton Content="Search again" Padding="4,0" FontSize="11" Click="SearchTvs_Click" Visibility="{x:Bind Model.PlayOnTv.ShowsSearchAgain, Mode=OneWay}" />
+                                        <Button Style="{StaticResource FlyyLinkPlainButton}" Width="30" Height="30" CornerRadius="15" Padding="0" Click="CancelTvPick_Click" ToolTipService.ToolTip="Cancel" AutomationProperties.Name="Cancel">
+                                            <views:LucideIcon Icon="X" Size="13" Foreground="{ThemeResource FlyyLinkSubBrush}" />
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                                <ItemsControl ItemsSource="{x:Bind Model.PlayOnTv.Tvs, Mode=OneWay}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="core:TvRenderer">
+                                            <Button Style="{StaticResource FlyyLinkPlainButton}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Height="34" Margin="0,0,0,4" Padding="10,0" CornerRadius="8" Background="{ThemeResource FlyyLinkThumbBrush}" Tag="{x:Bind Id}" Click="PlayOnTvTarget_Click">
+                                                <Grid ColumnSpacing="10">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <views:LucideIcon Icon="Cast" Size="13" Foreground="{ThemeResource FlyyLinkAccentBrush}" />
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource FlyyLinkTextBrush}" />
+                                                    <views:LucideIcon Grid.Column="2" Icon="Play" Size="11" Foreground="{ThemeResource FlyyLinkSubBrush}" />
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+
+                            <StackPanel Spacing="10" Visibility="{x:Bind Model.PlayOnTv.IsPlaying, Mode=OneWay}">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="36" Height="36" CornerRadius="9" Background="{ThemeResource FlyyLinkTintBrush}">
+                                        <views:LucideIcon Icon="{x:Bind Model.PlayOnTv.PlayingIcon, Mode=OneWay}" Size="15" Foreground="{ThemeResource FlyyLinkAccentBrush}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="{x:Bind Model.PlayOnTv.PlayingName, Mode=OneWay}" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource FlyyLinkTextBrush}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{x:Bind Model.PlayOnTv.PlayingStatus, Mode=OneWay}" Style="{StaticResource FlyyLinkCaption}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                                        <ProgressRing IsActive="{x:Bind Model.PlayOnTv.IsLoading, Mode=OneWay}" Width="16" Height="16" Margin="8,0" Visibility="{x:Bind Model.PlayOnTv.IsLoading, Mode=OneWay}" />
+                                        <Button Style="{StaticResource FlyyLinkPlainButton}" Width="36" Height="36" CornerRadius="18" Padding="0" Click="TvPlayPause_Click" Visibility="{x:Bind Model.PlayOnTv.ShowsPlayPause, Mode=OneWay}" ToolTipService.ToolTip="Play or pause" AutomationProperties.Name="Play or pause">
+                                            <views:LucideIcon Icon="{x:Bind Model.PlayOnTv.PlayPauseIcon, Mode=OneWay}" Size="17" Foreground="{ThemeResource FlyyLinkTextBrush}" />
+                                        </Button>
+                                        <Button Style="{StaticResource FlyyLinkPlainButton}" Width="32" Height="32" CornerRadius="16" Padding="0" Click="TvStop_Click" ToolTipService.ToolTip="Stop" AutomationProperties.Name="Stop">
+                                            <views:LucideIcon Icon="X" Size="13" Foreground="{ThemeResource FlyyLinkTextBrush}" />
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                                <Grid x:Name="TvTrack" Height="10" Background="Transparent" PointerPressed="TvTrack_PointerPressed" Visibility="{x:Bind Model.PlayOnTv.HasDuration, Mode=OneWay}">
+                                    <ProgressBar Maximum="1" Value="{x:Bind Model.PlayOnTv.Progress, Mode=OneWay}" VerticalAlignment="Center" IsHitTestVisible="False" />
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
 
                     <!-- Other devices -->
                     <Border Style="{StaticResource FlyyLinkCard}" Padding="12" Visibility="{x:Bind Model.HasOthers, Mode=OneWay}">

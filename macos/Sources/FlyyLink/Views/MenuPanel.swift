@@ -52,6 +52,8 @@ struct MenuPanel: View {
 
         main
 
+        PlayOnTvCard(model: model.playOnTv)
+
         if model.flyyDropReceiving != .off {
             FlyyDropReceivingBanner(model: model)
                 .transition(.opacity)
