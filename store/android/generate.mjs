@@ -101,15 +101,15 @@ function outputFor(id) {
   if (id === 'tv-banner') return join(HERE, 'tv/banner.png');
   if (id.startsWith('tv-')) return join(HERE, `tv/screenshots/${id.slice(3)}.png`);
 
-  const tablet = id.match(/^tablet-(\d+)-(.+)$/);
-  if (tablet) return join(HERE, `tablet/${tablet[1]}-inch/${tablet[2]}.png`);
+  const tablet = id.match(/^(amazon-)?tablet-(\d+)-(.+)$/);
+  if (tablet) return join(HERE, `${tablet[1] ? 'amazon/' : ''}tablet/${tablet[2]}-inch/${tablet[3]}.png`);
 
   return join(HERE, `screenshots/${id}.png`);
 }
 
 const assets = new Assets(ROOT).load();
 
-for (const folder of ['screenshots', 'tablet/7-inch', 'tablet/10-inch', 'tv/screenshots', '../../android/app/src/main/res/drawable-xhdpi']) {
+for (const folder of ['screenshots', 'tablet/7-inch', 'tablet/10-inch', 'amazon/tablet/7-inch', 'amazon/tablet/10-inch', 'tv/screenshots', '../../android/app/src/main/res/drawable-xhdpi']) {
   mkdirSync(join(HERE, folder), { recursive: true });
 }
 

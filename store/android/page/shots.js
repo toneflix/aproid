@@ -55,6 +55,8 @@ class StoreShot {
     this.dark = dark;
     this.screen = screen;
     this.extra = extra;
+    this.width = 1080;
+    this.height = 1920;
     this.scale = 1;
   }
 
@@ -69,7 +71,7 @@ class StoreShot {
   render(assets) {
     const app = this.app(assets);
 
-    return `<div class="canvas shot">
+    return `<div class="canvas shot" style="width:${this.width}px;height:${this.height}px">
       <img class="mark" src="${assets.mark}">
       <div class="headline">${this.lines[0]}<br><span class="accent">${this.lines[1]}</span></div>
       <div class="device">${this.device().render(this.screen(app))}</div>
@@ -80,19 +82,22 @@ class StoreShot {
 
 /**
  * The same store screenshot on a 7-inch (600 dp) or 10-inch (800 dp) tablet.
- * Drawn on the 1080x1920 canvas and saved at 1440x2560 or 2160x3840.
+ * Play gets 1440x2560 and 2160x3840; the Amazon Appstore gets 1200x1920 and 1600x2560.
  */
 class TabletShot extends StoreShot {
-  static SIZES = {
-    7: { dpWidth: 600, scale: 4 / 3 },
-    10: { dpWidth: 800, scale: 2 },
+  static FORMATS = {
+    'tablet-7': { dpWidth: 600, width: 1080, scale: 4 / 3 },
+    'tablet-10': { dpWidth: 800, width: 1080, scale: 2 },
+    'amazon-tablet-7': { dpWidth: 600, width: 1200, scale: 1 },
+    'amazon-tablet-10': { dpWidth: 800, width: 1200, scale: 4 / 3 },
   };
 
-  constructor(spec, inches) {
+  constructor(spec, format) {
     super(spec);
-    this.id = `tablet-${inches}-${spec.id}`;
-    this.inches = inches;
-    this.scale = TabletShot.SIZES[inches].scale;
+    this.id = `${format}-${spec.id}`;
+    this.dpWidth = TabletShot.FORMATS[format].dpWidth;
+    this.width = TabletShot.FORMATS[format].width;
+    this.scale = TabletShot.FORMATS[format].scale;
   }
 
   app(assets) {
@@ -100,7 +105,7 @@ class TabletShot extends StoreShot {
   }
 
   device() {
-    return new Tablet(900, 1440, TabletShot.SIZES[this.inches].dpWidth);
+    return new Tablet(900, 1440, this.dpWidth);
   }
 }
 
@@ -224,6 +229,6 @@ const SCREENS = [
 ];
 
 const SHOTS = SCREENS.map((spec) => new StoreShot(spec));
-const TABLET_SHOTS = [7, 10].flatMap((inches) => SCREENS.map((spec) => new TabletShot(spec, inches)));
+const TABLET_SHOTS = Object.keys(TabletShot.FORMATS).flatMap((format) => SCREENS.map((spec) => new TabletShot(spec, format)));
 
 const GRAPHICS = [new FeatureGraphic(), ...SHOTS, ...TABLET_SHOTS];

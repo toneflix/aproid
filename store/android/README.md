@@ -6,6 +6,7 @@ The feature graphic and phone, tablet and TV screenshots for the Play Store list
 - `screenshots/*.png`: 1080 x 1920 phone screenshots, in listing order.
 - `tablet/7-inch/*.png`: 1440 x 2560 screenshots on a 7-inch tablet (600 dp wide).
 - `tablet/10-inch/*.png`: 2160 x 3840 screenshots on a 10-inch tablet (800 dp wide).
+- `amazon/tablet/7-inch/*.png` (1200 x 1920) and `amazon/tablet/10-inch/*.png` (1600 x 2560): the same tablet shots at sizes the Amazon Appstore accepts. The phone `screenshots` (1080 x 1920) work there as they are.
 - `tv/banner.png`: the 1280 x 720 Android TV banner.
 - `tv/screenshots/*.png`: 1920 x 1080 Android TV screenshots, in listing order.
 
