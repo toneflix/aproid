@@ -101,7 +101,7 @@
 .laptop .menu { position: absolute; top: 8px; right: 8px; width: 54px; height: 22px; border-radius: 6px; background: var(--cyan, #00afff); }
 
 .carousel { display: flex; gap: 10px; margin-right: -16px; }
-.carousel .hero { width: 336px; }
+.carousel .hero { width: calc(100% - 60px); }
 .carousel .peek { opacity: 0.82; }
 
 .tiles { display: flex; gap: 10px; }
@@ -140,7 +140,7 @@
 /* Bottom sheets over a scrim. */
 
 .scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.32); }
-.sheet { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 28px 28px 0 0; background: var(--surface); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; max-width: 640px; margin: 0 auto; border-radius: 28px 28px 0 0; background: var(--surface); }
 .sheet .handle { width: 32px; height: 4px; margin: 22px auto; border-radius: 2px; background: color-mix(in srgb, var(--on-surface-variant) 40%, transparent); }
 
 .share { display: flex; flex-direction: column; gap: 18px; padding: 0 20px 28px; }

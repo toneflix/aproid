@@ -1,9 +1,11 @@
 # Google Play graphics
 
-The feature graphic and phone screenshots for the Play Store listing.
+The feature graphic and phone, tablet and TV screenshots for the Play Store listing.
 
 - `feature-graphic.png`: 1024 x 500.
 - `screenshots/*.png`: 1080 x 1920 phone screenshots, in listing order.
+- `tablet/7-inch/*.png`: 1440 x 2560 screenshots on a 7-inch tablet (600 dp wide).
+- `tablet/10-inch/*.png`: 2160 x 3840 screenshots on a 10-inch tablet (800 dp wide).
 - `tv/banner.png`: the 1280 x 720 Android TV banner.
 - `tv/screenshots/*.png`: 1920 x 1080 Android TV screenshots, in listing order.
 
@@ -19,7 +21,7 @@ npm install
 npm run generate
 ```
 
-To change a headline or add a screenshot, edit the `SHOTS` list in `page/shots.js`. If the app's home screen changes, update `page/app.js` and `page/app.css` to match.
+To change a headline or add a screenshot, edit the `SCREENS` list in `page/shots.js`. Each entry is drawn on the phone and on both tablets. If the app's home screen changes, update `page/app.js` and `page/app.css` to match.
 
 ## Android TV on Google Play
 

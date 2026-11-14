@@ -1,21 +1,49 @@
 /** A phone frame holding one app screen, scaled from dp to canvas pixels. */
 class Phone {
-  constructor(screenWidth, screenHeight) {
+  constructor(screenWidth, screenHeight, dpWidth = 412) {
     this.screenWidth = screenWidth;
     this.screenHeight = screenHeight;
+    this.dpWidth = dpWidth;
   }
 
   get scale() {
-    return this.screenWidth / 412;
+    return this.screenWidth / this.dpWidth;
+  }
+
+  get frameClass() {
+    return 'phone';
   }
 
   render(appHtml) {
     const height = this.screenHeight / this.scale;
-    const app = appHtml.replace('class="app', `style="height:${height}px;transform:scale(${this.scale})" class="app`);
+    const app = appHtml.replace('class="app', `style="width:${this.dpWidth}px;height:${height}px;transform:scale(${this.scale})" class="app`);
 
     const frame = this.screenWidth / 800;
 
-    return `<div class="phone" style="--k:${frame}"><div class="screen" style="width:${this.screenWidth}px;height:${this.screenHeight}px"><div class="camera"></div>${app}</div></div>`;
+    return `<div class="${this.frameClass}" style="--k:${frame}">${this.bezel()}<div class="screen" style="width:${this.screenWidth}px;height:${this.screenHeight}px">${this.punchHole()}${app}</div></div>`;
+  }
+
+  bezel() {
+    return '';
+  }
+
+  punchHole() {
+    return '<div class="camera"></div>';
+  }
+}
+
+/** A tablet frame: wider bezels with the camera in the top one. */
+class Tablet extends Phone {
+  get frameClass() {
+    return 'phone tablet';
+  }
+
+  bezel() {
+    return '<div class="camera"></div>';
+  }
+
+  punchHole() {
+    return '';
   }
 }
 
@@ -27,18 +55,52 @@ class StoreShot {
     this.dark = dark;
     this.screen = screen;
     this.extra = extra;
+    this.scale = 1;
+  }
+
+  app(assets) {
+    return new AndroidApp(assets, { dark: this.dark });
+  }
+
+  device() {
+    return new Phone(800, 1456);
   }
 
   render(assets) {
-    const app = new AndroidApp(assets, { dark: this.dark });
-    const phone = new Phone(800, 1456);
+    const app = this.app(assets);
 
     return `<div class="canvas shot">
       <img class="mark" src="${assets.mark}">
       <div class="headline">${this.lines[0]}<br><span class="accent">${this.lines[1]}</span></div>
-      <div class="device">${phone.render(this.screen(app))}</div>
+      <div class="device">${this.device().render(this.screen(app))}</div>
       ${this.extra(assets)}
     </div>`;
+  }
+}
+
+/**
+ * The same store screenshot on a 7-inch (600 dp) or 10-inch (800 dp) tablet.
+ * Drawn on the 1080x1920 canvas and saved at 1440x2560 or 2160x3840.
+ */
+class TabletShot extends StoreShot {
+  static SIZES = {
+    7: { dpWidth: 600, scale: 4 / 3 },
+    10: { dpWidth: 800, scale: 2 },
+  };
+
+  constructor(spec, inches) {
+    super(spec);
+    this.id = `tablet-${inches}-${spec.id}`;
+    this.inches = inches;
+    this.scale = TabletShot.SIZES[inches].scale;
+  }
+
+  app(assets) {
+    return new AndroidApp(assets, { dark: this.dark, roomy: true });
+  }
+
+  device() {
+    return new Tablet(900, 1440, TabletShot.SIZES[this.inches].dpWidth);
   }
 }
 
@@ -68,8 +130,9 @@ class FeatureGraphic {
 
 const FLOWING = 'Syncing';
 
-const SHOTS = [
-  new StoreShot({
+/** The listing screenshots, in order. Each is drawn on a phone and on both tablet sizes. */
+const SCREENS = [
+  {
     id: '01-home',
     lines: ['Android meets', 'your Mac and PC'],
     screen: (app) => app.screen(app.home([
@@ -81,16 +144,16 @@ const SHOTS = [
         { icon: 'link', title: 'Link from MacBook Pro', detail: 'From MacBook Pro · Tap to open', when: '5 min. ago' },
       ]),
     ])),
-  }),
-  new StoreShot({
+  },
+  {
     id: '02-flyydrop',
     lines: ['FlyyDrop to', 'anyone nearby'],
     screen: (app) => app.screen(
       app.home([app.hero('MacBook Pro', FLOWING), app.tiles(), app.flyyDropCard()]),
       app.flyyDropSheet("Ada's Pixel 8", { title: '3 photos · 12.4 MB', detail: 'IMG_2207.jpg, IMG_2208.jpg, IMG_2210.jpg' }),
     ),
-  }),
-  new StoreShot({
+  },
+  {
     id: '03-send-files',
     lines: ['Send files', 'in seconds'],
     screen: (app) => app.screen(
@@ -104,8 +167,8 @@ const SHOTS = [
         ],
       }),
     ),
-  }),
-  new StoreShot({
+  },
+  {
     id: '04-notifications',
     lines: ['Never miss a text', 'while you work'],
     dark: true,
@@ -122,8 +185,8 @@ const SHOTS = [
       <div class="body"><div class="top"><span>MESSAGES</span><span>now</span></div><div class="title">Mum</div><div class="text">On my way home</div></div>
       <span class="reply">Reply</span>
     </div>`,
-  }),
-  new StoreShot({
+  },
+  {
     id: '05-clipboard',
     lines: ['Copy here,', 'paste there'],
     screen: (app) => app.screen(
@@ -136,8 +199,8 @@ const SHOTS = [
       ]),
       app.toast('Clipboard sent'),
     ),
-  }),
-  new StoreShot({
+  },
+  {
     id: '06-many-computers',
     lines: ['One phone,', 'all your computers'],
     dark: true,
@@ -149,15 +212,18 @@ const SHOTS = [
         { icon: 'image', title: 'Screenshot 2026-11-10.png', detail: 'From MacBook Pro · Saved to Downloads', when: '8 min. ago' },
       ]),
     ])),
-  }),
-  new StoreShot({
+  },
+  {
     id: '07-pair',
     lines: ['Pair once,', 'stay connected'],
     screen: (app) => app.screen(
       app.home([app.hero('Work PC', FLOWING), app.tiles()]),
       app.pairSheet('Work PC', '4F7A2C91'),
     ),
-  }),
+  },
 ];
 
-const GRAPHICS = [new FeatureGraphic(), ...SHOTS];
+const SHOTS = SCREENS.map((spec) => new StoreShot(spec));
+const TABLET_SHOTS = [7, 10].flatMap((inches) => SCREENS.map((spec) => new TabletShot(spec, inches)));
+
+const GRAPHICS = [new FeatureGraphic(), ...SHOTS, ...TABLET_SHOTS];

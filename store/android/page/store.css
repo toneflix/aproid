@@ -86,6 +86,12 @@ body { background: var(--night); }
   z-index: 10;
 }
 
+/* Tablet hardware: wider bezels, the camera in the top one. */
+
+.phone.tablet { padding: calc(40px * var(--k)); border-radius: calc(64px * var(--k)); }
+.phone.tablet .screen { border-radius: calc(26px * var(--k)); }
+.phone.tablet .camera { top: calc(12px * var(--k)); width: calc(16px * var(--k)); height: calc(16px * var(--k)); margin-left: calc(-8px * var(--k)); }
+
 /* A desktop notification banner floating beside the phone. */
 
 .banner {
