@@ -40,15 +40,16 @@ object Ssdp {
 
 data class SsdpReply(val location: String, val usn: String, val target: String)
 
-/** A TV or speaker that plays media from a URL, as its UPnP device description lists it. */
+/** A TV or speaker that plays media from a URL: a DLNA one as its UPnP device description lists it, or a Google Cast one. */
 data class TvRenderer(
     val id: String,
     val name: String,
-    val avTransportUrl: String,
+    val avTransportUrl: String = "",
     val renderingControlUrl: String? = null,
+    val cast: CastEndpoint? = null,
 ) {
     /** The address of the TV, used to pick the local address it can reach us on. */
-    val host: String get() = URI(avTransportUrl).host
+    val host: String get() = cast?.host ?: URI(avTransportUrl).host
 
     companion object {
         /** Reads the first device in [xml] that has an AVTransport service, resolving its URLs against [location]. */

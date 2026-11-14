@@ -52,12 +52,13 @@ class TlsUpgrader(certificate: DeviceCertificate) {
     private fun newContext(): SSLContext = SSLContext.getInstance("TLS").apply {
         init(keyManagers, arrayOf(AcceptAnyCertificate), SecureRandom())
     }
+}
 
-    private object AcceptAnyCertificate : X509TrustManager {
-        override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) = Unit
+/** Accepts the self-signed certificates that devices and Cast TVs use. Callers check identity in other ways. */
+internal object AcceptAnyCertificate : X509TrustManager {
+    override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) = Unit
 
-        override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) = Unit
+    override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) = Unit
 
-        override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
-    }
+    override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
 }
