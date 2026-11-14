@@ -1,4 +1,4 @@
-// Renders the Google Play feature graphic and phone screenshots from page/.
+// Renders the Google Play feature graphic and phone, tablet and TV screenshots from page/.
 // Run from this folder: npm install && npm run generate
 import { readFileSync, readdirSync, mkdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -52,7 +52,7 @@ class Assets {
   }
 }
 
-/** Screenshots each graphic in page/index.html at its canvas size. */
+/** Screenshots each graphic in page/index.html at its canvas size, times its scale. */
 class Renderer {
   constructor(assets, outputs) {
     this.assets = assets;
@@ -61,14 +61,26 @@ class Renderer {
 
   async run() {
     const browser = await chromium.launch();
-    const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
     const index = pathToFileURL(join(HERE, 'page/index.html'));
+    const pages = new Map();
 
-    await page.addInitScript((assets) => { window.ASSETS = assets; }, this.assets);
-    await page.goto(index.href);
-    const graphics = await page.evaluate(() => [...GRAPHICS, ...TV_GRAPHICS].map(({ id, width, height }) => ({ id, width, height })));
+    const pageAt = async (scale) => {
+      if (!pages.has(scale)) {
+        const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: scale });
+        await page.addInitScript((assets) => { window.ASSETS = assets; }, this.assets);
+        pages.set(scale, page);
+      }
 
-    for (const { id, width = 1080, height = 1920 } of graphics) {
+      return pages.get(scale);
+    };
+
+    const first = await pageAt(1);
+    await first.goto(index.href);
+    const graphics = await first.evaluate(() => [...GRAPHICS, ...TV_GRAPHICS].map(({ id, width, height, scale }) => ({ id, width, height, scale })));
+
+    for (const { id, width = 1080, height = 1920, scale = 1 } of graphics) {
+      const page = await pageAt(scale);
+
       await page.setViewportSize({ width, height });
       await page.goto(`${index}?graphic=${id}`);
       await page.evaluate(() => document.fonts.ready);
@@ -89,12 +101,15 @@ function outputFor(id) {
   if (id === 'tv-banner') return join(HERE, 'tv/banner.png');
   if (id.startsWith('tv-')) return join(HERE, `tv/screenshots/${id.slice(3)}.png`);
 
+  const tablet = id.match(/^(amazon-)?tablet-(\d+)-(.+)$/);
+  if (tablet) return join(HERE, `${tablet[1] ? 'amazon/' : ''}tablet/${tablet[2]}-inch/${tablet[3]}.png`);
+
   return join(HERE, `screenshots/${id}.png`);
 }
 
 const assets = new Assets(ROOT).load();
 
-for (const folder of ['screenshots', 'tv/screenshots', '../../android/app/src/main/res/drawable-xhdpi']) {
+for (const folder of ['screenshots', 'tablet/7-inch', 'tablet/10-inch', 'amazon/tablet/7-inch', 'amazon/tablet/10-inch', 'tv/screenshots', '../../android/app/src/main/res/drawable-xhdpi']) {
   mkdirSync(join(HERE, folder), { recursive: true });
 }
 

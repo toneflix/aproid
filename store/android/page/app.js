@@ -1,9 +1,10 @@
 /** Builds the FlyyLink Android screens as HTML, mirroring the Compose layouts in android/app. */
 class AndroidApp {
-  constructor(assets, { dark = false, time = '19:31' } = {}) {
+  constructor(assets, { dark = false, time = '19:31', roomy = false } = {}) {
     this.assets = assets;
     this.dark = dark;
     this.time = time;
+    this.roomy = roomy;
   }
 
   icon(name) {
@@ -20,7 +21,15 @@ class AndroidApp {
     return `<div class="status"><span class="time">${this.time}</span><span class="icons">${this.icon('wifi')}<span class="signal">${bars}</span><span class="battery"></span></span></div>`;
   }
 
+  /** The home column. A roomy (tablet) screen also shows the FlyyDrop card under the tiles, as the app always does. */
   home(sections) {
+    const tiles = sections.findIndex((html) => html.includes('class="tiles"'));
+    const hasCard = sections.some((html) => html.includes('class="flyy-card"'));
+
+    if (this.roomy && tiles >= 0 && !hasCard) {
+      sections = [...sections.slice(0, tiles + 1), this.flyyDropCard(), ...sections.slice(tiles + 1)];
+    }
+
     return `<div class="home">${this.header()}${sections.join('')}</div>`;
   }
 
