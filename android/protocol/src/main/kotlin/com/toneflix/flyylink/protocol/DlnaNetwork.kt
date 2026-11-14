@@ -20,12 +20,34 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
-/** Finds TVs on the network that play media sent to them ("Play on TV"). */
+/** Finds TVs on the network that play media sent to them ("Play on TV"), over DLNA and Google Cast. */
 object TvFinder {
     private val targets = listOf(Ssdp.RENDERER, AvTransport.SERVICE)
 
     /** Searches for [timeoutMs] and returns each TV once, sorted by name. Blocks, so call it off the main thread. */
     fun search(timeoutMs: Long = 3000): List<TvRenderer> {
+        val pool = Executors.newSingleThreadExecutor()
+
+        return try {
+            val cast = pool.submit<List<TvRenderer>> { CastFinder.search(timeoutMs) }
+            val dlna = searchDlna(timeoutMs)
+
+            merge(dlna, runCatching { cast.get() }.getOrDefault(emptyList()))
+        } finally {
+            pool.shutdown()
+        }
+    }
+
+    /** Each TV once, sorted by name. A TV that answers both ways keeps its Cast entry, which plays more reliably. */
+    fun merge(dlna: List<TvRenderer>, cast: List<TvRenderer>): List<TvRenderer> {
+        val castHosts = cast.map { it.host }.toSet()
+
+        return (cast + dlna.filter { runCatching { it.host }.getOrNull() !in castHosts })
+            .distinctBy { it.id }
+            .sortedBy { it.name.lowercase() }
+    }
+
+    private fun searchDlna(timeoutMs: Long): List<TvRenderer> {
         val locations = LinkedHashSet<String>()
 
         DatagramSocket().use { socket ->
@@ -80,36 +102,60 @@ object TvFinder {
     }.getOrNull()
 }
 
-/** Plays media on one TV and controls it. Each call blocks on the network, so call them off the main thread. */
-class TvPlayer(val tv: TvRenderer) {
-    fun play(url: String, title: String, mime: String, size: Long? = null) {
+/** What can be done with media on a TV. Each call blocks on the network, so call them off the main thread. */
+interface TvControl {
+    fun play(url: String, title: String, mime: String, size: Long? = null)
+
+    fun resume()
+
+    fun pause()
+
+    fun stop()
+
+    fun seek(positionMs: Long)
+
+    fun position(): CastPosition?
+
+    fun state(): CastState?
+
+    fun volume(): Int?
+
+    fun setVolume(volume: Int)
+}
+
+/** Plays media on one TV and controls it, over Google Cast when the TV has it and DLNA otherwise. */
+class TvPlayer(val tv: TvRenderer) : TvControl by (tv.cast?.let(::CastControl) ?: DlnaControl(tv))
+
+/** Plays on a DLNA TV through its AVTransport service. */
+internal class DlnaControl(private val tv: TvRenderer) : TvControl {
+    override fun play(url: String, title: String, mime: String, size: Long?) {
         send(tv.avTransportUrl, AvTransport.setUri(url, title, mime, size))
         send(tv.avTransportUrl, AvTransport.play())
     }
 
-    fun resume() {
+    override fun resume() {
         send(tv.avTransportUrl, AvTransport.play())
     }
 
-    fun pause() {
+    override fun pause() {
         send(tv.avTransportUrl, AvTransport.pause())
     }
 
-    fun stop() {
+    override fun stop() {
         send(tv.avTransportUrl, AvTransport.stop())
     }
 
-    fun seek(positionMs: Long) {
+    override fun seek(positionMs: Long) {
         send(tv.avTransportUrl, AvTransport.seek(positionMs))
     }
 
-    fun position(): CastPosition? = AvTransport.position(send(tv.avTransportUrl, AvTransport.positionInfo()))
+    override fun position(): CastPosition? = AvTransport.position(send(tv.avTransportUrl, AvTransport.positionInfo()))
 
-    fun state(): CastState? = AvTransport.state(send(tv.avTransportUrl, AvTransport.transportInfo()))
+    override fun state(): CastState? = AvTransport.state(send(tv.avTransportUrl, AvTransport.transportInfo()))
 
-    fun volume(): Int? = tv.renderingControlUrl?.let { RenderingControl.volume(send(it, RenderingControl.getVolume())) }
+    override fun volume(): Int? = tv.renderingControlUrl?.let { RenderingControl.volume(send(it, RenderingControl.getVolume())) }
 
-    fun setVolume(volume: Int) {
+    override fun setVolume(volume: Int) {
         tv.renderingControlUrl?.let { send(it, RenderingControl.setVolume(volume)) }
     }
 

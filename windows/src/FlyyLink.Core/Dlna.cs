@@ -39,11 +39,11 @@ public static class Ssdp
 
 public sealed record SsdpReply(string Location, string Usn, string Target);
 
-/// A TV or speaker that plays media from a URL, as its UPnP device description lists it.
-public sealed record TvRenderer(string Id, string Name, string AvTransportUrl, string? RenderingControlUrl = null)
+/// A TV or speaker that plays media from a URL: a DLNA one as its UPnP device description lists it, or a Google Cast one.
+public sealed record TvRenderer(string Id, string Name, string AvTransportUrl = "", string? RenderingControlUrl = null, CastEndpoint? Cast = null)
 {
     /// The address of the TV, used to pick the local address it can reach us on.
-    public string Host => new Uri(AvTransportUrl).Host;
+    public string Host => Cast?.Host ?? new Uri(AvTransportUrl).Host;
 
     /// Reads the first device that has an AVTransport service, resolving its URLs against the location.
     public static TvRenderer? Parse(string xml, string location)

@@ -35,22 +35,24 @@ public struct SsdpReply: Equatable, Sendable {
     public var target: String
 }
 
-/// A TV or speaker that plays media from a URL, as its UPnP device description lists it.
+/// A TV or speaker that plays media from a URL: a DLNA one as its UPnP device description lists it, or a Google Cast one.
 public struct TvRenderer: Equatable, Hashable, Sendable, Identifiable {
     public var id: String
     public var name: String
     public var avTransportUrl: String
     public var renderingControlUrl: String?
+    public var cast: CastEndpoint?
 
-    public init(id: String, name: String, avTransportUrl: String, renderingControlUrl: String? = nil) {
+    public init(id: String, name: String, avTransportUrl: String = "", renderingControlUrl: String? = nil, cast: CastEndpoint? = nil) {
         self.id = id
         self.name = name
         self.avTransportUrl = avTransportUrl
         self.renderingControlUrl = renderingControlUrl
+        self.cast = cast
     }
 
     /// The address of the TV, used to pick the local address it can reach us on.
-    public var host: String { URL(string: avTransportUrl)?.host ?? "" }
+    public var host: String { cast?.host ?? URL(string: avTransportUrl)?.host ?? "" }
 
     /// Reads the first device in `xml` that has an AVTransport service, resolving its URLs against `location`.
     public static func parse(_ xml: String, location: String) -> TvRenderer? {

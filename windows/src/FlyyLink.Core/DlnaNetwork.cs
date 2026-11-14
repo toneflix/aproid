@@ -4,7 +4,7 @@ using System.Text;
 
 namespace FlyyLink.Core;
 
-/// Finds TVs on the network that play media sent to them ("Play on TV"). Mirrors DlnaNetwork.kt and DlnaNetwork.swift.
+/// Finds TVs on the network that play media sent to them ("Play on TV"), over DLNA and Google Cast. Mirrors DlnaNetwork.kt and DlnaNetwork.swift.
 public static class TvFinder
 {
     private static readonly string[] Targets = [Ssdp.Renderer, AvTransport.Service];
@@ -13,13 +13,30 @@ public static class TvFinder
     /// Searches for the timeout and returns each TV once, sorted by name.
     public static async Task<List<TvRenderer>> SearchAsync(TimeSpan? timeout = null, CancellationToken cancel = default)
     {
-        var locations = await CollectLocationsAsync(timeout ?? TimeSpan.FromSeconds(3), cancel);
-        var found = await Task.WhenAll(locations.Select(location => DescribeAsync(location, cancel)));
+        var cast = CastFinder.SearchAsync(timeout, cancel);
+        var dlna = await SearchDlnaAsync(timeout ?? TimeSpan.FromSeconds(3), cancel);
 
-        return found.OfType<TvRenderer>()
+        return Merge(dlna, await cast);
+    }
+
+    /// Each TV once, sorted by name. A TV that answers both ways keeps its Cast entry, which plays more reliably.
+    public static List<TvRenderer> Merge(IEnumerable<TvRenderer> dlna, IEnumerable<TvRenderer> cast)
+    {
+        var castTvs = cast.ToList();
+        var castHosts = castTvs.Select(tv => tv.Host).ToHashSet();
+
+        return castTvs.Concat(dlna.Where(tv => !castHosts.Contains(tv.Host)))
             .DistinctBy(tv => tv.Id)
             .OrderBy(tv => tv.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private static async Task<List<TvRenderer>> SearchDlnaAsync(TimeSpan timeout, CancellationToken cancel)
+    {
+        var locations = await CollectLocationsAsync(timeout, cancel);
+        var found = await Task.WhenAll(locations.Select(location => DescribeAsync(location, cancel)));
+
+        return found.OfType<TvRenderer>().ToList();
     }
 
     private static async Task<List<string>> CollectLocationsAsync(TimeSpan timeout, CancellationToken cancel)
@@ -73,12 +90,58 @@ public static class TvFinder
     }
 }
 
-/// Plays media on one TV and controls it.
-public sealed class TvPlayer(TvRenderer tv)
+/// What can be done with media on a TV.
+public interface ITvControl
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(5) };
+    Task PlayAsync(string url, string title, string mime, long? size = null);
+
+    Task ResumeAsync();
+
+    Task PauseAsync();
+
+    Task StopAsync();
+
+    Task SeekAsync(long positionMs);
+
+    Task<CastPosition?> PositionAsync();
+
+    Task<CastState?> StateAsync();
+
+    Task<int?> VolumeAsync();
+
+    Task SetVolumeAsync(int volume);
+}
+
+/// Plays media on one TV and controls it, over Google Cast when the TV has it and DLNA otherwise.
+public sealed class TvPlayer(TvRenderer tv) : ITvControl
+{
+    private readonly ITvControl _control = tv.Cast is CastEndpoint cast ? new CastControl(cast) : new DlnaControl(tv);
 
     public TvRenderer Tv => tv;
+
+    public Task PlayAsync(string url, string title, string mime, long? size = null) => _control.PlayAsync(url, title, mime, size);
+
+    public Task ResumeAsync() => _control.ResumeAsync();
+
+    public Task PauseAsync() => _control.PauseAsync();
+
+    public Task StopAsync() => _control.StopAsync();
+
+    public Task SeekAsync(long positionMs) => _control.SeekAsync(positionMs);
+
+    public Task<CastPosition?> PositionAsync() => _control.PositionAsync();
+
+    public Task<CastState?> StateAsync() => _control.StateAsync();
+
+    public Task<int?> VolumeAsync() => _control.VolumeAsync();
+
+    public Task SetVolumeAsync(int volume) => _control.SetVolumeAsync(volume);
+}
+
+/// Plays on a DLNA TV through its AVTransport service.
+internal sealed class DlnaControl(TvRenderer tv) : ITvControl
+{
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(5) };
 
     public async Task PlayAsync(string url, string title, string mime, long? size = null)
     {

@@ -1,11 +1,28 @@
 import Foundation
 
-/// Finds TVs on the network that play media sent to them ("Play on TV"). Mirrors DlnaNetwork.kt.
+/// Finds TVs on the network that play media sent to them ("Play on TV"), over DLNA and Google Cast. Mirrors DlnaNetwork.kt.
 public enum TvFinder {
     private static let targets = [Ssdp.renderer, AvTransport.service]
 
     /// Searches for `timeout` seconds and returns each TV once, sorted by name.
     public static func search(timeout: TimeInterval = 3) async -> [TvRenderer] {
+        async let cast = CastFinder.search(timeout: timeout)
+        let dlna = await searchDlna(timeout: timeout)
+
+        return merge(dlna: dlna, cast: await cast)
+    }
+
+    /// Each TV once, sorted by name. A TV that answers both ways keeps its Cast entry, which plays more reliably.
+    public static func merge(dlna: [TvRenderer], cast: [TvRenderer]) -> [TvRenderer] {
+        let castHosts = Set(cast.map(\.host))
+        var seen = Set<String>()
+
+        return (cast + dlna.filter { !castHosts.contains($0.host) })
+            .filter { seen.insert($0.id).inserted }
+            .sorted { $0.name.lowercased() < $1.name.lowercased() }
+    }
+
+    private static func searchDlna(timeout: TimeInterval) async -> [TvRenderer] {
         let locations = await Task.detached { collectLocations(timeout: timeout) }.value
 
         let found = await withTaskGroup(of: TvRenderer?.self) { group in
@@ -80,50 +97,90 @@ public enum TvFinder {
     }
 }
 
-/// Plays media on one TV and controls it.
-public struct TvPlayer: Sendable {
+/// What can be done with media on a TV.
+public protocol TvControl: Sendable {
+    func play(url: String, title: String, mime: String, size: Int64?) async throws
+    func resume() async throws
+    func pause() async throws
+    func stop() async throws
+    func seek(_ positionMs: Int64) async throws
+    func position() async throws -> CastPosition?
+    func state() async throws -> CastState?
+    func volume() async throws -> Int?
+    func setVolume(_ volume: Int) async throws
+}
+
+/// Plays media on one TV and controls it, over Google Cast when the TV has it and DLNA otherwise.
+public struct TvPlayer: TvControl {
     public let tv: TvRenderer
+    private let control: any TvControl
 
     public init(tv: TvRenderer) {
         self.tv = tv
+        control = tv.cast.map { CastControl(endpoint: $0) as any TvControl } ?? DlnaControl(tv: tv)
     }
 
     public func play(url: String, title: String, mime: String, size: Int64? = nil) async throws {
+        try await control.play(url: url, title: title, mime: mime, size: size)
+    }
+
+    public func resume() async throws { try await control.resume() }
+
+    public func pause() async throws { try await control.pause() }
+
+    public func stop() async throws { try await control.stop() }
+
+    public func seek(_ positionMs: Int64) async throws { try await control.seek(positionMs) }
+
+    public func position() async throws -> CastPosition? { try await control.position() }
+
+    public func state() async throws -> CastState? { try await control.state() }
+
+    public func volume() async throws -> Int? { try await control.volume() }
+
+    public func setVolume(_ volume: Int) async throws { try await control.setVolume(volume) }
+}
+
+/// Plays on a DLNA TV through its AVTransport service.
+struct DlnaControl: TvControl {
+    let tv: TvRenderer
+
+    func play(url: String, title: String, mime: String, size: Int64?) async throws {
         try await send(tv.avTransportUrl, AvTransport.setUri(url, title: title, mime: mime, size: size))
         try await send(tv.avTransportUrl, AvTransport.play())
     }
 
-    public func resume() async throws {
+    func resume() async throws {
         try await send(tv.avTransportUrl, AvTransport.play())
     }
 
-    public func pause() async throws {
+    func pause() async throws {
         try await send(tv.avTransportUrl, AvTransport.pause())
     }
 
-    public func stop() async throws {
+    func stop() async throws {
         try await send(tv.avTransportUrl, AvTransport.stop())
     }
 
-    public func seek(_ positionMs: Int64) async throws {
+    func seek(_ positionMs: Int64) async throws {
         try await send(tv.avTransportUrl, AvTransport.seek(positionMs))
     }
 
-    public func position() async throws -> CastPosition? {
+    func position() async throws -> CastPosition? {
         AvTransport.position(try await send(tv.avTransportUrl, AvTransport.positionInfo()))
     }
 
-    public func state() async throws -> CastState? {
+    func state() async throws -> CastState? {
         AvTransport.state(try await send(tv.avTransportUrl, AvTransport.transportInfo()))
     }
 
-    public func volume() async throws -> Int? {
+    func volume() async throws -> Int? {
         guard let url = tv.renderingControlUrl else { return nil }
 
         return RenderingControl.volume(try await send(url, RenderingControl.getVolume()))
     }
 
-    public func setVolume(_ volume: Int) async throws {
+    func setVolume(_ volume: Int) async throws {
         guard let url = tv.renderingControlUrl else { return }
 
         try await send(url, RenderingControl.setVolume(volume))

@@ -50,6 +50,6 @@
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>macOS needs location access for FlyyLink to see your phone's hotspot name.</string>
     <key>NSLocalNetworkUsageDescription</key>
-    <string>FlyyLink finds and connects to your phone on the local network.</string>
+    <string>FlyyLink finds and connects to your phone and TVs on the local network.</string>
 </dict>
 </plist>
